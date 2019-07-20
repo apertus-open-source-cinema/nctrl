@@ -1,0 +1,14 @@
+/target
+/ftable/target
+**/*.rs.bk
+\#*\#
+*.ldat
+*.xsdat
+perf.data
+perf.data.old
+flame.svg
+main
+main.cpp
+old_stuff
+.propfs
+.cargo

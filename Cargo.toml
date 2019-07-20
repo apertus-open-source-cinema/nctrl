@@ -1,0 +1,33 @@
+[package]
+name = "ctrlv2"
+version = "0.1.0"
+authors = ["Robin Ole Heinemann <robin.ole.heinemann@t-online.de>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+fuse = { git = "https://github.com/zargony/rust-fuse" }
+env_logger = "*"
+libc = "*"
+fuseable = { package = "fuseable", features = ["bimap"], git = "https://github.com/axiom-micro/ctrl" }
+fuseable_derive = { package = "fuseable_derive", git = "https://github.com/axiom-micro/ctrl" }
+parse_num = { package = "parse_num", git = "https://github.com/axiom-micro/ctrl" }
+ctrl = { git = "https://github.com/axiom-micro/ctrl" }
+ftable = { path = "ftable" }
+structopt = "*"
+serde = { version = "*", features = ["rc"] }
+serde_derive = "*"
+serde_yaml = "*"
+paste = "*"
+byteorder = "*"
+regex = "*"
+failure = "*"
+memmap = "*"
+i2cdev = "*"
+lazy_static ="*"
+num = "*"
+derivative = "*"
+isomorphism = { version = "*", features = ["serde"] }
+itertools = "*"
+log = "*"
