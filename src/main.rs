@@ -13,7 +13,7 @@ use std::path::PathBuf;
 use std::time::{Duration, UNIX_EPOCH};
 use structopt::StructOpt;
 
-const TTL: Duration = Duration::from_secs(3600); // 1 second
+const TTL: Duration = Duration::from_secs(3600); // 1 hour
 
 /*
  * what kind of inode -> path, inode -> name mapping do we need?

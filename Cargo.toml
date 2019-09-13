@@ -4,8 +4,6 @@ version = "0.1.0"
 authors = ["Robin Ole Heinemann <robin.ole.heinemann@t-online.de>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 fuse = { git = "https://github.com/zargony/rust-fuse" }
 env_logger = "*"
@@ -31,3 +29,14 @@ derivative = "*"
 isomorphism = { version = "*", features = ["serde"] }
 itertools = "*"
 log = "*"
+
+[profile.release]
+lto = true
+opt-level = 3
+
+
+[replace]
+"fuse-sys:0.4.0-dev" = { path = "/home/robin/projects/rust-fuse", package="fuse-sys" }
+
+# [patch.crates-io]
+# fuse = { path = "/home/robin/projects/rust-fuse" }
