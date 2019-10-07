@@ -1,10 +1,18 @@
 [package]
-name = "ftable"
+name = "btree"
 version = "0.1.0"
 authors = ["Robin Ole Heinemann <robin.ole.heinemann@t-online.de>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
-btree = { path = "../btree" }
+[dev-dependencies]
+rand = "*"
+pbr = "*"
+
+[profile.release]
+lto = true
+opt-level = 3
+
+[features]
+std = []

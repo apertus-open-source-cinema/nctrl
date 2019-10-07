@@ -13,6 +13,7 @@ fuseable_derive = { package = "fuseable_derive", git = "https://github.com/axiom
 parse_num = { package = "parse_num", git = "https://github.com/axiom-micro/ctrl" }
 ctrl = { git = "https://github.com/axiom-micro/ctrl" }
 ftable = { path = "ftable" }
+btree = { path = "btree" }
 structopt = "*"
 serde = { version = "*", features = ["rc"] }
 serde_derive = "*"

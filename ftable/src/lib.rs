@@ -213,7 +213,7 @@ impl<'a> FTable<'a> {
 
                 new_entry
             },
-            DirOrFile::File => panic!("attempted to att child to file")
+            DirOrFile::File => panic!("attempted to add child to file")
         };
 
         self.table.push(new_entry);
