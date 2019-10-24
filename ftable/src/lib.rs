@@ -1,6 +1,7 @@
 #![feature(const_fn)]
 use std::ffi::OsStr;
 use std::fmt::Debug;
+use btree::{BTree, BTreeProxy, BTreeIdx, BTreeDFIter};
 
 // Things to further improve performance:
 // Use filehandle in opendir / releasedir 
@@ -22,6 +23,8 @@ impl Debug for Inode {
             write!(fmt, "None")
         } else if self.is_empty() {
             write!(fmt, "Empty")
+        } else if self.is_root() {
+            write!(fmt, "Root")
         } else {
             self.0.fmt(fmt)
         }
@@ -34,8 +37,8 @@ impl Into<u64> for Inode {
     }
 }
 
-const NONE_INODE: u64 = std::u64::MAX;
-const EMPTY_INODE: u64 = std::u64::MAX - 1;
+//const NONE_INODE: u64 = ;
+// const EMPTY_INODE: u64 = std::u64::MAX - 1;
 
 impl Inode {
     pub const None: Inode = Inode::none();
@@ -43,11 +46,11 @@ impl Inode {
     pub const Root: Inode = Inode::root();
 
     pub const fn none() -> Inode {
-        Inode(NONE_INODE)
+        Inode(std::u64::MAX)
     }
 
     pub const fn empty() -> Inode {
-        Inode(EMPTY_INODE)
+        Inode(std::u64::MAX - 1)
     }
 
     pub const fn root() -> Inode {
@@ -86,7 +89,9 @@ pub struct Entry<'a> {
     pub parent: Inode,
     pub ty: DirOrFile,
     pub name: &'a OsStr,
-    prev: Inode
+    btree_right: Inode,
+    btree_left: Inode,
+    btree_parent: Inode
 }
 
 impl<'a> Entry<'a> {
@@ -152,16 +157,17 @@ impl<'a> Iterator for FTablePathIter<'a> {
     }
 }
 
+/*
 enum FTableDirIterState {
     ThisDir,
     UpperDir,
     Entries
 }
 
+*/
 pub struct FTableDirIter<'a> {
+    proxy_iter: BTreeDFIter<&'a OsStr, Inode, (&'a FTable<'a>, Inode)>,
     table: &'a FTable<'a>,
-    ino: Inode,
-//    state: u8
 }
 
 
@@ -169,8 +175,10 @@ impl<'a> Iterator for FTableDirIter<'a> {
     type Item = (Inode, &'a Entry<'a>);
     
     fn next(&mut self) -> Option<Self::Item> {
+        self.proxy_iter.next().map(|(ino, _)| (ino, &self.table.table[ino.as_usize()]))
+            /*
         if self.ino.is_some() {
-            let entry = &self.table.table[self.ino.as_usize()];
+            let entry = ;
 
             let old_ino = self.ino;
             self.ino = entry.prev;
@@ -179,13 +187,132 @@ impl<'a> Iterator for FTableDirIter<'a> {
         } else {
             None
         }
+            */
+    }
+}
+
+/*
+struct FTableBTreeProxy<'a> {
+    table: &'a mut FTable<'a>,
+    root: Inode,
+}
+
+impl<'a> FTableBTreeProxy<'a> {
+    fn new(table: &'a mut FTable<'a>, root: Inode) -> FTableBTreeProxy<'a> {
+        assert!(table.is_dir(root));
+
+        FTableBTreeProxy {
+            table,
+            root
+        }
+    }
+}
+*/
+
+impl<'a: 'b, 'b> BTreeProxy<&'a OsStr, Inode> for (&'b FTable<'a>, Inode) {
+    fn root(&self) -> Inode {
+        match self.0.table[self.1.as_usize()].ty {
+            DirOrFile::Dir(file) => file,
+            _ => panic!("tried to use Table.TableBTreeProxy but the root was not a dir")
+        }
+    }
+
+    fn set_root(&mut self, node: Inode) {
+        panic!("attempted to use immutable proxy for mutation")
+    }
+
+    fn get_left(&self, node: Inode) -> Inode {
+        self.0.table[node.as_usize()].btree_left
+    }
+
+    fn set_left(&mut self, node: Inode, left: Inode) {
+        panic!("attempted to use immutable proxy for mutation")
+    }
+
+    fn get_right(&self, node: Inode) -> Inode {
+        self.0.table[node.as_usize()].btree_right
+    }
+
+    fn set_right(&mut self, node: Inode, right: Inode) {
+        panic!("attempted to use immutable proxy for mutation")
+    }
+
+    fn get_parent(&self, node: Inode) -> Inode {
+        self.0.table[node.as_usize()].btree_parent
+    }
+
+    fn value(&self, node: Inode) -> &'a OsStr {
+        self.0.table[node.as_usize()].name
+    }
+}
+
+
+impl<'a: 'b, 'b> BTreeProxy<&'a OsStr, Inode> for (&'b mut FTable<'a>, Inode) {
+    fn root(&self) -> Inode {
+        match self.0.table[self.1.as_usize()].ty {
+            DirOrFile::Dir(file) => file,
+            _ => panic!("tried to use Table.TableBTreeProxy but the root was not a dir")
+        }
+    }
+
+    fn set_root(&mut self, node: Inode) {
+        match self.0.table[self.1.as_usize()].ty {
+            DirOrFile::Dir(ref mut root) => {
+                *root = node;
+            },
+            _ => panic!("tried to use Table.TableBTreeProxy but the root was not a dir")
+        }
+
+        self.0.table[node.as_usize()].btree_parent = Inode::None;
+    }
+
+    fn get_left(&self, node: Inode) -> Inode {
+        self.0.table[node.as_usize()].btree_left
+    }
+
+    fn set_left(&mut self, node: Inode, left: Inode) {
+        self.0.table[node.as_usize()].btree_left = left;
+
+        if BTreeIdx::is_some(&left) {
+            self.0.table[left.as_usize()].btree_parent = node;
+        }
+    }
+
+    fn get_right(&self, node: Inode) -> Inode {
+        self.0.table[node.as_usize()].btree_right
+    }
+
+    fn set_right(&mut self, node: Inode, right: Inode) {
+        self.0.table[node.as_usize()].btree_right = right;
+
+        if BTreeIdx::is_some(&right) {
+            self.0.table[right.as_usize()].btree_parent = node;
+        }
+    }
+
+    fn get_parent(&self, node: Inode) -> Inode {
+        self.0.table[node.as_usize()].btree_parent
+    }
+
+    fn value(&self, node: Inode) -> &'a OsStr {
+        self.0.table[node.as_usize()].name
+    }
+}
+
+impl BTreeIdx for Inode {
+    fn is_none(&self) -> bool {
+        Inode::is_none(*self) || Inode::is_empty(*self)
+    }
+
+    fn none() -> Self {
+        Inode::None
     }
 }
 
 impl<'a> FTable<'a> {
     pub fn new() -> FTable<'a> {
         FTable {
-            table: vec![Entry { parent: Inode::none(), ty: DirOrFile::Dir(Inode::none()), prev: Inode::none(), name: OsStr::new("") }; 2],
+            table: vec![Entry { parent: Inode::none(), ty: DirOrFile::Dir(Inode::none()), btree_left: Inode::none(), btree_right: Inode::none(), btree_parent: Inode::none(), name: OsStr::new("") }; 2],
         }
     }
 
@@ -193,15 +320,17 @@ impl<'a> FTable<'a> {
         self.table.get(ino.as_usize())
     }
 
-    pub fn add<'b: 'a>(&mut self, parent: Inode, is_dir: bool, name: &'b OsStr) -> Inode {
+    pub fn add(&mut self, parent: Inode, is_dir: bool, name: &'a OsStr) -> Inode {
         let ino = Inode(self.table.len() as u64);
 
         let new_entry =  match self.table[parent.as_usize()].ty {
-            DirOrFile::Dir(ref mut old_child) => {
+            DirOrFile::Dir(_) => {
                 let new_entry = Entry {
                     parent: parent,
                     name: name,
-                    prev: if old_child.is_empty() { Inode::none() } else { *old_child },
+                    btree_left: Inode::none(),
+                    btree_right: Inode::none(),
+                    btree_parent: Inode::none(),
                     ty: if is_dir {
                         DirOrFile::Dir(Inode::none())
                     } else {
@@ -209,14 +338,14 @@ impl<'a> FTable<'a> {
                     }
                 };
 
-                *old_child = ino;
-
                 new_entry
             },
             DirOrFile::File => panic!("attempted to add child to file")
         };
 
         self.table.push(new_entry);
+
+        (self, parent).insert(ino);
 
         ino
     }
@@ -227,21 +356,28 @@ impl<'a> FTable<'a> {
     }
 
     // traverses through all childs of a directory
-    pub fn iter_dir(&'a self, ino: Inode) -> Option<FTableDirIter<'a>> {
+    pub fn iter_dir(&'a self, ino: Inode) -> Option<FTableDirIter> {
         match &self.table[ino.as_usize()].ty {
-            DirOrFile::Dir(ino) => {
+            DirOrFile::Dir(_) => {
+                Some(FTableDirIter {
+                    proxy_iter: (self, ino).into_df_iter(),
+                    table: self
+                })
+
+                    /*
                 Some(FTableDirIter {
                     table: self,
                     ino: *ino
                 })
+                    */
             },
             DirOrFile::File => None
         }
     }
 
     // get the entry with name in directory parent
-    pub fn lookup_directory_entry(&'a self, parent: Inode, name: &OsStr) -> Option<(Inode, &Entry<'a>)> {
-        self.iter_dir(parent).and_then(|mut iter| iter.find(|e| e.1.name == name))
+    pub fn lookup_directory_entry(&'a self, parent: Inode, name: &'a OsStr) -> Option<(Inode, &Entry<'a>)> {
+        (self, parent).search(name).map(|ino| (ino, &self.table[ino.as_usize()]))
     }
 
     pub fn mark_empty(&mut self, ino: Inode) {
@@ -256,6 +392,13 @@ impl<'a> FTable<'a> {
             },
             DirOrFile::File => panic!("attempted to mark file as empty")
         };
+    }
+
+    pub fn is_dir(&self, ino: Inode) -> bool {
+        match self.table[ino.as_usize()].ty {
+            DirOrFile::Dir(_) => true,
+            DirOrFile::File => false
+        }
     }
 }
 
