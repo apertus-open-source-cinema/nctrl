@@ -30,11 +30,7 @@ pub trait BTreeIdx: Copy + PartialEq {
     fn none() -> Self;
 }
 
-pub trait BTree<'a, V, I, DFIter: Iterator<Item = (I, V)>> {
-    fn df_iter_from(&'a self, idx: I) -> DFIter;
-    fn df_iter(&'a self) -> DFIter;
-
-    
+pub trait BTree<V, I, DFIter: Iterator<Item = (I, V)>> {
     fn into_df_iter_from(self, idx: I) -> DFIter;
     fn into_df_iter(self) -> DFIter;
 
@@ -102,16 +98,16 @@ enum BTreeDFIterState {
     GoingRightOrUp
 }
 
-struct BTreeDFIter<'a, V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> {
+pub struct BTreeDFIter<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> {
     node: I,
     done_left: bool,
     state: BTreeDFIterState,
-    proxy: &'a P,
+    proxy: P,
     _marker: core::marker::PhantomData<V>
 }
 
-impl<'a, V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> BTreeDFIter<'a, V, I, P> {
-    fn new(proxy: &'a P, idx: I) -> Self {
+impl<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> BTreeDFIter<V, I, P> {
+    fn new(proxy: P, idx: I) -> Self {
         BTreeDFIter {
             node: idx,
             done_left: false,
@@ -122,66 +118,72 @@ impl<'a, V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> BTreeDFIter<'a, V, I, 
     }
 }
 
-impl<'a, V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> Iterator for BTreeDFIter<'a, V, I, P> {
+impl<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> Iterator for BTreeDFIter<V, I, P> {
     type Item = (I, V);
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.state {
-            BTreeDFIterState::GoingLeft => {
-                self.state = BTreeDFIterState::GoingRightOrUp;
+        if self.node.is_none() { // tree is empty
+            None
+        } else {
+            match self.state {
+                BTreeDFIterState::GoingLeft => {
+                    self.state = BTreeDFIterState::GoingRightOrUp;
 
-                let mut left = self.proxy.get_left(self.node);
+                    let mut left = self.proxy.get_left(self.node);
 
-                if !self.done_left {
-                    while left.is_some() {
-                        self.node = left;
-                        left = self.proxy.get_left(self.node);
+                    if !self.done_left {
+                        while left.is_some() {
+                            self.node = left;
+                            left = self.proxy.get_left(self.node);
+                        }
+
+                        self.done_left = true;
+
+                        Some((self.node, self.proxy.value(self.node)))
+                    } else {
+                        self.next()
                     }
+                },
+                BTreeDFIterState::GoingRightOrUp => {
+                    self.state = BTreeDFIterState::GoingLeft;
 
-                    self.done_left = true;
+                    let right = self.proxy.get_right(self.node);
 
-                    Some((self.node, self.proxy.value(self.node)))
-                } else {
-                    self.next()
-                }
-            },
-            BTreeDFIterState::GoingRightOrUp => {
-                self.state = BTreeDFIterState::GoingLeft;
+                    if right.is_some() {
+                        self.node = right;
+                        self.done_left = false;
 
-                let right = self.proxy.get_right(self.node);
+                        self.next()
+                    } else {
+                        let mut parent = self.proxy.get_parent(self.node);
 
-                if right.is_some() {
-                    self.node = right;
-                    self.done_left = false;
+                        if parent.is_some() {
+                            while parent.is_some() && (self.node != self.proxy.get_left(parent)) {
+                                self.node = parent;
 
-                    self.next()
-                } else {
-                    let mut parent = self.proxy.get_parent(self.node);
+                                parent = self.proxy.get_parent(self.node);
+                            }
 
-                    if parent.is_some() {
-                        while parent.is_some() && (self.node != self.proxy.get_left(parent)) {
                             self.node = parent;
 
-                            parent = self.proxy.get_parent(self.node);
-                        }
-
-                        self.node = parent;
-
-                        if self.node.is_none() {
-                            None
+                            if self.node.is_none() {
+                                None
+                            } else {
+                                Some((self.node, self.proxy.value(self.node)))
+                            }
                         } else {
-                            Some((self.node, self.proxy.value(self.node)))
+                            None
                         }
-                    } else {
-                        None
                     }
                 }
             }
+
         }
+
     }
 }
 
-impl<'a, V: PartialOrd + Debug, I: BTreeIdx + Debug, P: BTreeProxy<V, I>> BTree<'a, V, I, BTreeDFIter<'a, V, I, P>> for P {
+impl<V: PartialOrd + Debug, I: BTreeIdx + Debug, P: BTreeProxy<V, I>> BTree<V, I, BTreeDFIter<V, I, P>> for P {
     fn max_depth_from(&self, node: I) -> usize {
         use core::cmp::max;
 
@@ -196,12 +198,13 @@ impl<'a, V: PartialOrd + Debug, I: BTreeIdx + Debug, P: BTreeProxy<V, I>> BTree<
         self.max_depth_from(self.root())
     }
 
-    fn df_iter_from(&'a self, idx: I) -> BTreeDFIter<'a, V, I, P> {
+    fn into_df_iter_from(self, idx: I) -> BTreeDFIter<V, I, P> {
         BTreeDFIter::new(self, idx)
     }
 
-    fn df_iter(&'a self) -> BTreeDFIter<'a, V, I, P> {
-        self.df_iter_from(self.root())
+    fn into_df_iter(self) -> BTreeDFIter<V, I, P> {
+        let root = self.root();
+        self.into_df_iter_from(root)
     }
 
     fn first(&self) -> I {
@@ -235,6 +238,11 @@ impl<'a, V: PartialOrd + Debug, I: BTreeIdx + Debug, P: BTreeProxy<V, I>> BTree<
     fn insert(&mut self, new: I) {
         let mut node = self.root();
         let new_value = self.value(new);
+
+        if node.is_none() { // we have no root yet
+            self.set_root(new);
+            return;
+        }
 
         loop {
             let cur_value = self.value(node);
@@ -540,47 +548,10 @@ mod test {
     }
     */
 
+    /*
     fn check<'a>(mut proxy: Proxy<'a>, mut actual_values: Vec<(&OsStr, usize)>) {
-        actual_values.sort_by_key(|ab| ab.0.clone());
-        let mut values = Vec::new();
-
-        for (idx, value) in proxy.df_iter() {
-            values.push((value, idx));
-        }
-
-        assert_eq!(actual_values, values);
-
-        if !is_sorted(values.iter()) {
-            panic!("not sorted {:#?}", proxy);
-        }
-
-
-        for (value, idx) in values.iter() {
-            assert!(Some(*idx) == proxy.search(value.clone()));
-        }
-
-        proxy.rebalance();
-
-        assert_eq!(proxy.max_depth(), lb(actual_values.len()));
-        let mut new_values = Vec::new();
-
-        for (idx, value) in proxy.df_iter() {
-            new_values.push((value, idx));
-        }
-
-
-        if !is_sorted(new_values.iter()) {
-            panic!("not sorted after rebalance {:#?}", proxy);
-        }
-
-
-        assert_eq!(values, new_values);
-
-
-        for (value, idx) in new_values {
-            assert!(Some(idx) == proxy.search(value));
-        }
     }
+    */
 
 
 
@@ -619,7 +590,49 @@ mod test {
 
             proxy.insert(i);
 
-            check(Proxy { nodes: &mut proxy.nodes.clone(), root: proxy.root }, proxy.nodes.nodes[..=i].iter().enumerate().map(|(idx, node)| (node.value, idx)).collect());
+
+            let mut proxy = Proxy { nodes: &mut proxy.nodes.clone(), root: proxy.root };
+            let mut actual_values: Vec<(&OsStr, usize)> = proxy.nodes.nodes[..=i].iter().enumerate().map(|(idx, node)| (node.value, idx)).collect();
+
+            actual_values.sort_by_key(|ab| ab.0.clone());
+            let mut values = Vec::new();
+
+        let mut _nodes_for_iter = proxy.nodes.clone();
+        let proxy_for_iter = Proxy { nodes: &mut _nodes_for_iter, root: proxy.root };
+        let iter = proxy_for_iter.into_df_iter();
+
+        for (idx, value) in  iter {
+            values.push((value, idx));
+        }
+
+        assert_eq!(actual_values, values);
+
+        assert!(is_sorted(values.iter()), "not sorted {:#?}", proxy);
+
+        for (value, idx) in values.iter() {
+            assert!(Some(*idx) == proxy.search(value.clone()));
+        }
+
+        proxy.rebalance();
+
+        assert_eq!(proxy.max_depth(), lb(actual_values.len()));
+        let mut new_values = Vec::new();
+
+        let mut _nodes_for_iter = proxy.nodes.clone();
+        let proxy_for_iter = Proxy { nodes: &mut _nodes_for_iter, root: proxy.root };
+
+        for (idx, value) in proxy_for_iter.into_df_iter() {
+            new_values.push((value, idx));
+        }
+
+
+        assert!(is_sorted(new_values.iter()), "not sorted after rebalance {:#?}", proxy);
+        assert_eq!(values, new_values);
+
+
+        for (value, idx) in new_values {
+            assert!(Some(idx) == proxy.search(value));
+        }
         }
 
     }
