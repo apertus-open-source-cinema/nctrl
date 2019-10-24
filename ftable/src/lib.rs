@@ -3,16 +3,15 @@ use std::ffi::OsStr;
 use std::fmt::Debug;
 use btree::{BTree, BTreeProxy, BTreeIdx, BTreeDFIter};
 
-// Things to further improve performance:
-// Use filehandle in opendir / releasedir 
-// to store directory iterator for readdir
-// (as we only ever get a small amount of dir entries through in one readdir)
+// TODO(robin):
+// - Things to further improve performance:
+//   - Use filehandle in opendir / releasedir
+//     to store directory iterator for readdir
+//     (as we only ever get a small amount of dir entries through in one readdir)
+//   - rework path iter to use smallvec? (currently this is O(n^2) where n is the number of directories, so roughly O((log n)^2))
 //
-// Use a binary search tree (maybe order index tree??) for the directory entries
-// -> log N lookup, O(1) space overhead
-//
-// optionally: make Inode transparent over the type -> more compact for small filesystems
-// make agnostic over the data / string type??  
+// - maybe: make Inode transparent over the type -> more compact for small filesystems
+// - make agnostic over the data / string type?
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Inode(pub u64);
@@ -36,9 +35,6 @@ impl Into<u64> for Inode {
         self.0 
     }
 }
-
-//const NONE_INODE: u64 = ;
-// const EMPTY_INODE: u64 = std::u64::MAX - 1;
 
 impl Inode {
     pub const None: Inode = Inode::none();
@@ -73,6 +69,8 @@ impl Inode {
         self.0 == Inode::Empty.0
     }
 
+    // TODO(robin): this is used only when indexing into a array of
+    // entries, maybe add check we aren't None or Empty?
     pub const fn as_usize(self) -> usize {
         self.0 as usize
     }
@@ -86,9 +84,11 @@ pub enum DirOrFile {
 
 #[derive(Debug, Clone)]
 pub struct Entry<'a> {
-    pub parent: Inode,
+    pub parent: Inode, // parent directory
     pub ty: DirOrFile,
     pub name: &'a OsStr,
+
+    // indices for the binary tree representing the files in a directory
     btree_right: Inode,
     btree_left: Inode,
     btree_parent: Inode
@@ -120,7 +120,7 @@ impl<'a> FTablePathIter<'a> {
         let mut parent = table.table[ino.as_usize()].parent;
         let mut len = 1;
 
-        // Only root can have NONE_INODE as parent
+        // Only root can have Inode::None as parent;
         while parent.is_some() {
             len += 1; 
             parent = table.table[parent.as_usize()].parent
@@ -157,14 +157,6 @@ impl<'a> Iterator for FTablePathIter<'a> {
     }
 }
 
-/*
-enum FTableDirIterState {
-    ThisDir,
-    UpperDir,
-    Entries
-}
-
-*/
 pub struct FTableDirIter<'a> {
     proxy_iter: BTreeDFIter<&'a OsStr, Inode, (&'a FTable<'a>, Inode)>,
     table: &'a FTable<'a>,
@@ -176,38 +168,8 @@ impl<'a> Iterator for FTableDirIter<'a> {
     
     fn next(&mut self) -> Option<Self::Item> {
         self.proxy_iter.next().map(|(ino, _)| (ino, &self.table.table[ino.as_usize()]))
-            /*
-        if self.ino.is_some() {
-            let entry = ;
-
-            let old_ino = self.ino;
-            self.ino = entry.prev;
-
-            Some((old_ino, entry))
-        } else {
-            None
-        }
-            */
     }
 }
-
-/*
-struct FTableBTreeProxy<'a> {
-    table: &'a mut FTable<'a>,
-    root: Inode,
-}
-
-impl<'a> FTableBTreeProxy<'a> {
-    fn new(table: &'a mut FTable<'a>, root: Inode) -> FTableBTreeProxy<'a> {
-        assert!(table.is_dir(root));
-
-        FTableBTreeProxy {
-            table,
-            root
-        }
-    }
-}
-*/
 
 impl<'a: 'b, 'b> BTreeProxy<&'a OsStr, Inode> for (&'b FTable<'a>, Inode) {
     fn root(&self) -> Inode {
@@ -217,7 +179,7 @@ impl<'a: 'b, 'b> BTreeProxy<&'a OsStr, Inode> for (&'b FTable<'a>, Inode) {
         }
     }
 
-    fn set_root(&mut self, node: Inode) {
+    fn set_root(&mut self, _node: Inode) {
         panic!("attempted to use immutable proxy for mutation")
     }
 
@@ -225,7 +187,7 @@ impl<'a: 'b, 'b> BTreeProxy<&'a OsStr, Inode> for (&'b FTable<'a>, Inode) {
         self.0.table[node.as_usize()].btree_left
     }
 
-    fn set_left(&mut self, node: Inode, left: Inode) {
+    fn set_left(&mut self, _node: Inode, _left: Inode) {
         panic!("attempted to use immutable proxy for mutation")
     }
 
@@ -233,7 +195,7 @@ impl<'a: 'b, 'b> BTreeProxy<&'a OsStr, Inode> for (&'b FTable<'a>, Inode) {
         self.0.table[node.as_usize()].btree_right
     }
 
-    fn set_right(&mut self, node: Inode, right: Inode) {
+    fn set_right(&mut self, _node: Inode, _right: Inode) {
         panic!("attempted to use immutable proxy for mutation")
     }
 
@@ -312,7 +274,15 @@ impl BTreeIdx for Inode {
 impl<'a> FTable<'a> {
     pub fn new() -> FTable<'a> {
         FTable {
-            table: vec![Entry { parent: Inode::none(), ty: DirOrFile::Dir(Inode::none()), btree_left: Inode::none(), btree_right: Inode::none(), btree_parent: Inode::none(), name: OsStr::new("") }; 2],
+            table: vec![
+                Entry {
+                    parent: Inode::none(),
+                    ty: DirOrFile::Dir(Inode::none()),
+                    btree_left: Inode::none(),
+                    btree_right: Inode::none(),
+                    btree_parent: Inode::none(),
+                    name: OsStr::new("") }
+                ; 2],
         }
     }
 
@@ -363,13 +333,6 @@ impl<'a> FTable<'a> {
                     proxy_iter: (self, ino).into_df_iter(),
                     table: self
                 })
-
-                    /*
-                Some(FTableDirIter {
-                    table: self,
-                    ino: *ino
-                })
-                    */
             },
             DirOrFile::File => None
         }
@@ -380,6 +343,7 @@ impl<'a> FTable<'a> {
         (self, parent).search(name).map(|ino| (ino, &self.table[ino.as_usize()]))
     }
 
+    // quickly remove all entries from a directory, does not deallocate!!!
     pub fn mark_empty(&mut self, ino: Inode) {
         match self.table[ino.as_usize()].ty {
             DirOrFile::Dir(ref mut child) => {
@@ -398,6 +362,33 @@ impl<'a> FTable<'a> {
         match self.table[ino.as_usize()].ty {
             DirOrFile::Dir(_) => true,
             DirOrFile::File => false
+        }
+    }
+
+    // optimize (balance) the binary trees for each directory
+    // best to call this after no more files / dirs will be added
+    pub fn optimize(&mut self) {
+        self.optimize_from(Inode::Root)
+    }
+
+    // rebalance everything down from this inode (of course only
+    // actually does something if this inode is a directory)
+    pub fn optimize_from(&mut self, ino: Inode) {
+        match self.table[ino.as_usize()].ty {
+            DirOrFile::Dir(_) => {
+                let mut proxy: (&mut FTable, Inode) = (self, ino);
+                proxy.rebalance();
+            }
+            _ => ()
+        }
+
+        // because rust doesn't quite get what i want
+        let dir_inodes: Vec<_> = self.iter_dir(ino).unwrap()
+            .filter(|(_, entry)| entry.is_dir())
+            .map(|(ino, _)| ino).collect();
+
+        for ino in dir_inodes {
+            self.optimize_from(ino);
         }
     }
 }

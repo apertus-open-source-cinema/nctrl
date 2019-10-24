@@ -119,6 +119,8 @@ impl<'a, T: Fuseable> FuseableFS<'a, T> {
                         OsStr::new(Box::leak(f.into_boxed_str())),
                     );
                 }
+
+                self.ftable.optimize_from(ino);
             }
             Either::Right(file) => panic!("we got a mismatch"),
         };
