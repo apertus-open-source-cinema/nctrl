@@ -13,3 +13,5 @@ old_stuff
 .propfs
 .cargo
 t
+*.debug
+*.out
