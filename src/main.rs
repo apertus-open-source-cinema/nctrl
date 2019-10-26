@@ -1,17 +1,18 @@
 use ctrl::{sensor::Sensor, serde_util::FILE_OPENER};
 use ftable::{DirOrFile, Entry, FTable, Inode};
 use fuse::{
-    FileAttr, FileType, Filesystem, ReplyAttr, ReplyData, ReplyDirectory, ReplyEntry, Request,
+    FileAttr, FileType, Filesystem, ReplyAttr, ReplyData, ReplyWrite, ReplyDirectory, ReplyEntry, Request,
 };
 use fuseable::{Either, Fuseable};
-use libc::ENOENT;
+use libc::{ENOENT, EINVAL};
 use std::env;
 use std::ffi::OsStr;
 use std::io::Read;
 use std::iter::{empty, once};
 use std::path::PathBuf;
-use std::time::{Duration, UNIX_EPOCH};
+use std::time::{Duration, UNIX_EPOCH, SystemTime};
 use structopt::StructOpt;
+use log::error;
 
 const TTL: Duration = Duration::from_secs(3600); // 1 hour
 
@@ -50,7 +51,6 @@ impl<'a, T: Fuseable> FuseableFS<'a, T> {
         match fuseable.read(&mut std::iter::empty()).unwrap() {
             Either::Left(files) => {
                 for file in files.into_iter() {
-                    // ftable.add(Inode::root(), fuseable.is_dir(&mut vec![&*file].into_iter()).unwrap(), OsStr::new(Box::leak(file.into_boxed_str())));
                     ftable.add(
                         Inode::root(),
                         fuseable.is_dir(&mut std::iter::once(&*file)).unwrap(),
@@ -58,9 +58,7 @@ impl<'a, T: Fuseable> FuseableFS<'a, T> {
                     );
                 }
             }
-            Either::Right(file) => {
-                // f.ftable.add(Inode::root(), fuseable.is_dir(&mut vec![file].into_iter()), file)
-            }
+            _ => {}
         }
 
         FuseableFS { fuseable, ftable }
@@ -122,7 +120,7 @@ impl<'a, T: Fuseable> FuseableFS<'a, T> {
 
                 self.ftable.optimize_from(ino);
             }
-            Either::Right(file) => panic!("we got a mismatch"),
+            Either::Right(_) => panic!("we got a mismatch"),
         };
     }
 }
@@ -154,6 +152,18 @@ impl<'a, T: Fuseable> Filesystem for FuseableFS<'a, T> {
         }
     }
 
+    fn setattr(&mut self, _req: &Request<'_>, ino: u64, _mode: Option<u32>, _uid: Option<u32>, _gid: Option<u32>, _size: Option<u64>, _atime: Option<SystemTime>, _mtime: Option<SystemTime>, _fh: Option<u64>, _crtime: Option<SystemTime>, _chgtime: Option<SystemTime>, _bkuptime: Option<SystemTime>, _flags: Option<u32>, reply: ReplyAttr) {
+        match self.ftable.get(Inode(ino)) {
+            Some(e) => {
+                reply.attr(&TTL, &self.attr(ino, e.is_dir()));
+            }
+            None => {
+                reply.error(ENOENT);
+            }
+        }
+    }
+
+
     fn read(
         &mut self,
         _req: &Request,
@@ -163,7 +173,29 @@ impl<'a, T: Fuseable> Filesystem for FuseableFS<'a, T> {
         _size: u32,
         reply: ReplyData,
     ) {
-        println!("{:#?}", self.ftable);
+
+        match &self.ftable.get(Inode(ino)) {
+            Some(_entry) => {
+                match self
+                    .fuseable
+                    .read(&mut self.ftable.iter_path(Inode(ino)).map(|e| e.name.to_str().unwrap()))
+                {
+                    Ok(Either::Left(_)) => {
+                        panic!("we got a mismatch");
+                    }
+                    Ok(Either::Right(data)) => {
+                        reply.data(data.as_bytes())
+                    }
+                    Err(e) => {
+                        error!("{}", e);
+                        reply.error(EINVAL)
+                    }
+                }
+            }
+            None => {
+                reply.error(ENOENT)
+            }
+        }
     }
 
     fn readdir(
@@ -229,6 +261,29 @@ impl<'a, T: Fuseable> Filesystem for FuseableFS<'a, T> {
             }
         }
     }
+
+    fn write(&mut self, _req: &Request<'_>, ino: u64, _fh: u64, offset: i64, data: &[u8], _flags: u32, reply: ReplyWrite) {
+        assert!(offset == 0, "tried to call write with offset != 0 (it is {}) this is not supported!", offset);
+
+        match &self.ftable.get(Inode(ino)) {
+            Some(_entry) => {
+                match self.fuseable                   // TODO(robin): possibly unnecessary copy here vvvvvvvvvvvvv
+                    .write(&mut self.ftable.iter_path(Inode(ino)).map(|e| e.name.to_str().unwrap()), data.to_vec()) {
+                        Ok(_) => {
+                            reply.written(data.len() as u32);
+                        },
+                        Err(e) => {
+                            error!("{}", e);
+                            reply.error(EINVAL)
+                        }
+                    }
+            }
+            None => {
+                reply.error(ENOENT)
+            }
+        }
+
+    }
 }
 
 /// Basic daemon for controlling the various components of a camera
@@ -262,7 +317,7 @@ fn main() {
     let mut sensor: Sensor = serde_yaml::from_str(&contents).unwrap();
     sensor.mocked(opt.mock);
 
-    let options = ["-o", "ro", "-o", "fsname=hello", "-o", "auto_unmount"]
+    let options = ["-o", "rw", "-o", "fsname=propfs", "-o", "auto_unmount"]
         .iter()
         .map(|o| o.as_ref())
         .collect::<Vec<&OsStr>>();
