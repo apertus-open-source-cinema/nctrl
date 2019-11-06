@@ -1,4 +1,4 @@
-use ctrl::{sensor::Sensor, serde_util::FILE_OPENER};
+use ctrl::{sensor::Camera, serde_util::FILE_OPENER};
 use ftable::{DirOrFile, Entry, FTable, Inode};
 use fuse::{
     FileAttr, FileType, Filesystem, ReplyAttr, ReplyData, ReplyWrite, ReplyDirectory, ReplyEntry, Request,
@@ -314,7 +314,7 @@ fn main() {
     f.read_to_string(&mut contents)
         .expect("something went wrong reading the file");
 
-    let mut sensor: Sensor = serde_yaml::from_str(&contents).unwrap();
+    let mut sensor: Camera = serde_yaml::from_str(&contents).unwrap();
     sensor.mocked(opt.mock);
 
     let options = ["-o", "rw", "-o", "fsname=propfs", "-o", "auto_unmount"]
