@@ -41,9 +41,8 @@ where
 
 pub fn by_string_option_num<'de, T, D>(deserializer: D) -> Result<Option<T>, D::Error>
 where
-    for<'a> T: Deserialize<'a>,
+    for<'a> T: Deserialize<'a> + Num,
     D: Deserializer<'de>,
-    T: Num,
     <T as Num>::FromStrRadixErr: std::fmt::Display,
 {
     let s = Option::<String>::deserialize(deserializer)?;

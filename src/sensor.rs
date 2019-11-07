@@ -4,7 +4,6 @@ use crate::{
     serde_util::{bool_false, by_path, by_string_option_num},
     valuemap::*,
 };
-use derivative::Derivative;
 use failure::format_err;
 use fuseable::{type_name, Either, Fuseable, FuseableError};
 use fuseable_derive::Fuseable;
@@ -580,7 +579,7 @@ macro_rules! script_set {
         struct $set_name {}
 
         impl $set_name {
-            fn new() -> HashMap<String, Box<dyn Script>> {
+            fn get_scripts() -> HashMap<String, Box<dyn Script>> {
                 let mut map = HashMap::new();
 
                 $(map.insert($name.to_owned(), Box::new($script::default()) as Box<dyn Script>);)*
@@ -608,7 +607,7 @@ macro_rules! script_config {
         fn scripts_from_model(model: &str) -> HashMap<String, Box<dyn Script>> {
             match model {
                 $(
-                    $tag => $script::new(),
+                    $tag => $script::get_scripts(),
                 )*
                 _ => {
                         panic!("unsupported model {}", model);
@@ -678,7 +677,7 @@ impl Fuseable for Camera {
                             .deref(),
                         &self,
                     )
-                    .map(|v| Either::Right(v)),
+                    .map(Either::Right),
                     _ => self.scripts.read(&mut path),
                 }
             }

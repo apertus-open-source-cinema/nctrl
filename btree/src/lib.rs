@@ -365,7 +365,7 @@ impl<V: PartialOrd + Debug, I: BTreeIdx + Debug, P: BTreeProxy<V, I>>
         };
 
         compress(leaf_count);
-        size = size - leaf_count;
+        size -= leaf_count;
 
         while size > 1 {
             size >>= 1;

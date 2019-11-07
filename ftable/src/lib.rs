@@ -86,7 +86,7 @@ impl<'a> Entry<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct FTable<'a> {
     table: Vec<Entry<'a>>,
 }
@@ -250,18 +250,14 @@ impl<'a> FTable<'a> {
         let ino = Inode(self.table.len() as u64);
 
         let new_entry = match self.table[parent.as_usize()].ty {
-            DirOrFile::Dir(_) => {
-                let new_entry = Entry {
-                    parent,
-                    name,
-                    btree_left: Inode::none(),
-                    btree_right: Inode::none(),
-                    btree_parent: Inode::none(),
-                    ty: if is_dir { DirOrFile::Dir(Inode::none()) } else { DirOrFile::File },
-                };
-
-                new_entry
-            }
+            DirOrFile::Dir(_) => Entry {
+                parent,
+                name,
+                btree_left: Inode::none(),
+                btree_right: Inode::none(),
+                btree_parent: Inode::none(),
+                ty: if is_dir { DirOrFile::Dir(Inode::none()) } else { DirOrFile::File },
+            },
             DirOrFile::File => panic!("attempted to add child to file"),
         };
 
@@ -323,12 +319,9 @@ impl<'a> FTable<'a> {
     // rebalance everything down from this inode (of course only
     // actually does something if this inode is a directory)
     pub fn optimize_from(&mut self, ino: Inode) {
-        match self.table[ino.as_usize()].ty {
-            DirOrFile::Dir(_) => {
-                let mut proxy: (&mut FTable, Inode) = (self, ino);
-                proxy.rebalance();
-            }
-            _ => (),
+        if let DirOrFile::Dir(_) = self.table[ino.as_usize()].ty {
+            let mut proxy: (&mut FTable, Inode) = (self, ino);
+            proxy.rebalance();
         }
 
         // because rust doesn't quite get what i want

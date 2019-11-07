@@ -23,17 +23,14 @@ impl<'a, T: Fuseable> FuseableFS<'a, T> {
     pub fn new(fuseable: T) -> Self {
         let mut ftable = FTable::new();
 
-        match fuseable.read(&mut std::iter::empty()).unwrap() {
-            Either::Left(files) => {
-                for file in files.into_iter() {
-                    ftable.add(
-                        Inode::root(),
-                        fuseable.is_dir(&mut std::iter::once(&*file)).unwrap(),
-                        OsStr::new(Box::leak(file.into_boxed_str())),
-                    );
-                }
+        if let Either::Left(files) = fuseable.read(&mut std::iter::empty()).unwrap() {
+            for file in files.into_iter() {
+                ftable.add(
+                    Inode::root(),
+                    fuseable.is_dir(&mut std::iter::once(&*file)).unwrap(),
+                    OsStr::new(Box::leak(file.into_boxed_str())),
+                );
             }
-            _ => {}
         }
 
         FuseableFS { fuseable, ftable }

@@ -15,14 +15,16 @@ pub enum Value {
     Any,
 }
 
-impl ToString for Value {
-    fn to_string(&self) -> String {
+impl core::fmt::Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Value::Value(v) => {
+            Value::Value(v) => write!(
+                f,
+                "{}",
                 "0x".to_string()
                     + &v.iter().map(|v| format!("{:02X}", v).to_string()).collect::<String>()
-            }
-            Value::Any => "Any".to_string(),
+            ),
+            Value::Any => write!(f, "Any"),
         }
     }
 }
