@@ -1,6 +1,7 @@
 use lazy_static::lazy_static;
-use serde::{Deserialize, Deserializer};
-use std::{fs::File, io::Read, path::PathBuf, sync::Mutex};
+use serde::{de::Error, Deserialize, Deserializer};
+use std::{fs::File, io::Read, path::PathBuf, sync::Mutex, iter::FromIterator};
+use num::Num;
 
 pub struct FileOpener {
     path: Mutex<Option<PathBuf>>,
@@ -37,6 +38,63 @@ where
 
     Ok(serde_yaml::from_str(&contents).unwrap())
 }
+
+pub fn by_string_option_num<'de, T, D>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    for<'a> T: Deserialize<'a>,
+    D: Deserializer<'de>,
+    T: Num,
+    <T as Num>::FromStrRadixErr: std::fmt::Display,
+{
+    let s = Option::<String>::deserialize(deserializer)?;
+
+    match s {
+        None => Ok(None),
+        Some(v) => {
+            let v: Vec<_> = v.chars().collect();
+            let (base, start) = match (v.get(0), v.get(1)) {
+                (Some('0'), Some('b')) => (2, 2),
+                (Some('0'), Some('o')) => (8, 2),
+                (Some('0'), Some('x')) => (16, 2),
+                (Some('0'..='9'), _) => (10, 0),
+                (..) => panic!("invalid address {:?}", v),
+            };
+
+            T::from_str_radix(&String::from_iter(&v[start..]), base)
+                .map(Some)
+                .map_err(D::Error::custom)
+        }
+    }
+}
+
+/*
+fn by_string<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+where
+    for<'a> T: Deserialize<'a>,
+    D: Deserializer<'de>,
+    T: FromStr,
+    <T as FromStr>::Err: std::fmt::Display
+{
+    let s = String::deserialize(deserializer)?;
+
+    T::from_str(&s).map_err(D::Error::custom)
+}
+
+fn by_string_option<'de, T, D>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    for<'a> T: Deserialize<'a>,
+    D: Deserializer<'de>,
+    T: FromStr,
+    <T as FromStr>::Err: std::fmt::Display
+{
+    let s = Option::<String>::deserialize(deserializer)?;
+
+    match s {
+        None => Ok(None),
+        Some(v) => T::from_str(&v).map(|t| Some(t)).map_err(D::Error::custom)
+    }
+}
+*/
 
 pub fn bool_false() -> bool { false }
 

@@ -1,20 +1,19 @@
 use crate::{
     address::Address,
     communication_channel::CommunicationChannel,
-    serde_util::{bool_false, by_path},
+    serde_util::{bool_false, by_path, by_string_option_num},
     valuemap::*,
 };
 use failure::format_err;
 use fuseable::{type_name, Either, FuseableError, Fuseable};
 use fuseable_derive::Fuseable;
 use itertools::{izip, Itertools};
-use num::Num;
 use parse_num::parse_num_mask;
 use serde::{de::Error, Deserialize, Deserializer};
 use serde_derive::*;
+use derivative::Derivative;
 use std::{
     collections::HashMap,
-    iter::FromIterator,
     sync::{Arc, Mutex},
     fmt::Debug,
     ops::Deref
@@ -33,8 +32,6 @@ enum Description {
     LongAndShort { long: String, short: String },
 }
 
-// #[fuseable(virtual_field(name = "value", read = "self.read_value", write =
-// "self.write_value", is_dir = "self.value_is_dir"))]
 #[derive(Debug, Serialize, Fuseable, Clone)]
 pub struct Register {
     #[fuseable(ro)]
@@ -83,63 +80,6 @@ impl<'de> Deserialize<'de> for Register {
             default: reg.default,
             description: reg.description,
         })
-    }
-}
-
-/*
-fn by_string<'de, T, D>(deserializer: D) -> Result<T, D::Error>
-where
-    for<'a> T: Deserialize<'a>,
-    D: Deserializer<'de>,
-    T: FromStr,
-    <T as FromStr>::Err: std::fmt::Display
-{
-    let s = String::deserialize(deserializer)?;
-
-    T::from_str(&s).map_err(D::Error::custom)
-}
-
-fn by_string_option<'de, T, D>(deserializer: D) -> Result<Option<T>, D::Error>
-where
-    for<'a> T: Deserialize<'a>,
-    D: Deserializer<'de>,
-    T: FromStr,
-    <T as FromStr>::Err: std::fmt::Display
-{
-    let s = Option::<String>::deserialize(deserializer)?;
-
-    match s {
-        None => Ok(None),
-        Some(v) => T::from_str(&v).map(|t| Some(t)).map_err(D::Error::custom)
-    }
-}
-*/
-
-fn by_string_option_num<'de, T, D>(deserializer: D) -> Result<Option<T>, D::Error>
-where
-    for<'a> T: Deserialize<'a>,
-    D: Deserializer<'de>,
-    T: Num,
-    <T as Num>::FromStrRadixErr: std::fmt::Display,
-{
-    let s = Option::<String>::deserialize(deserializer)?;
-
-    match s {
-        None => Ok(None),
-        Some(v) => {
-            let v: Vec<_> = v.chars().collect();
-            let (base, start) = match (v.get(0), v.get(1)) {
-                (Some('0'), Some('b')) => (2, 2),
-                (Some('0'), Some('o')) => (8, 2),
-                (Some('0'), Some('x')) => (16, 2),
-                (Some('0'..='9'), _) => (10, 0),
-                (..) => panic!("invalid address {:?}", v),
-            };
-
-            T::from_str_radix(&String::from_iter(&v[start..]), base)
-                .map(Some)
-                .map_err(D::Error::custom)
-        }
     }
 }
 
@@ -544,13 +484,30 @@ pub trait Script: Debug + Fuseable {
 }
 
 macro_rules! script {
-    { $struct_name:ident {$($elem:ident:$elem_typ:ty),*}  => {
+    { $desc:tt $struct_name:ident {$($elem:ident:$elem_typ:ty),*}  => {
         read => ($self_read:ident $(,$regs_read:ident)*) $body_read:block
         write [$value_name:ident] => ($self_write:ident $(,$regs_write:ident)*) $body_write:block
     } } => {
             #[derive(Debug, Fuseable)]
             struct $struct_name {
+                description: String,
                 $($elem: $elem_typ,)*
+            }
+
+            impl Default for $struct_name {
+                fn default() -> $struct_name {
+                    #[derive(Default)]
+                    struct ForDefault {
+                        $($elem: $elem_typ,)*
+                    }
+
+                    let for_default = ForDefault::default();
+
+                    $struct_name {
+                        description: $desc.to_string(),
+                        $($elem: for_default.$elem),*
+                    }
+                }
             }
 
 
@@ -570,7 +527,8 @@ macro_rules! script {
 }
 
 script! {
-    Reset {} => {
+    "hard resets the sensor and brings it into standby\n"
+    Reset { test: u8 } => {
         read => (self) {
             Err(FuseableError::unsupported("read", fuseable::type_name(&self)))
         }
@@ -589,6 +547,73 @@ script! {
         }
     }
 }
+
+script! {
+    "hard resets the ar0331 and brings it into standby\n"
+    ResetAR0331 { test: u8 } => {
+        read => (self) {
+            Err(FuseableError::unsupported("read", fuseable::type_name(&self)))
+        }
+        write [value] => (self, sensor, sensor_io) {
+            println!("writing {:?}", value);
+
+            sensor_io.write_register("reset", 1)?;
+
+            std::thread::sleep(std::time::Duration::from_millis(10));
+
+            sensor_io.write_register("reset", 0)?;
+            sensor.write_function("software_reset", 0)?;
+            sensor.write_function("stream", 1)?;
+
+            Ok(())
+        }
+    }
+}
+
+macro_rules! script_set {
+    { $set_name:ident => { $($name:tt:$script:ident),* } } => {
+        struct $set_name {}
+
+        impl $set_name {
+            fn new() -> HashMap<String, Box<dyn Script>> {
+                let mut map = HashMap::new();
+
+                $(map.insert($name.to_owned(), Box::new($script::default()) as Box<dyn Script>);)*
+
+                map
+            }
+        }
+    };
+}
+
+script_set! {
+    AR0330Scripts => {
+        "reset": Reset
+    }
+}
+
+script_set! {
+    AR0331Scripts => {
+        "reset": ResetAR0331
+    }
+}
+
+macro_rules! script_config {
+    ( $($script:ident => $tag:tt),* ) => {
+        fn scripts_from_model(model: &str) -> HashMap<String, Box<dyn Script>> {
+            match model {
+                $(
+                    $tag => $script::new(),
+                )*
+                _ => {
+                        panic!("unsupported model {}", model);
+                }
+            }
+        }
+    }
+}
+
+script_config!(AR0330Scripts => "ar0330", AR0331Scripts => "ar0331");
 
 #[derive(Debug)]
 pub struct Camera {
@@ -695,9 +720,14 @@ impl<'de> Deserialize<'de> for Camera {
 
         let CameraWithoutScripts { model, registers } = CameraWithoutScripts::deserialize(deserializer)?;
 
+
+        let scripts = scripts_from_model(&model);
+
+        /*
         let mut scripts = HashMap::new();
-        let reset: Box<dyn Script> = Box::new(Reset {});
+        let reset: Box<dyn Script> = Box::new(Reset::default());
         scripts.insert("reset".to_owned(), reset);
+        */
 
         Ok(Camera { scripts, model, registers })
     }

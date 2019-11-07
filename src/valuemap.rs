@@ -1,4 +1,4 @@
-use ::log::{log, trace};
+use ::log::trace;
 use byteorder::{BigEndian, ReadBytesExt};
 use failure::format_err;
 use fuseable::{Either, Result};

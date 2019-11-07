@@ -114,20 +114,22 @@ fn impl_body(ast: &syn::DeriveInput) -> (TokenStream, TokenStream, TokenStream) 
     }
 
     for attr in &attrs {
-        if let Some(syn::Meta::List(syn::MetaList { nested, .. })) = &attr.interpret_meta() {
+        if let Ok(syn::Meta::List(syn::MetaList { nested, .. })) = &attr.parse_meta() {
             for nested_meta in nested {
                 match nested_meta {
-                    Meta(List(MetaList { nested, ident, .. })) => {
-                        if ident == "virtual_field" {
+                    Meta(List(MetaList { nested, path, .. })) => {
+                        if path.get_ident().unwrap() == "virtual_field" {
                             let mut name = None;
                             let mut is_dir = None;
                             let mut read = None;
                             let mut write = None;
 
                             for nested_meta in nested {
-                                if let Meta(NameValue(MetaNameValue { ident, lit, .. })) =
+                                if let Meta(NameValue(MetaNameValue { path, lit, .. })) =
                                     nested_meta
                                 {
+                                    let ident = path.get_ident().unwrap();
+
                                     if ident == "name" {
                                         name = Some(lit_to_ident(lit))
                                     } else if ident == "is_dir" {
@@ -436,8 +438,10 @@ fn parse_field(field: &&syn::Field) -> ParsedField {
     let mut readable = true;
 
     for attr in attrs {
-        if let Some(syn::Meta::List(syn::MetaList { nested, .. })) = &attr.interpret_meta() {
-            if let Some(syn::NestedMeta::Meta(syn::Meta::Word(ident))) = nested.iter().next() {
+        if let Ok(syn::Meta::List(syn::MetaList { nested, .. })) = &attr.parse_meta() {
+            if let Some(syn::NestedMeta::Meta(syn::Meta::Path(path))) = nested.iter().next() {
+                let ident = path.get_ident().unwrap();
+
                 if ident == "skip" {
                     skip = true;
                 } else if ident == "ro" {

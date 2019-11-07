@@ -37,9 +37,9 @@ impl Into<u64> for Inode {
 }
 
 impl Inode {
-    pub const None: Inode = Inode::none();
-    pub const Empty: Inode = Inode::empty();
-    pub const Root: Inode = Inode::root();
+    pub const NONE: Inode = Inode::none();
+    pub const EMPTY: Inode = Inode::empty();
+    pub const ROOT: Inode = Inode::root();
 
     pub const fn none() -> Inode {
         Inode(std::u64::MAX)
@@ -58,15 +58,15 @@ impl Inode {
     }
 
     pub const fn is_root(self) -> bool {
-        self.0 == Inode::Root.0
+        self.0 == Inode::ROOT.0
     }
 
     pub const fn is_none(self) -> bool {
-        self.0 == Inode::None.0
+        self.0 == Inode::NONE.0
     }
 
     pub const fn is_empty(self) -> bool {
-        self.0 == Inode::Empty.0
+        self.0 == Inode::EMPTY.0
     }
 
     // TODO(robin): this is used only when indexing into a array of
@@ -225,7 +225,7 @@ impl<'a: 'b, 'b> BTreeProxy<&'a OsStr, Inode> for (&'b mut FTable<'a>, Inode) {
             _ => panic!("tried to use Table.TableBTreeProxy but the root was not a dir")
         }
 
-        self.0.table[node.as_usize()].btree_parent = Inode::None;
+        self.0.table[node.as_usize()].btree_parent = Inode::none();
     }
 
     fn get_left(&self, node: Inode) -> Inode {
@@ -267,7 +267,7 @@ impl BTreeIdx for Inode {
     }
 
     fn none() -> Self {
-        Inode::None
+        Inode::none()
     }
 }
 
@@ -368,7 +368,7 @@ impl<'a> FTable<'a> {
     // optimize (balance) the binary trees for each directory
     // best to call this after no more files / dirs will be added
     pub fn optimize(&mut self) {
-        self.optimize_from(Inode::Root)
+        self.optimize_from(Inode::root())
     }
 
     // rebalance everything down from this inode (of course only
