@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
-use serde::{de::Error, Deserialize, Deserializer};
-use std::{fs::File, io::Read, path::PathBuf, sync::Mutex, iter::FromIterator};
 use num::Num;
+use serde::{de::Error, Deserialize, Deserializer};
+use std::{fs::File, io::Read, iter::FromIterator, path::PathBuf, sync::Mutex};
 
 pub struct FileOpener {
     path: Mutex<Option<PathBuf>>,

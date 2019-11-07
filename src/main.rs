@@ -1,8 +1,6 @@
+use nctrl::{fuseable_fs::FuseableFS, sensor::Camera, serde_util::FILE_OPENER};
+use std::{ffi::OsStr, io::Read, path::PathBuf};
 use structopt::StructOpt;
-use std::ffi::OsStr;
-use std::path::PathBuf;
-use std::io::Read;
-use nctrl::{sensor::Camera, serde_util::FILE_OPENER, fuseable_fs::FuseableFS};
 
 
 /// Basic daemon for controlling the various components of a camera
@@ -30,8 +28,7 @@ fn main() {
     FILE_OPENER.set_path(PathBuf::from(opt.file));
 
     let mut contents = String::new();
-    f.read_to_string(&mut contents)
-        .expect("something went wrong reading the file");
+    f.read_to_string(&mut contents).expect("something went wrong reading the file");
 
     let mut sensor: Camera = serde_yaml::from_str(&contents).unwrap();
     sensor.mocked(opt.mock);

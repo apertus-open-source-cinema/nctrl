@@ -1,8 +1,8 @@
 #![feature(core_intrinsics)]
 use failure::{Error, Fail};
 use std::{
-    hash::Hash,
     collections::{BTreeMap, HashMap},
+    hash::Hash,
     ops::{Deref, DerefMut},
     result,
     str::FromStr,

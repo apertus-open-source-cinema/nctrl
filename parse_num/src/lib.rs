@@ -40,12 +40,12 @@ pub fn parse_num_mask<T: ToString>(s: T) -> Result<(Option<Vec<u8>>, Vec<u8>), P
     if !string.contains(&'z') {
         let num = parse_num(s)?;
 
-        return Ok((None, num));
+        return Ok((None, num))
     }
 
     let (negative, radix, start) = get_negative_radix_start(string)?;
     if radix.count_ones() != 1 {
-        return Err("invald radix, expected radix of from 2^n for masked numbers".into());
+        return Err("invald radix, expected radix of from 2^n for masked numbers".into())
     }
 
     let string = &string[start..];
@@ -64,7 +64,7 @@ pub fn parse_num_mask<T: ToString>(s: T) -> Result<(Option<Vec<u8>>, Vec<u8>), P
 
     for c in &string[..] {
         if !c.is_digit(radix) {
-            return Err(format!("invalid digit {} for radix {}", c, radix).into());
+            return Err(format!("invalid digit {} for radix {}", c, radix).into())
         }
     }
 
@@ -83,12 +83,12 @@ pub fn parse_num_mask_padded<T: ToString + Clone>(
     if !string.contains(&'z') {
         let num = parse_num_padded(s)?;
 
-        return Ok((None, num));
+        return Ok((None, num))
     }
 
     let (negative, radix, start) = get_negative_radix_start(string)?;
     if radix.count_ones() != 1 {
-        return Err("invald radix, expected radix of from 2^n for masked numbers".into());
+        return Err("invald radix, expected radix of from 2^n for masked numbers".into())
     }
 
     let string = &string[start..];
@@ -107,7 +107,7 @@ pub fn parse_num_mask_padded<T: ToString + Clone>(
 
     for c in &string[..] {
         if !c.is_digit(radix) {
-            return Err(format!("invalid digit {} for radix {}", c, radix).into());
+            return Err(format!("invalid digit {} for radix {}", c, radix).into())
         }
     }
 
@@ -166,7 +166,7 @@ pub fn parse_num<T: ToString>(string: T) -> Result<Vec<u8>, ParseError> {
 
     for c in string {
         if !c.is_digit(radix) {
-            return Err(format!("invalid digit {} for radix {}", c, radix).into());
+            return Err(format!("invalid digit {} for radix {}", c, radix).into())
         }
     }
 
@@ -184,12 +184,12 @@ pub fn parse_num_padded<T: ToString + Clone>(string: T) -> Result<Vec<u8>, Parse
     let string = &string[start..];
 
     if radix.count_ones() != 1 {
-        return parse_num(orig_string);
+        return parse_num(orig_string)
     }
 
     for c in string {
         if !c.is_digit(radix) {
-            return Err(format!("invalid digit {} for radix {}", c, radix).into());
+            return Err(format!("invalid digit {} for radix {}", c, radix).into())
         }
     }
 

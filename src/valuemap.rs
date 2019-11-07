@@ -101,7 +101,7 @@ impl ValueMap {
                             }
 
                             if map.get_left(&Value::Value(potential_value.clone())).is_none() {
-                                break;
+                                break
                             }
                         }
 
@@ -141,7 +141,7 @@ impl ValueMap {
                             }
 
                             if map.get(&Value::Value(potential_value.clone())).is_none() {
-                                break;
+                                break
                             }
                         }
 
@@ -176,7 +176,7 @@ impl ValueMap {
                             }
 
                             if map.get(&Value::Value(potential_value.clone())).is_none() {
-                                break;
+                                break
                             }
                         }
 
@@ -219,7 +219,7 @@ where
     let map = ValueMapNonMatched::deserialize(deserializer)?;
 
     let map: HashMap<String, String> = if map.map.is_none() {
-        return Ok(None);
+        return Ok(None)
     } else {
         map.map.unwrap().into_iter().map(|(k, v)| (k, v.to_string())).collect()
     };

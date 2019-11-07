@@ -8,8 +8,7 @@ use quote::quote;
 use syn::{
     parse_macro_input,
     Data::{Enum, Struct},
-    DeriveInput,
-    Field,
+    DeriveInput, Field,
 };
 
 #[proc_macro_derive(Fuseable, attributes(fuseable))]
@@ -78,8 +77,7 @@ fn impl_body(ast: &syn::DeriveInput) -> (TokenStream, TokenStream, TokenStream) 
 
     use syn::{
         Meta::{List, NameValue},
-        MetaList,
-        MetaNameValue,
+        MetaList, MetaNameValue,
         NestedMeta::Meta,
     };
 

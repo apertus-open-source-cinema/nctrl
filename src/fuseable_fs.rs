@@ -1,13 +1,16 @@
+use ::log::error;
 use ftable::{DirOrFile, Entry, FTable, Inode};
 use fuse::{
-    FileAttr, FileType, Filesystem, ReplyAttr, ReplyData, ReplyWrite, ReplyDirectory, ReplyEntry, Request,
+    FileAttr, FileType, Filesystem, ReplyAttr, ReplyData, ReplyDirectory, ReplyEntry, ReplyWrite,
+    Request,
 };
 use fuseable::{Either, Fuseable};
-use libc::{ENOENT, EINVAL};
-use std::ffi::OsStr;
-use std::iter::once;
-use std::time::{Duration, UNIX_EPOCH, SystemTime};
-use ::log::error;
+use libc::{EINVAL, ENOENT};
+use std::{
+    ffi::OsStr,
+    iter::once,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 const TTL: Duration = Duration::from_secs(3600); // 1 hour
 
@@ -45,11 +48,7 @@ impl<'a, T: Fuseable> FuseableFS<'a, T> {
             mtime: UNIX_EPOCH,
             ctime: UNIX_EPOCH,
             crtime: UNIX_EPOCH,
-            kind: if is_dir {
-                FileType::Directory
-            } else {
-                FileType::RegularFile
-            },
+            kind: if is_dir { FileType::Directory } else { FileType::RegularFile },
             perm: 0o777,
             nlink: 2,
             uid: 0,
@@ -93,10 +92,7 @@ impl<'a, T: Fuseable> FuseableFS<'a, T> {
 
 impl<'a, T: Fuseable> Filesystem for FuseableFS<'a, T> {
     fn lookup(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: ReplyEntry) {
-        if let Some(Entry {
-            ty: DirOrFile::Dir(Inode::NONE),
-            ..
-        }) = &self.ftable.get(Inode(parent))
+        if let Some(Entry { ty: DirOrFile::Dir(Inode::NONE), .. }) = &self.ftable.get(Inode(parent))
         {
             self.add_dir(Inode(parent));
         }
@@ -118,7 +114,23 @@ impl<'a, T: Fuseable> Filesystem for FuseableFS<'a, T> {
         }
     }
 
-    fn setattr(&mut self, _req: &Request<'_>, ino: u64, _mode: Option<u32>, _uid: Option<u32>, _gid: Option<u32>, _size: Option<u64>, _atime: Option<SystemTime>, _mtime: Option<SystemTime>, _fh: Option<u64>, _crtime: Option<SystemTime>, _chgtime: Option<SystemTime>, _bkuptime: Option<SystemTime>, _flags: Option<u32>, reply: ReplyAttr) {
+    fn setattr(
+        &mut self,
+        _req: &Request<'_>,
+        ino: u64,
+        _mode: Option<u32>,
+        _uid: Option<u32>,
+        _gid: Option<u32>,
+        _size: Option<u64>,
+        _atime: Option<SystemTime>,
+        _mtime: Option<SystemTime>,
+        _fh: Option<u64>,
+        _crtime: Option<SystemTime>,
+        _chgtime: Option<SystemTime>,
+        _bkuptime: Option<SystemTime>,
+        _flags: Option<u32>,
+        reply: ReplyAttr,
+    ) {
         match self.ftable.get(Inode(ino)) {
             Some(e) => {
                 reply.attr(&TTL, &self.attr(ino, e.is_dir()));
@@ -139,7 +151,10 @@ impl<'a, T: Fuseable> Filesystem for FuseableFS<'a, T> {
         reply: ReplyData,
     ) {
         if offset != 0 {
-            error!("can't handle offset != 0 in read, it is {}, silently dropping this read", offset)
+            error!(
+                "can't handle offset != 0 in read, it is {}, silently dropping this read",
+                offset
+            )
         }
 
         match &self.ftable.get(Inode(ino)) {
@@ -151,18 +166,14 @@ impl<'a, T: Fuseable> Filesystem for FuseableFS<'a, T> {
                     Ok(Either::Left(_)) => {
                         panic!("we got a mismatch");
                     }
-                    Ok(Either::Right(data)) => {
-                        reply.data(data.as_bytes())
-                    }
+                    Ok(Either::Right(data)) => reply.data(data.as_bytes()),
                     Err(e) => {
                         error!("{}", e);
                         reply.error(EINVAL)
                     }
                 }
             }
-            None => {
-                reply.error(ENOENT)
-            }
+            None => reply.error(ENOENT),
         }
     }
 
@@ -191,10 +202,7 @@ impl<'a, T: Fuseable> Filesystem for FuseableFS<'a, T> {
                         let (top_ino, mut top_dir) = if ino.is_root() {
                             (ino, this_dir.clone())
                         } else {
-                            (
-                                this_dir.parent,
-                                self.ftable.get(this_dir.parent).unwrap().clone(),
-                            )
+                            (this_dir.parent, self.ftable.get(this_dir.parent).unwrap().clone())
                         };
 
                         top_dir.name = OsStr::new("..");
@@ -216,7 +224,7 @@ impl<'a, T: Fuseable> Filesystem for FuseableFS<'a, T> {
                                 },
                                 entry.name,
                             ) {
-                                break; // buffer full
+                                break // buffer full
                             }
                         }
                         reply.ok();
@@ -230,26 +238,37 @@ impl<'a, T: Fuseable> Filesystem for FuseableFS<'a, T> {
         }
     }
 
-    fn write(&mut self, _req: &Request<'_>, ino: u64, _fh: u64, offset: i64, data: &[u8], _flags: u32, reply: ReplyWrite) {
-        assert!(offset == 0, "tried to call write with offset != 0 (it is {}) this is not supported!", offset);
+    fn write(
+        &mut self,
+        _req: &Request<'_>,
+        ino: u64,
+        _fh: u64,
+        offset: i64,
+        data: &[u8],
+        _flags: u32,
+        reply: ReplyWrite,
+    ) {
+        assert!(
+            offset == 0,
+            "tried to call write with offset != 0 (it is {}) this is not supported!",
+            offset
+        );
 
         match &self.ftable.get(Inode(ino)) {
             Some(_entry) => {
                 match self.fuseable                   // TODO(robin): possibly unnecessary copy here vvvvvvvvvvvvv
-                    .write(&mut self.ftable.iter_path(Inode(ino)).map(|e| e.name.to_str().unwrap()), data.to_vec()) {
-                        Ok(_) => {
-                            reply.written(data.len() as u32);
-                        },
-                        Err(e) => {
-                            error!("{}", e);
-                            reply.error(EINVAL)
-                        }
+                    .write(&mut self.ftable.iter_path(Inode(ino)).map(|e| e.name.to_str().unwrap()), data.to_vec())
+                {
+                    Ok(_) => {
+                        reply.written(data.len() as u32);
                     }
+                    Err(e) => {
+                        error!("{}", e);
+                        reply.error(EINVAL)
+                    }
+                }
             }
-            None => {
-                reply.error(ENOENT)
-            }
+            None => reply.error(ENOENT),
         }
-
     }
 }

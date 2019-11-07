@@ -23,9 +23,7 @@ pub trait BTreeProxy<V: PartialOrd, I: BTreeIdx> {
 
 pub trait BTreeIdx: Copy + PartialEq {
     fn is_none(&self) -> bool;
-    fn is_some(&self) -> bool {
-        !self.is_none()
-    }
+    fn is_some(&self) -> bool { !self.is_none() }
 
     fn none() -> Self;
 }
@@ -51,7 +49,7 @@ pub trait BTree<V, I, DFIter: Iterator<Item = (I, V)>> {
 
 enum BTreeDFIterState {
     GoingLeft,
-    GoingRightOrUp
+    GoingRightOrUp,
 }
 
 pub struct BTreeDFIter<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> {
@@ -59,7 +57,7 @@ pub struct BTreeDFIter<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> {
     done_left: bool,
     state: BTreeDFIterState,
     proxy: P,
-    _marker: core::marker::PhantomData<V>
+    _marker: core::marker::PhantomData<V>,
 }
 
 impl<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> BTreeDFIter<V, I, P> {
@@ -68,7 +66,7 @@ impl<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> BTreeDFIter<V, I, P> {
             node: idx,
             done_left: false,
             state: BTreeDFIterState::GoingLeft,
-            proxy: proxy,
+            proxy,
             _marker: core::marker::PhantomData,
         }
     }
@@ -78,7 +76,8 @@ impl<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> Iterator for BTreeDFIter<V
     type Item = (I, V);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.node.is_none() { // tree is empty
+        if self.node.is_none() {
+            // tree is empty
             None
         } else {
             match self.state {
@@ -100,8 +99,9 @@ impl<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> Iterator for BTreeDFIter<V
                     } else {
                         self.next()
                     }
-                },
-                // first go right, if we can't go up until we are at the parent of the last node we did
+                }
+                // first go right, if we can't go up until we are at the parent of the last node we
+                // did
                 BTreeDFIterState::GoingRightOrUp => {
                     self.state = BTreeDFIterState::GoingLeft;
 
@@ -135,30 +135,29 @@ impl<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> Iterator for BTreeDFIter<V
                     }
                 }
             }
-
         }
-
     }
 }
 
-impl<V: PartialOrd + Debug, I: BTreeIdx + Debug, P: BTreeProxy<V, I>> BTree<V, I, BTreeDFIter<V, I, P>> for P {
+impl<V: PartialOrd + Debug, I: BTreeIdx + Debug, P: BTreeProxy<V, I>>
+    BTree<V, I, BTreeDFIter<V, I, P>> for P
+{
     fn max_depth_from(&self, node: I) -> usize {
         use core::cmp::max;
 
         if node.is_some() {
-            1 + max(self.max_depth_from(self.get_left(node)), self.max_depth_from(self.get_right(node)))
+            1 + max(
+                self.max_depth_from(self.get_left(node)),
+                self.max_depth_from(self.get_right(node)),
+            )
         } else {
             0
         }
     }
 
-    fn max_depth(&self) -> usize {
-        self.max_depth_from(self.root())
-    }
+    fn max_depth(&self) -> usize { self.max_depth_from(self.root()) }
 
-    fn into_df_iter_from(self, idx: I) -> BTreeDFIter<V, I, P> {
-        BTreeDFIter::new(self, idx)
-    }
+    fn into_df_iter_from(self, idx: I) -> BTreeDFIter<V, I, P> { BTreeDFIter::new(self, idx) }
 
     fn into_df_iter(self) -> BTreeDFIter<V, I, P> {
         let root = self.root();
@@ -197,9 +196,10 @@ impl<V: PartialOrd + Debug, I: BTreeIdx + Debug, P: BTreeProxy<V, I>> BTree<V, I
         let mut node = self.root();
         let new_value = self.value(new);
 
-        if node.is_none() { // we have no root yet
+        if node.is_none() {
+            // we have no root yet
             self.set_root(new);
-            return;
+            return
         }
 
         loop {
@@ -210,7 +210,7 @@ impl<V: PartialOrd + Debug, I: BTreeIdx + Debug, P: BTreeProxy<V, I>> BTree<V, I
 
                 if next.is_none() {
                     self.set_right(node, new);
-                    break;
+                    break
                 } else {
                     node = next;
                 }
@@ -219,12 +219,15 @@ impl<V: PartialOrd + Debug, I: BTreeIdx + Debug, P: BTreeProxy<V, I>> BTree<V, I
 
                 if next.is_none() {
                     self.set_left(node, new);
-                    break;
+                    break
                 } else {
                     node = next;
                 }
             } else {
-                panic!("duplicate item, {:?} is already at {:?} (value {:?})", new_value, node, cur_value);
+                panic!(
+                    "duplicate item, {:?} is already at {:?} (value {:?})",
+                    new_value, node, cur_value
+                );
             }
         }
     }
@@ -242,13 +245,13 @@ impl<V: PartialOrd + Debug, I: BTreeIdx + Debug, P: BTreeProxy<V, I>> BTree<V, I
             } else if value_to_search > value {
                 next = self.get_right(current);
             } else {
-                return Some(current);
+                return Some(current)
             }
 
             if next.is_some() {
                 current = next;
             } else {
-                return None;
+                return None
             }
         }
     }
@@ -279,8 +282,6 @@ impl<V: PartialOrd + Debug, I: BTreeIdx + Debug, P: BTreeProxy<V, I>> BTree<V, I
                     new_nodes.push(right);
                     writeln!(f, "{:?} -> {:?}", self.value(node), self.value(right))?;
                 }
-
-
             }
 
             write!(f, "{{ rank = same;")?;
@@ -304,7 +305,8 @@ impl<V: PartialOrd + Debug, I: BTreeIdx + Debug, P: BTreeProxy<V, I>> BTree<V, I
     // Tree Rebalancing in Optimal Time and Space
     // QUENTIN F. STOUT and BEllE L. WARREN
 
-    // TODO(robin): maybe add support for pseudo-root sentinal instead of manually handling root
+    // TODO(robin): maybe add support for pseudo-root sentinal instead of manually
+    // handling root
     fn rebalance(&mut self) {
         let root = self.root();
 
@@ -376,19 +378,14 @@ impl<V: PartialOrd + Debug, I: BTreeIdx + Debug, P: BTreeProxy<V, I>> BTree<V, I
 #[cfg(feature = "std")]
 #[cfg(test)]
 mod test {
-    use std::fmt::Debug;
-    use crate::{BTreeIdx, BTreeProxy, BTree};
-    use rand::{Rng, distributions::Uniform};
-    use std::ffi::OsStr;
+    use crate::{BTree, BTreeIdx, BTreeProxy};
+    use rand::{distributions::Uniform, Rng};
+    use std::{ffi::OsStr, fmt::Debug};
 
     impl BTreeIdx for usize {
-        fn is_none(&self) -> bool {
-            *self == usize::max_value()
-        }
+        fn is_none(&self) -> bool { *self == usize::max_value() }
 
-        fn none() -> usize {
-            usize::max_value()
-        }
+        fn none() -> usize { usize::max_value() }
     }
 
     #[derive(Debug, Clone)]
@@ -396,25 +393,23 @@ mod test {
         value: &'a OsStr,
         left: usize,
         right: usize,
-        parent: usize
+        parent: usize,
     }
 
     #[derive(Debug, Clone)]
     struct Tree<'a> {
-        nodes: Vec<Node<'a>>
+        nodes: Vec<Node<'a>>,
     }
 
     #[derive(Debug)]
     struct Proxy<'a> {
         nodes: &'a mut Tree<'a>,
-        root: usize
+        root: usize,
     }
 
-    impl<'a> BTreeProxy<&'a OsStr, usize>  for Proxy<'a> {
+    impl<'a> BTreeProxy<&'a OsStr, usize> for Proxy<'a> {
         #[inline]
-        fn root(&self) -> usize {
-            self.root
-        }
+        fn root(&self) -> usize { self.root }
 
         #[inline]
         fn set_root(&mut self, node: usize) {
@@ -423,9 +418,7 @@ mod test {
         }
 
         #[inline]
-        fn get_left(&self, node: usize) -> usize {
-            self.nodes.nodes[node].left
-        }
+        fn get_left(&self, node: usize) -> usize { self.nodes.nodes[node].left }
 
         #[inline]
         fn set_left(&mut self, node: usize, left: usize) {
@@ -437,9 +430,7 @@ mod test {
         }
 
         #[inline]
-        fn get_right(&self, node: usize) -> usize {
-            self.nodes.nodes[node].right
-        }
+        fn get_right(&self, node: usize) -> usize { self.nodes.nodes[node].right }
 
         #[inline]
         fn set_right(&mut self, node: usize, right: usize) {
@@ -451,32 +442,28 @@ mod test {
         }
 
         #[inline]
-        fn get_parent(&self, node: usize) -> usize {
-            self.nodes.nodes[node].parent
-        }
+        fn get_parent(&self, node: usize) -> usize { self.nodes.nodes[node].parent }
 
         #[inline]
-        fn value(&self, node: usize) -> &'a OsStr {
-            self.nodes.nodes[node].value
-        }
+        fn value(&self, node: usize) -> &'a OsStr { self.nodes.nodes[node].value }
     }
 
     fn is_sorted<T: Iterator<Item = I>, I: PartialOrd>(iter: T) -> bool {
         is_sorted_by(iter, |a, b| a.partial_cmp(b))
     }
 
-    fn is_sorted_by<I, T: Iterator<Item = I>, F: FnMut(&I, &I) -> Option<core::cmp::Ordering>>(mut iter: T, mut compare: F) -> bool {
+    fn is_sorted_by<I, T: Iterator<Item = I>, F: FnMut(&I, &I) -> Option<core::cmp::Ordering>>(
+        mut iter: T,
+        mut compare: F,
+    ) -> bool {
         let mut last = match iter.next() {
             Some(e) => e,
             None => return true,
         };
 
         while let Some(curr) = iter.next() {
-            if compare(&last, &curr)
-                .map(|o| o == core::cmp::Ordering::Greater)
-                .unwrap_or(true)
-            {
-                return false;
+            if compare(&last, &curr).map(|o| o == core::cmp::Ordering::Greater).unwrap_or(true) {
+                return false
             }
             last = curr;
         }
@@ -484,9 +471,7 @@ mod test {
         true
     }
 
-    fn lb(value: usize) -> usize {
-        ((value + 1).next_power_of_two().trailing_zeros()) as usize
-    }
+    fn lb(value: usize) -> usize { ((value + 1).next_power_of_two().trailing_zeros()) as usize }
 
     #[test]
     fn it_works() {
@@ -494,19 +479,21 @@ mod test {
         let M = 10; // 25
         let N = 1 << M;
 
-        let nodes: Vec<Node> = (0..N).map(|_| {
-            Node {
-                value: OsStr::new(
-                    Box::leak(
-                        rng.sample_iter(&Uniform::new(0, 9))
-                            .map(|v| format!("{}", v)).take(M).collect::<String>()
-                            .into_boxed_str())),
+        let nodes: Vec<Node> = (0..N)
+            .map(|_| Node {
+                value: OsStr::new(Box::leak(
+                    rng.sample_iter(&Uniform::new(0, 9))
+                        .map(|v| format!("{}", v))
+                        .take(M)
+                        .collect::<String>()
+                        .into_boxed_str(),
+                )),
 
                 left: usize::max_value(),
                 right: usize::max_value(),
                 parent: usize::max_value(),
-            }
-        }).collect();
+            })
+            .collect();
 
         let mut tree = Tree { nodes };
 
@@ -525,7 +512,11 @@ mod test {
 
 
                 let mut proxy = Proxy { nodes: &mut proxy.nodes.clone(), root: proxy.root };
-                let mut actual_values: Vec<(&OsStr, usize)> = proxy.nodes.nodes[..=i].iter().enumerate().map(|(idx, node)| (node.value, idx)).collect();
+                let mut actual_values: Vec<(&OsStr, usize)> = proxy.nodes.nodes[..=i]
+                    .iter()
+                    .enumerate()
+                    .map(|(idx, node)| (node.value, idx))
+                    .collect();
 
                 actual_values.sort_by_key(|ab| ab.0.clone());
                 let mut values = Vec::new();
@@ -534,7 +525,7 @@ mod test {
                 let proxy_for_iter = Proxy { nodes: &mut _nodes_for_iter, root: proxy.root };
                 let iter = proxy_for_iter.into_df_iter();
 
-                for (idx, value) in  iter {
+                for (idx, value) in iter {
                     values.push((value, idx));
                 }
 
