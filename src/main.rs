@@ -16,29 +16,6 @@ use log::error;
 
 const TTL: Duration = Duration::from_secs(3600); // 1 hour
 
-/*
- * what kind of inode -> path, inode -> name mapping do we need?
- *
- * lookup needs parent inode + name -> attr
- * getattr needs inode -> attr
- * read needs inode -> read
- * readdir needs directory inode -> children inodes + children names
- */
-
-// maybe use a tree, which is equal to the directory structure?
-// lookup should be O(1) -> inode is idx to array
-// array entries:
-// enum DirOrFile {
-//     Dir(Option(first)), // Directory, first is inode of first entry
-//     File(Option(next)), // File, next is next entry in dir
-// }
-//
-// struct Entry {
-//     parent: u64, // parent inode
-//     type: DirOrFile //
-//     name: &OsStr
-// }
-
 struct FuseableFS<'a, T> {
     fuseable: T,
     ftable: FTable<'a>,
@@ -86,12 +63,6 @@ impl<'a, T: Fuseable> FuseableFS<'a, T> {
             flags: 0,
         }
     }
-
-    /*
-    fn to_str(&'a self, iter: impl Iterator<Item = &'a Entry<'a>> + 'a) -> impl Iterator<Item = &str> + 'a {
-        iter.map(|e| e.name.to_str().unwrap())
-    }
-    */
 
     fn add_dir(&mut self, ino: Inode) {
         match self
@@ -162,7 +133,6 @@ impl<'a, T: Fuseable> Filesystem for FuseableFS<'a, T> {
             }
         }
     }
-
 
     fn read(
         &mut self,

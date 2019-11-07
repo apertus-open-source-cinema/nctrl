@@ -34,11 +34,6 @@ pub trait BTree<V, I, DFIter: Iterator<Item = (I, V)>> {
     fn into_df_iter_from(self, idx: I) -> DFIter;
     fn into_df_iter(self) -> DFIter;
 
-    /*
-    fn df_map_from<T, F: FnMut(I, V) -> Option<T>>(&self, idx: I, func: &mut F) -> Option<T>;
-    fn df_map<T, F: FnMut(I, V) -> Option<T>>(&self, func: &mut F) -> Option<T>;
-    */
-
     fn first(&self) -> I;
     fn last(&self) -> I;
 
@@ -53,45 +48,6 @@ pub trait BTree<V, I, DFIter: Iterator<Item = (I, V)>> {
     fn max_depth(&self) -> usize;
     fn max_depth_from(&self, node: I) -> usize;
 }
-
-// TODO(robin): implement non recursive variant of this
-// either using a stack or a parent pointer, 
-// probably a parent pointer
-// or morris traversal, but is that really faster?
-
-/*
-fn btree_df_map_from<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>, T, F: FnMut(I, V) -> Option<T>>(tree: &P, idx: I, func: &mut F) -> Option<T> {
-    let left = tree.get_left(idx);
-
-    if left.is_some() {
-        let left_side = btree_df_map_from(tree, left, func);
-
-        if left_side.is_some() {
-            return left_side;
-        }
-    }
-
-    let middle = func(idx, tree.value(idx));
-
-    if middle.is_some() {
-        return middle;
-    }
-
-
-    let right = tree.get_right(idx);
-
-    if right.is_some() {
-        let right_side = btree_df_map_from(tree, right, func);
-
-        if right_side.is_some() {
-            return right_side;
-        }
-    }
-
-    None
-}
-*/
-
 
 enum BTreeDFIterState {
     GoingLeft,
@@ -117,7 +73,7 @@ impl<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> BTreeDFIter<V, I, P> {
         }
     }
 }
-
+// TODO(robin): use morris traversal instead of parent pointer?
 impl<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> Iterator for BTreeDFIter<V, I, P> {
     type Item = (I, V);
 
@@ -126,6 +82,7 @@ impl<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> Iterator for BTreeDFIter<V
             None
         } else {
             match self.state {
+                // go as far left as possible
                 BTreeDFIterState::GoingLeft => {
                     self.state = BTreeDFIterState::GoingRightOrUp;
 
@@ -144,6 +101,7 @@ impl<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> Iterator for BTreeDFIter<V
                         self.next()
                     }
                 },
+                // first go right, if we can't go up until we are at the parent of the last node we did
                 BTreeDFIterState::GoingRightOrUp => {
                     self.state = BTreeDFIterState::GoingLeft;
 
@@ -346,7 +304,7 @@ impl<V: PartialOrd + Debug, I: BTreeIdx + Debug, P: BTreeProxy<V, I>> BTree<V, I
     // Tree Rebalancing in Optimal Time and Space
     // QUENTIN F. STOUT and BEllE L. WARREN
 
-    // TODO(robin): maybe add support for pseudo-root sentinal
+    // TODO(robin): maybe add support for pseudo-root sentinal instead of manually handling root
     fn rebalance(&mut self) {
         let root = self.root();
 
@@ -530,31 +488,6 @@ mod test {
         ((value + 1).next_power_of_two().trailing_zeros()) as usize
     }
 
-    /*
-    fn check_2<'a, V: PartialOrd + Ord + Debug + Clone, I: BTreeIdx + PartialOrd + Ord + Debug, DFIter: Iterator<Item = (I, V)>, T: BTree<'a, V, I, DFIter> + Debug>(proxy: &'a mut T, mut actual_values: Vec<(V, I)>) {
-
-        actual_values.sort_by_key(|ab| ab.0.clone());
-        let mut values = Vec::new();
-
-        proxy.df_iter().map(&mut |(idx, value)| {
-            values.push((value, idx));
-
-            if false {
-                Some(1)
-            } else {
-                None
-            }
-        });
-    }
-    */
-
-    /*
-    fn check<'a>(mut proxy: Proxy<'a>, mut actual_values: Vec<(&OsStr, usize)>) {
-    }
-    */
-
-
-
     #[test]
     fn it_works() {
         let rng = rand::thread_rng();
@@ -569,72 +502,71 @@ mod test {
                             .map(|v| format!("{}", v)).take(M).collect::<String>()
                             .into_boxed_str())),
 
-            left: usize::max_value(),
-            right: usize::max_value(),
-            parent: usize::max_value(),
-        }
-    }).collect();
-
-    let mut tree = Tree { nodes };
-
-    {
-        let mut proxy = Proxy { nodes: &mut tree, root: 0 };
-
-        let k = M - 10;
-        let mut pb = pbr::ProgressBar::new((N >> k) as u64);
-
-        for i in 1..N {
-            if (i % (1 << k)) == 0 {
-                pb.inc();
+                left: usize::max_value(),
+                right: usize::max_value(),
+                parent: usize::max_value(),
             }
+        }).collect();
 
-            proxy.insert(i);
+        let mut tree = Tree { nodes };
+
+        {
+            let mut proxy = Proxy { nodes: &mut tree, root: 0 };
+
+            let k = M - 10;
+            let mut pb = pbr::ProgressBar::new((N >> k) as u64);
+
+            for i in 1..N {
+                if (i % (1 << k)) == 0 {
+                    pb.inc();
+                }
+
+                proxy.insert(i);
 
 
-            let mut proxy = Proxy { nodes: &mut proxy.nodes.clone(), root: proxy.root };
-            let mut actual_values: Vec<(&OsStr, usize)> = proxy.nodes.nodes[..=i].iter().enumerate().map(|(idx, node)| (node.value, idx)).collect();
+                let mut proxy = Proxy { nodes: &mut proxy.nodes.clone(), root: proxy.root };
+                let mut actual_values: Vec<(&OsStr, usize)> = proxy.nodes.nodes[..=i].iter().enumerate().map(|(idx, node)| (node.value, idx)).collect();
 
-            actual_values.sort_by_key(|ab| ab.0.clone());
-            let mut values = Vec::new();
+                actual_values.sort_by_key(|ab| ab.0.clone());
+                let mut values = Vec::new();
 
-        let mut _nodes_for_iter = proxy.nodes.clone();
-        let proxy_for_iter = Proxy { nodes: &mut _nodes_for_iter, root: proxy.root };
-        let iter = proxy_for_iter.into_df_iter();
+                let mut _nodes_for_iter = proxy.nodes.clone();
+                let proxy_for_iter = Proxy { nodes: &mut _nodes_for_iter, root: proxy.root };
+                let iter = proxy_for_iter.into_df_iter();
 
-        for (idx, value) in  iter {
-            values.push((value, idx));
+                for (idx, value) in  iter {
+                    values.push((value, idx));
+                }
+
+                assert_eq!(actual_values, values);
+
+                assert!(is_sorted(values.iter()), "not sorted {:#?}", proxy);
+
+                for (value, idx) in values.iter() {
+                    assert!(Some(*idx) == proxy.search(value.clone()));
+                }
+
+                proxy.rebalance();
+
+                assert_eq!(proxy.max_depth(), lb(actual_values.len()));
+                let mut new_values = Vec::new();
+
+                let mut _nodes_for_iter = proxy.nodes.clone();
+                let proxy_for_iter = Proxy { nodes: &mut _nodes_for_iter, root: proxy.root };
+
+                for (idx, value) in proxy_for_iter.into_df_iter() {
+                    new_values.push((value, idx));
+                }
+
+
+                assert!(is_sorted(new_values.iter()), "not sorted after rebalance {:#?}", proxy);
+                assert_eq!(values, new_values);
+
+
+                for (value, idx) in new_values {
+                    assert!(Some(idx) == proxy.search(value));
+                }
+            }
         }
-
-        assert_eq!(actual_values, values);
-
-        assert!(is_sorted(values.iter()), "not sorted {:#?}", proxy);
-
-        for (value, idx) in values.iter() {
-            assert!(Some(*idx) == proxy.search(value.clone()));
-        }
-
-        proxy.rebalance();
-
-        assert_eq!(proxy.max_depth(), lb(actual_values.len()));
-        let mut new_values = Vec::new();
-
-        let mut _nodes_for_iter = proxy.nodes.clone();
-        let proxy_for_iter = Proxy { nodes: &mut _nodes_for_iter, root: proxy.root };
-
-        for (idx, value) in proxy_for_iter.into_df_iter() {
-            new_values.push((value, idx));
-        }
-
-
-        assert!(is_sorted(new_values.iter()), "not sorted after rebalance {:#?}", proxy);
-        assert_eq!(values, new_values);
-
-
-        for (value, idx) in new_values {
-            assert!(Some(idx) == proxy.search(value));
-        }
-        }
-
     }
-}
 }
