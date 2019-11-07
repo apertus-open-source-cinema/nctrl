@@ -2175,7 +2175,7 @@ reserved_mfr_30ee:
   max: 62463
   min: 0
   width: 2
-reserved_mfr_30f0:
+reserved_chiprev:
   address: '0x30F0'
   default: '0x1208'
   mask: '0xF3FF'
@@ -5021,3 +5021,9 @@ y_odd_inc_cb:
   max: 7
   min: 0
   width: 2
+magic_init_config:
+    address: '0x3152'
+    width: 2
+magic_init_start:
+    address: '0x304a'
+    width: 2
