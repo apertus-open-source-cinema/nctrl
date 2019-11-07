@@ -1,4 +1,4 @@
-use ctrl::{sensor::Camera, serde_util::FILE_OPENER};
+use nctrl::{sensor::Camera, serde_util::FILE_OPENER};
 use ftable::{DirOrFile, Entry, FTable, Inode};
 use fuse::{
     FileAttr, FileType, Filesystem, ReplyAttr, ReplyData, ReplyWrite, ReplyDirectory, ReplyEntry, Request,
@@ -12,7 +12,7 @@ use std::iter::{empty, once};
 use std::path::PathBuf;
 use std::time::{Duration, UNIX_EPOCH, SystemTime};
 use structopt::StructOpt;
-use log::error;
+use ::log::{log, error};
 
 const TTL: Duration = Duration::from_secs(3600); // 1 hour
 

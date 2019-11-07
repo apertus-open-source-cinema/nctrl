@@ -1,5 +1,9 @@
 /target
 /ftable/target
+/btree/target
+/parse_num/target
+/fuseable/target
+/fuseable_derive/target
 **/*.rs.bk
 \#*\#
 *.ldat

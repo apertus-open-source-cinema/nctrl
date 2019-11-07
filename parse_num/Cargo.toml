@@ -1,0 +1,8 @@
+[package]
+name = "parse_num"
+version = "0.1.0"
+authors = ["Robin Ole Heinemann <robin.ole.heinemann@t-online.de>"]
+edition = "2018"
+
+[dependencies]
+num = "*"

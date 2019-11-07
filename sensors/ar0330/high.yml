@@ -1,0 +1,4840 @@
+access_address:
+  addr: seq_ctrl_port[0:9]
+  description: 'When in STANDBY (not streaming)  mode: address pointer to the sequencer
+    RAM.'
+  writable: true
+auto_inc_on_read:
+  addr: seq_ctrl_port[14:15]
+  description: If 1 => The access_address is incremented (by 1) after each read operation
+    from seq_data_port (which returns  only1 byte)
+  max: 1
+  min: 0
+  writable: true
+bit_12:
+  addr: smia_test[12:13]
+  writable: true
+bit_13:
+  addr: hispi_control_status[13:14]
+  writable: true
+bit_14:
+  addr: digital_test[14:15]
+  writable: true
+bit_15:
+  addr: reset_register[15:16]
+  max: 1
+  min: 0
+  writable: true
+bit_15_collision_0:
+  addr: digital_test[15:16]
+  max: 1
+  min: 0
+  writable: true
+bit_15_collision_1:
+  addr: hispi_timing[15:16]
+  max: 1
+  min: 0
+  writable: true
+bit_2:
+  addr: grr_control1[2:3]
+  max: 1
+  min: 0
+  writable: true
+bit_4:
+  addr: datapath_select[4:5]
+  max: 1
+  min: 0
+  writable: true
+bit_5:
+  addr: reset_register[5:6]
+  max: 1
+  min: 0
+  writable: true
+bit_6:
+  addr: digital_ctrl[6:7]
+  writable: true
+bit_7:
+  addr: digital_ctrl[7:8]
+  max: 1
+  min: 0
+  writable: true
+bit_8:
+  addr: hispi_control_status[8:9]
+  max: 1
+  min: 0
+  writable: true
+bit_9:
+  addr: smia_test[9:10]
+  max: 1
+  min: 0
+  writable: true
+bit_9_collision_0:
+  addr: hispi_control_status[9:10]
+  max: 1
+  min: 0
+  writable: true
+bits_0_1:
+  addr: digital_ctrl[0:2]
+  max: 3
+  min: 0
+  writable: true
+bits_0_3:
+  addr: smia_test[0:4]
+  max: 15
+  min: 0
+  writable: true
+bits_10_11:
+  addr: smia_test[10:12]
+  max: 3
+  min: 0
+  writable: true
+bits_2_3:
+  addr: digital_ctrl[2:4]
+  max: 0
+  min: 3
+  writable: true
+blanking_data_enable:
+  addr: hispi_control_status[3:4]
+  description:
+    long: This parameter allows the user to define the idle (IDL) data output during
+      horizontal and vertical blanking periods.  This parameter will affect the HiSPi
+      transmitter when it is configured to Streaming SP.  Value 0, the default pattern
+      (constant 1) is output during horizontal and vertical blanking periods  Value
+      1, the pattern defined by the blanking_data input is output during horizontal
+      and vertical blanking periods
+    short: blanking data enable
+  max: 1
+  min: 0
+  writable: true
+blue_gain:
+  addr: blue_gain[0:11]
+  address: '0x3058'
+  default: 128
+  description: Digital gain for Blue pixels, in format of xxxx.yyyyyyy.
+  max: 2047
+  min: 0
+  writable: true
+blue_gain_cb:
+  addr: blue_gain_cb[0:11]
+  address: '0x30BE'
+  default: 128
+  description: digital gain blue context B
+  max: 2047
+  min: 0
+  writable: true
+chip_version_reg:
+  addr: chip_version_reg[0:16]
+  address: '0x3000'
+  default: 9732
+  description:
+    long: Model ID. Read-only. Can be made read/write by clearing reset_register[3].
+    short: Read-only. Can be made read/write by clearing reset_register[3].
+  max: 65535
+  min: 0
+  writable: true
+clock_del:
+  addr: hispi_timing[12:15]
+  description:
+    long: Delay applied to the clock lane in 1/8 unit interval (UI) steps.
+    short: CLOCK_DEL
+  max: 7
+  min: 0
+  writable: true
+coarse_gain:
+  addr: analog_gain[4:6]
+  description: Coarse Analog gain in context A.
+  writable: true
+coarse_gain_cb:
+  addr: analog_gain[12:14]
+  description: Coarse Analog gain in context B.
+  writable: true
+coarse_integration_time:
+  addr: coarse_integration_time[0:16]
+  address: '0x3012'
+  default: 16
+  description: Integration time specified in multiples of line_length_pck_.
+  max: 65535
+  min: 0
+  writable: true
+coarse_integration_time_cb:
+  addr: coarse_integration_time_cb[0:16]
+  address: '0x3016'
+  default: 16
+  description: Coarse integration time in context B.
+  max: 65535
+  min: 0
+  writable: true
+compression_enable:
+  addr: compression[0:1]
+  description: Enables A-LAW compression.  Inputs 12-bit RAW pixel data.  Outputs
+    10-bit compressed data using A-LAW compression.
+  writable: true
+cont_tx_clk:
+  addr: mipi_timing_4[15:16]
+  description:
+    long: Reserved. Read as 0
+    short: Enable the continuous clocking of the Mipi clock
+  writable: false
+context_b:
+  addr: digital_test[13:14]
+  description: 0 = Use context A 1 = Use Context B
+  writable: true
+data0_del:
+  addr: hispi_timing[0:3]
+  description:
+    long: Delay applied to Data Lane 0 in 1/8 unit interval (UI) steps.
+    short: DATA0_DEL
+  max: 7
+  min: 0
+  writable: true
+data1_del:
+  addr: hispi_timing[3:6]
+  description:
+    long: Delay applied to Data Lane 1 in 1/8 unit interval (UI) steps.
+    short: DATA1_DEL
+  max: 7
+  min: 0
+  writable: true
+data2_del:
+  addr: hispi_timing[6:9]
+  description:
+    long: Delay applied to Data Lane 2 in 1/8 unit interval (UI) steps.
+    short: DATA2_DEL
+  max: 7
+  min: 0
+  writable: true
+data3_del:
+  addr: hispi_timing[9:12]
+  description:
+    long: Delay applied to Data Lane 3 in 1/8 unit interval (UI) steps.
+    short: DATA3_DEL
+  max: 7
+  min: 0
+  writable: true
+data_format_bits:
+  addr: data_format_bits[0:16]
+  address: '0x31AC'
+  default: 2570
+  description: '[7:0] = The bit-width of the compressed pixel data  [15:8] = The bit-width
+    of the uncompressed pixel data'
+  max: 65535
+  min: 0
+  writable: true
+data_pedestal:
+  addr: data_pedestal[0:12]
+  address: '0x301E'
+  default: 168
+  description: Constant offset that is added to pixel values at the end of datapath
+    (after all corrections).
+  max: 4095
+  min: 0
+  writable: true
+datapath_select_bit8:
+  addr: datapath_select[8:9]
+  description: Not used.
+  max: 1
+  min: 0
+  writable: true
+dither_enable:
+  addr: digital_ctrl[5:6]
+  description: Enables dithering after digital gain.
+  max: 1
+  min: 0
+  writable: true
+drive_pins:
+  addr: reset_register[6:7]
+  description: 0 = The parallel data interface (DOUT[11:0], LINE_VALID, FRAME_VALID,
+    and PIXCLK) may enter a high-impedance state (depending upon the enabling and
+    use of the pad OE_BAR) 1 = The parallel data interface is driven.  This bit is
+    "do not care" unless bit[7]=1.
+  max: 1
+  min: 0
+  writable: true
+embedded_data:
+  addr: smia_test[8:9]
+  description: 1 = Frames of data out of the sensor include 2 rows of embedded data.  0
+    = Frames out of the sensor exclude the embedded data.  This register field should
+    only be change while the sensor is in software standby.  Disabling the embedded
+    data will not reduce the number of vertical blanking rows.
+  writable: true
+en_flash:
+  addr: flash[8:9]
+  description: Enables the flash. The flash is asserted when an integration (either
+    T1, T2 or T3 is ongoing).
+  max: 1
+  min: 0
+  writable: true
+enable:
+  addr: poly_sc_enable[15:16]
+  description: Turn on shading correction.
+  max: 1
+  min: 0
+  writable: true
+ext_shut_delay:
+  addr: grr_control4[0:16]
+  max: 65535
+  min: 0
+  writable: true
+ext_shut_pulse_width:
+  addr: grr_control3[0:16]
+  description: Width of the external shutter pulse in clock cycles.   When set to
+    zero, the shutter pulse will be controlled by GRR_CONTROL4.
+  max: 65535
+  min: 0
+  writable: true
+extra_delay:
+  addr: extra_delay[0:16]
+  address: '0x3042'
+  description: The last row in the frame is extended by the number of the sensor core
+    clock periods specified here. The extra_delay must be configured to an even value.  This
+    register can be used to fine-tune the sensor maximum frame-rate.
+  max: 65535
+  min: 0
+  writable: true
+fine_gain:
+  addr: analog_gain[0:4]
+  description: Fine analog gain in context A.
+  max: 15
+  min: 0
+  writable: true
+fine_gain_cb:
+  addr: analog_gain[8:12]
+  description: Fine analog gain in context b
+  writable: true
+fine_integration_time:
+  addr: fine_integration_time[0:16]
+  address: '0x3014'
+  description: Fine integration is used to delay the shutter operation after the sample
+    operation is finished. Thus, the integration time is decreased. The resolution
+    is 1 pixel clock time. Note that for short line length (line_length_pck, line_length_pck_cb)
+    values, the available time for fine shutter is limited. If programmed for more
+    than available time, the normal sensor operation will be distrupted.
+  max: 65535
+  min: 0
+  writable: true
+fine_integration_time_cb:
+  addr: fine_integration_time_cb[0:16]
+  address: '0x3018'
+  description: Fine integration time in context B.
+  max: 65535
+  min: 0
+  writable: true
+flash2:
+  addr: flash2[0:16]
+  address: '0x3048'
+  default: 256
+  description: Xenon flash pulse width in clock periods.
+  max: 65535
+  min: 0
+  writable: true
+forced_pll_on:
+  addr: reset_register[11:12]
+  description: When this bit is set, the PLL will be enabled even when the sensor
+    is in "standby" (low power mode).
+  writable: true
+frame_cnt_mode:
+  addr: mipi_config_status[0:2]
+  description:
+    long: 'MIPI frame start and frame end short packets contain a 16-bit frame number
+      field. The behaviour of the frame number field is controlled as follows:  0:
+      the frame number is always set to 0.  1: The frame number is reset during sensor
+      reset. The frame number for the first frame generated in streaming mode after
+      reset is 1, and the frame number increments for subsequent frames. The frame
+      number wraps from 0xFF to 0x01.  2: The frame number is reset when the sensor
+      is in the software standby system state. The frame number for the first frame
+      generated in streaming mode is 1, and the frame number increments for subsequent
+      frames. The frame number wraps from 0xFF to 0x01.  3: Reserved.'
+    short: FRAME_CNT_MODE
+  max: 3
+  min: 0
+  writable: true
+frame_count:
+  addr: frame_count[0:16]
+  address: '0x303A'
+  default: 65535
+  description: Counts the number of output frames. At the startup is initialized to
+    0xffff.
+  max: 65535
+  min: 0
+  writable: true
+frame_length_lines:
+  addr: frame_length_lines[0:16]
+  address: '0x300A'
+  default: 1308
+  description: The number of complete lines (rows) in the frame timing. This includes
+    visible lines and vertical blanking lines.
+  max: 65535
+  min: 0
+  writable: true
+frame_length_lines_cb:
+  addr: frame_length_lines_cb[0:16]
+  address: '0x30AA'
+  default: 1548
+  description: FRAME_LENGTH_LINES context B. See description for frame_length_lines
+  max: 65535
+  min: 0
+  writable: true
+frame_preamble:
+  addr: frame_preamble[0:16]
+  address: '0x31B0'
+  default: 36
+  description: 'MIPI timing configuration: Number of clock cycles for frame short
+    packet and transition from LP to HS.'
+  max: 65535
+  min: 0
+  writable: true
+frame_start_mode:
+  addr: grr_control1[5:6]
+  description: When set to 1, the sensor will match the frame time to the  frame length
+    lines and line_length_pck.  It will not increase the frame time even if the integration
+    time specified by coarse integration time is longer than the minimum frame-time.
+  writable: true
+framesync:
+  addr: frame_status[0:1]
+  description:
+    long: Set on register write and reset on frame synchronization. Acts as debug
+      flag to verify that register writes completed before last frame synchronization.
+    short: Set on register write and reset on frame synchronization.
+  max: 1
+  min: 0
+  writable: false
+global_gain:
+  addr: global_gain[0:11]
+  address: '0x305E'
+  default: 128
+  description:
+    long: Writing a gain to this register is equivalent to writing that code to each
+      of the 4 color-specific gain registers. Reading from this register returns the
+      value most recently written to the green1_gain register.
+    short: "xxxx.yyyyyyy The x's represent a 4-bit integer value. The seven y\u2019\
+      s represent the values \xBD, \xBC, 1/8, 1/16, 1/32, 1/64 ,1/128 respectively.\
+      \ For instance, to get a gain of 6.75x you need the value 0b01101100000."
+  max: 2047
+  min: 0
+  writable: true
+global_gain_cb:
+  addr: global_gain_cb[0:11]
+  address: '0x30C4'
+  default: 128
+  description: global digital gain context B
+  max: 2047
+  min: 0
+  writable: true
+gpi_en:
+  addr: reset_register[8:9]
+  description: 0 = the primary input buffers associated with the OUTPUT_ENABLE_N,
+    TRIGGER and STANDBY inputs are powered down and cannot be used.  1 = the input
+    buffers are enabled and can be read through reserved.
+  max: 1
+  min: 0
+  writable: true
+gr_delay:
+  addr: grr_control2[0:8]
+  description: Delay between external trigger and global reset in number of rows.
+  max: 255
+  min: 0
+  writable: true
+green1_gain:
+  addr: green1_gain[0:11]
+  address: '0x3056'
+  default: 128
+  description: Digital gain for green1 (Gr) pixels, in format of xxxx.yyyyyyy.
+  max: 2047
+  min: 0
+  writable: true
+green1_gain_cb:
+  addr: green1_gain_cb[0:11]
+  address: '0x30BC'
+  default: 128
+  description: Digital gain green1 context B
+  max: 2047
+  min: 0
+  writable: true
+green2_gain:
+  addr: green2_gain[0:11]
+  address: '0x305C'
+  default: 128
+  description: Digital gain for green2 (Gb) pixels in format of xxxx.yyyyyyy.
+  max: 2047
+  min: 0
+  writable: true
+green2_gain_cb:
+  addr: green2_gain_cb[0:11]
+  address: '0x30C2'
+  default: 128
+  description: digital gain green 2 context B
+  max: 2047
+  min: 0
+  writable: true
+grr_mode:
+  addr: grr_control1[0:1]
+  description: '0: Normal ERS mode. 1: Global reset release mode.'
+  max: 1
+  min: 0
+  writable: true
+high_vcm:
+  addr: datapath_select[9:10]
+  description: 'Configures the sensor to use the normal or high VCM mode in the AR0330
+    sensor.  0: Low Vcm. VDD_HiSPI_TX = 0.4V - 0.8V  1: High Vcm. VDD_HISPI_TX = 1.7V
+    - 1.9V  This register must be changed when the sensor streaming is disabled. (reset_register[2]=0)'
+  max: 1
+  min: 0
+  writable: true
+hispi_mode_sel:
+  addr: hispi_control_status[10:12]
+  description:
+    long: 'Select the HiSPi output protocol: b00: Streaming S  b01: Streaming SP or
+      Packetized SP note: Use the streaming_mode parameter to configure between Streaming
+      SP and Packetized SP.'
+    short: Mode select
+  max: 3
+  min: 0
+  writable: true
+horiz_mirror:
+  addr: image_orientation[0:1]
+  description:
+    long: 0 = Normal readout  1 = Readout is mirrored horizontally so that the column
+      specified by x_addr_end_  (+1)is read out of the sensor first.  Changing this
+      register can only be done when streaming is disabled
+    short: This bit is an alias of read_mode[14].
+  max: 1
+  min: 0
+  writable: true
+horiz_mirror_collision_0:
+  addr: read_mode[14:15]
+  description: 0 = Normal readout  1 = Readout is mirrored horizontally so that the
+    column specified by x_addr_end_  (+1)is read out of the sensor first.  Changing
+    this register can only be done when streaming is disabled
+  max: 1
+  min: 0
+  writable: true
+horizontal_cursor_position:
+  addr: horizontal_cursor_position[0:11]
+  address: '0x31E8'
+  description: Specify the start row for the test cursor.
+  max: 2047
+  min: 0
+  writable: true
+horizontal_cursor_width:
+  addr: horizontal_cursor_width[0:11]
+  address: '0x31EC'
+  description: Specify the width, in rows, of the horizontal test cursor. A width
+    of 0 disables the cursor.
+  max: 2047
+  min: 0
+  writable: true
+i2c_ids:
+  addr: i2c_ids[0:16]
+  address: '0x31FC'
+  default: 12320
+  description:
+    long: I2C addresses.
+    short: I2C addresses
+  max: 65535
+  min: 0
+  writable: true
+i2c_wrt_checksum:
+  addr: i2c_wrt_checksum[0:16]
+  address: '0x31D6'
+  default: 65535
+  description: Checksum of I2C write operations.
+  max: 65535
+  min: 0
+  writable: true
+invert_flash:
+  addr: flash[7:8]
+  description: Invert flash output signal. When set, the FLASH output signal will
+    be active low.
+  max: 1
+  min: 0
+  writable: true
+line_length_pck:
+  addr: line_length_pck[0:16]
+  address: '0x300C'
+  default: 1248
+  description: The number of pixel clock periods in one line (row) time. This includes
+    visible pixels and horizontal blanking time. Only even values are allowed.
+  max: 65535
+  min: 0
+  writable: true
+line_length_pck_cb:
+  addr: line_length_pck_cb[0:16]
+  address: '0x303E'
+  default: 1248
+  description: Line length in context b. The number of pixel clock periods in one
+    line (row) time. This includes visible pixels and horizontal blanking time. Only
+    even values are allowed.
+  max: 65535
+  min: 0
+  writable: true
+line_preamble:
+  addr: line_preamble[0:16]
+  address: '0x31B2'
+  default: 12
+  description: 'MIPI timing: Number of clock cycles for line transition from LP to
+    HS.'
+  max: 65535
+  min: 0
+  writable: true
+lock_control:
+  addr: lock_control[0:16]
+  address: '0x3010'
+  default: 48879
+  description: This register protects the mirror mode select (register read mode).
+    When set to value 0xBEEF, the horizontal and vertical mirror modes can be changed,
+    otherwise these values are locked.
+  max: 65535
+  min: 0
+  writable: true
+lock_reg:
+  addr: reset_register[3:4]
+  description: Many parameter limitation registers that are specified as read-only
+    are actually implemented as read/write registers. Clearing this bit allows such
+    registers to be written.
+  max: 1
+  min: 0
+  writable: true
+mask_bad:
+  addr: reset_register[9:10]
+  description: 0 = The sensor will produce bad (corrupted) frames as a result of some
+    register changes.  1 = Bad (corrupted) frames are masked within the sensor by
+    extending the vertical blanking time for the duration of the bad frame.
+  max: 1
+  min: 0
+  writable: true
+mipi_heavy_lp_load:
+  addr: mipi_timing_4[14:15]
+  description:
+    long: contol  of phy heavy_lp_load pin
+    short: MIPI_HEAVY_LP_LOAD
+  max: 1
+  min: 0
+  writable: true
+mipi_line_byte_error:
+  addr: datapath_status[4:5]
+  max: 1
+  min: 0
+  writable: true
+mipi_preamble_error:
+  addr: datapath_status[5:6]
+  description: MIPI_PREAMBLE_ERROR
+  max: 1
+  min: 0
+  writable: true
+mipi_timing_0_t_hs_prepare:
+  addr: mipi_timing_0[12:16]
+  description:
+    long: Time (in clk cycles) to drive LP-00 prior to entering HS data transmission
+      mode
+    short: LP-00 drive time
+  max: 15
+  min: 0
+  writable: true
+mode_select:
+  addr: mode_select[0:1]
+  address: '0x301C'
+  description: This bit is an alias of reset_register[2].
+  max: 1
+  min: 0
+  writable: true
+op_pix_clk_div:
+  addr: op_pix_clk_div[0:5]
+  address: '0x3036'
+  default: 12
+  description: Clock divisor applied to the op_sys_clk to generate the output pixel
+    clock.  The divisor indicates the bit-depth of the output pixel word. (i.e. "12"
+    12-bit, "10" 10-bit, "8", 8-bit)
+  max: 31
+  min: 0
+  writable: true
+op_sys_clk_div:
+  addr: op_sys_clk_div[0:5]
+  address: '0x3038'
+  default: 1
+  description: Clock divisor applied to PLL output clock to generate output system
+    clock. Can only be programmed to "1" in the AR0330 sensor.  Read-only.
+  max: 31
+  min: 0
+  writable: true
+operation_mode_ctrl:
+  addr: operation_mode_ctrl[0:2]
+  address: '0x3082'
+  default: 1
+  max: 3
+  min: 0
+  writable: false
+output_msb_first:
+  addr: hispi_control_status[1:2]
+  description:
+    long: 'Configures the active data transmitted by the HiSPi interface to MSB or
+      LSB first.   Value 0: Active data will be in LSB Value 1: Active data will be
+      in MSB  Note:  The SYNC code and idle (IDL) data are not affected by the output_msb_first
+      bit.'
+    short: 'Configures the active data transmitted by the HiSPi interface to MSB or
+      LSB first.   Value 0: Active data will be in LSB  Value 1: Active data will
+      be in MSB  Note:  The SYNC code and idle (IDL) data are not affected by the
+      output_msb_first bit.'
+  max: 1
+  min: 0
+  writable: true
+p_bl_p0q0:
+  addr: p_bl_p0q0[0:16]
+  address: '0x3614'
+  description: P0 coefficient for Q0 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p0q1:
+  addr: p_bl_p0q1[0:16]
+  address: '0x3616'
+  description: P0 coefficient for Q1 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p0q2:
+  addr: p_bl_p0q2[0:16]
+  address: '0x3618'
+  description: P0 coefficient for Q2 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p0q3:
+  addr: p_bl_p0q3[0:16]
+  address: '0x361A'
+  description: P0 coefficient for Q3 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p0q4:
+  addr: p_bl_p0q4[0:16]
+  address: '0x361C'
+  description: P0 coefficient for Q4 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p1q0:
+  addr: p_bl_p1q0[0:16]
+  address: '0x3654'
+  description: P1 coefficient for Q0 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p1q1:
+  addr: p_bl_p1q1[0:16]
+  address: '0x3656'
+  description: P1 coefficient for Q1 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p1q2:
+  addr: p_bl_p1q2[0:16]
+  address: '0x3658'
+  description: P1 coefficient for Q2 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p1q3:
+  addr: p_bl_p1q3[0:16]
+  address: '0x365A'
+  description: P1 coefficient for Q3 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p1q4:
+  addr: p_bl_p1q4[0:16]
+  address: '0x365C'
+  description: P1 coefficient for Q4 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p2q0:
+  addr: p_bl_p2q0[0:16]
+  address: '0x3694'
+  description: P2 coefficient for Q0 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p2q1:
+  addr: p_bl_p2q1[0:16]
+  address: '0x3696'
+  description: P2 coefficient for Q1 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p2q2:
+  addr: p_bl_p2q2[0:16]
+  address: '0x3698'
+  description: P2 coefficient for Q2 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p2q3:
+  addr: p_bl_p2q3[0:16]
+  address: '0x369A'
+  description: P2 coefficient for Q3 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p2q4:
+  addr: p_bl_p2q4[0:16]
+  address: '0x369C'
+  description: P2 coefficient for Q4 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p3q0:
+  addr: p_bl_p3q0[0:16]
+  address: '0x36D4'
+  description: P3 coefficient for Q0 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p3q1:
+  addr: p_bl_p3q1[0:16]
+  address: '0x36D6'
+  description: P3 coefficient for Q1 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p3q2:
+  addr: p_bl_p3q2[0:16]
+  address: '0x36D8'
+  description: P3 coefficient for Q2 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p3q3:
+  addr: p_bl_p3q3[0:16]
+  address: '0x36DA'
+  description: P3 coefficient for Q3 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p3q4:
+  addr: p_bl_p3q4[0:16]
+  address: '0x36DC'
+  description: P3 coefficient for Q4 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p4q0:
+  addr: p_bl_p4q0[0:16]
+  address: '0x3714'
+  description: P4 coefficient for Q0 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p4q1:
+  addr: p_bl_p4q1[0:16]
+  address: '0x3716'
+  description: P4 coefficient for Q1 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p4q2:
+  addr: p_bl_p4q2[0:16]
+  address: '0x3718'
+  description: P4 coefficient for Q2 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p4q3:
+  addr: p_bl_p4q3[0:16]
+  address: '0x371A'
+  description: P4 coefficient for Q3 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_p4q4:
+  addr: p_bl_p4q4[0:16]
+  address: '0x371C'
+  description: P4 coefficient for Q4 for Bl. P_BL_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Bl pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_bl_q5:
+  addr: p_bl_q5[0:16]
+  address: '0x37C4'
+  description: Parameter for parabolic roll-off algorithm for blue pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p0q0:
+  addr: p_gb_p0q0[0:16]
+  address: '0x361E'
+  description: P0 coefficient for Q0 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p0q1:
+  addr: p_gb_p0q1[0:16]
+  address: '0x3620'
+  description: P0 coefficient for Q1 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p0q2:
+  addr: p_gb_p0q2[0:16]
+  address: '0x3622'
+  description: P0 coefficient for Q2 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p0q3:
+  addr: p_gb_p0q3[0:16]
+  address: '0x3624'
+  description: P0 coefficient for Q3 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p0q4:
+  addr: p_gb_p0q4[0:16]
+  address: '0x3626'
+  description: P0 coefficient for Q4 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p1q0:
+  addr: p_gb_p1q0[0:16]
+  address: '0x365E'
+  description: P1 coefficient for Q0 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p1q1:
+  addr: p_gb_p1q1[0:16]
+  address: '0x3660'
+  description: P1 coefficient for Q1 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p1q2:
+  addr: p_gb_p1q2[0:16]
+  address: '0x3662'
+  description: P1 coefficient for Q2 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p1q3:
+  addr: p_gb_p1q3[0:16]
+  address: '0x3664'
+  description: P1 coefficient for Q3 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p1q4:
+  addr: p_gb_p1q4[0:16]
+  address: '0x3666'
+  description: P1 coefficient for Q4 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p2q0:
+  addr: p_gb_p2q0[0:16]
+  address: '0x369E'
+  description: P2 coefficient for Q0 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p2q1:
+  addr: p_gb_p2q1[0:16]
+  address: '0x36A0'
+  description: P2 coefficient for Q1 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p2q2:
+  addr: p_gb_p2q2[0:16]
+  address: '0x36A2'
+  description: P2 coefficient for Q2 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p2q3:
+  addr: p_gb_p2q3[0:16]
+  address: '0x36A4'
+  description: P2 coefficient for Q3 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p2q4:
+  addr: p_gb_p2q4[0:16]
+  address: '0x36A6'
+  description: P2 coefficient for Q4 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p3q0:
+  addr: p_gb_p3q0[0:16]
+  address: '0x36DE'
+  description: P3 coefficient for Q0 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p3q1:
+  addr: p_gb_p3q1[0:16]
+  address: '0x36E0'
+  description: P3 coefficient for Q1 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p3q2:
+  addr: p_gb_p3q2[0:16]
+  address: '0x36E2'
+  description: P3 coefficient for Q2 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p3q3:
+  addr: p_gb_p3q3[0:16]
+  address: '0x36E4'
+  description: P3 coefficient for Q3 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p3q4:
+  addr: p_gb_p3q4[0:16]
+  address: '0x36E6'
+  description: P3 coefficient for Q4 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p4q0:
+  addr: p_gb_p4q0[0:16]
+  address: '0x371E'
+  description: P4 coefficient for Q0 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p4q1:
+  addr: p_gb_p4q1[0:16]
+  address: '0x3720'
+  description: P4 coefficient for Q1 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p4q2:
+  addr: p_gb_p4q2[0:16]
+  address: '0x3722'
+  description: P4 coefficient for Q2 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p4q3:
+  addr: p_gb_p4q3[0:16]
+  address: '0x3724'
+  description: P4 coefficient for Q3 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_p4q4:
+  addr: p_gb_p4q4[0:16]
+  address: '0x3726'
+  description: P4 coefficient for Q4 for Gb. P_GB_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gb pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gb_q5:
+  addr: p_gb_q5[0:16]
+  address: '0x37C6'
+  description: Parameter for parabolic roll-off algorithm for greenB pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p0q0:
+  addr: p_gr_p0q0[0:16]
+  address: '0x3600'
+  description: P0 coefficient for Q0 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p0q1:
+  addr: p_gr_p0q1[0:16]
+  address: '0x3602'
+  description: P0 coefficient for Q1 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p0q2:
+  addr: p_gr_p0q2[0:16]
+  address: '0x3604'
+  description: P0 coefficient for Q2 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p0q3:
+  addr: p_gr_p0q3[0:16]
+  address: '0x3606'
+  description: P0 coefficient for Q3 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p0q4:
+  addr: p_gr_p0q4[0:16]
+  address: '0x3608'
+  description: P0 coefficient for Q4 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p1q0:
+  addr: p_gr_p1q0[0:16]
+  address: '0x3640'
+  description: P1 coefficient for Q0 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p1q1:
+  addr: p_gr_p1q1[0:16]
+  address: '0x3642'
+  description: P1 coefficient for Q1 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p1q2:
+  addr: p_gr_p1q2[0:16]
+  address: '0x3644'
+  description: P1 coefficient for Q2 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p1q3:
+  addr: p_gr_p1q3[0:16]
+  address: '0x3646'
+  description: P1 coefficient for Q3 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p1q4:
+  addr: p_gr_p1q4[0:16]
+  address: '0x3648'
+  description: P1 coefficient for Q4 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p2q0:
+  addr: p_gr_p2q0[0:16]
+  address: '0x3680'
+  description: P2 coefficient for Q0 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p2q1:
+  addr: p_gr_p2q1[0:16]
+  address: '0x3682'
+  description: P2 coefficient for Q1 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p2q2:
+  addr: p_gr_p2q2[0:16]
+  address: '0x3684'
+  description: P2 coefficient for Q2 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p2q3:
+  addr: p_gr_p2q3[0:16]
+  address: '0x3686'
+  description: P2 coefficient for Q3 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p2q4:
+  addr: p_gr_p2q4[0:16]
+  address: '0x3688'
+  description: P2 coefficient for Q4 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p3q0:
+  addr: p_gr_p3q0[0:16]
+  address: '0x36C0'
+  description: P3 coefficient for Q0 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p3q1:
+  addr: p_gr_p3q1[0:16]
+  address: '0x36C2'
+  description: P3 coefficient for Q1 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p3q2:
+  addr: p_gr_p3q2[0:16]
+  address: '0x36C4'
+  description: P3 coefficient for Q2 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p3q3:
+  addr: p_gr_p3q3[0:16]
+  address: '0x36C6'
+  description: P3 coefficient for Q3 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p3q4:
+  addr: p_gr_p3q4[0:16]
+  address: '0x36C8'
+  description: P3 coefficient for Q4 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p4q0:
+  addr: p_gr_p4q0[0:16]
+  address: '0x3700'
+  description: P4 coefficient for Q0 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p4q1:
+  addr: p_gr_p4q1[0:16]
+  address: '0x3702'
+  description: P4 coefficient for Q1 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p4q2:
+  addr: p_gr_p4q2[0:16]
+  address: '0x3704'
+  description: P4 coefficient for Q2 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p4q3:
+  addr: p_gr_p4q3[0:16]
+  address: '0x3706'
+  description: P4 coefficient for Q3 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_p4q4:
+  addr: p_gr_p4q4[0:16]
+  address: '0x3708'
+  description: P4 coefficient for Q4 for Gr. P_GR_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Gr pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_gr_q5:
+  addr: p_gr_q5[0:16]
+  address: '0x37C0'
+  description: Parameter for parabolic roll-off algorithm for greenR pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p0q0:
+  addr: p_rd_p0q0[0:16]
+  address: '0x360A'
+  description: P0 coefficient for Q0 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p0q1:
+  addr: p_rd_p0q1[0:16]
+  address: '0x360C'
+  description: P0 coefficient for Q1 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p0q2:
+  addr: p_rd_p0q2[0:16]
+  address: '0x360E'
+  description: P0 coefficient for Q2 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p0q3:
+  addr: p_rd_p0q3[0:16]
+  address: '0x3610'
+  description: P0 coefficient for Q3 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p0q4:
+  addr: p_rd_p0q4[0:16]
+  address: '0x3612'
+  description: P0 coefficient for Q4 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p1q0:
+  addr: p_rd_p1q0[0:16]
+  address: '0x364A'
+  description: P1 coefficient for Q0 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p1q1:
+  addr: p_rd_p1q1[0:16]
+  address: '0x364C'
+  description: P1 coefficient for Q1 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p1q2:
+  addr: p_rd_p1q2[0:16]
+  address: '0x364E'
+  description: P1 coefficient for Q2 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p1q3:
+  addr: p_rd_p1q3[0:16]
+  address: '0x3650'
+  description: P1 coefficient for Q3 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p1q4:
+  addr: p_rd_p1q4[0:16]
+  address: '0x3652'
+  description: P1 coefficient for Q4 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p2q0:
+  addr: p_rd_p2q0[0:16]
+  address: '0x368A'
+  description: P2 coefficient for Q0 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p2q1:
+  addr: p_rd_p2q1[0:16]
+  address: '0x368C'
+  description: P2 coefficient for Q1 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p2q2:
+  addr: p_rd_p2q2[0:16]
+  address: '0x368E'
+  description: P2 coefficient for Q2 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p2q3:
+  addr: p_rd_p2q3[0:16]
+  address: '0x3690'
+  description: P2 coefficient for Q3 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p2q4:
+  addr: p_rd_p2q4[0:16]
+  address: '0x3692'
+  description: P2 coefficient for Q4 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p3q0:
+  addr: p_rd_p3q0[0:16]
+  address: '0x36CA'
+  description: P3 coefficient for Q0 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p3q1:
+  addr: p_rd_p3q1[0:16]
+  address: '0x36CC'
+  description: P3 coefficient for Q1 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p3q2:
+  addr: p_rd_p3q2[0:16]
+  address: '0x36CE'
+  description: P3 coefficient for Q2 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p3q3:
+  addr: p_rd_p3q3[0:16]
+  address: '0x36D0'
+  description: P3 coefficient for Q3 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p3q4:
+  addr: p_rd_p3q4[0:16]
+  address: '0x36D2'
+  description: P3 coefficient for Q4 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p4q0:
+  addr: p_rd_p4q0[0:16]
+  address: '0x370A'
+  description: P4 coefficient for Q0 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p4q1:
+  addr: p_rd_p4q1[0:16]
+  address: '0x370C'
+  description: P4 coefficient for Q1 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p4q2:
+  addr: p_rd_p4q2[0:16]
+  address: '0x370E'
+  description: P4 coefficient for Q2 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p4q3:
+  addr: p_rd_p4q3[0:16]
+  address: '0x3710'
+  description: P4 coefficient for Q3 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_p4q4:
+  addr: p_rd_p4q4[0:16]
+  address: '0x3712'
+  description: P4 coefficient for Q4 for Rd. P_RD_PpQq registers are read successively
+    when the row polynomial (Q) coefficients are calculated during the horizontal
+    blanking period before a row containing Rd pixels.
+  max: 65535
+  min: 0
+  writable: true
+p_rd_q5:
+  addr: p_rd_q5[0:16]
+  address: '0x37C2'
+  description: Parameter for parabolic roll-off algorithm for red pixels.
+  max: 65535
+  min: 0
+  writable: true
+parallel_en:
+  addr: reset_register[7:8]
+  description: 0 = The parallel data interface (DOUT[11:0], LINE_VALID, FRAME_VALID,
+    and PIXCLK) is disabled and the outputs are placed in a high-impedance state.  1
+    = The parallel data interface is enabled. The output signals can be switched between
+    a driven and a high-impedance state using output-enable control.
+  max: 1
+  min: 0
+  writable: true
+pll_multiplier:
+  addr: pll_multiplier[0:8]
+  address: '0x3030'
+  default: 98
+  description: PLL_MULTIPLIER
+  max: 255
+  min: 0
+  writable: true
+poly_origin_c:
+  addr: poly_origin_c[0:12]
+  address: '0x3782'
+  description: 'Origin of polynomial function: applied as offset to X (col) coordinate
+    of pixel.'
+  max: 4095
+  min: 0
+  writable: true
+poly_origin_r:
+  addr: poly_origin_r[0:11]
+  address: '0x3784'
+  default: 772
+  description: 'Origin of polynomial function: applied as offset to Y (row) coordinate
+    of pixel.'
+  max: 2047
+  min: 0
+  writable: true
+pre_pll_clk_div:
+  addr: pre_pll_clk_div[0:6]
+  address: '0x302E'
+  default: 4
+  description: Divides the input clock before being multiplied by the VCO.
+  max: 63
+  min: 0
+  writable: true
+read_mode_col_bin:
+  addr: read_mode[13:14]
+  description: Column binning mode in context A.  Pixel values are averaged in the
+    digital domain.  Use when skipping is enabled by setting x_odd_inc.
+  writable: true
+read_mode_col_bin_cb:
+  addr: read_mode[11:12]
+  description: Column binning mode in context B.  Pixel values are averaged in the
+    digital domain.  Use when skipping is enabled by setting x_odd_inc.
+  writable: true
+read_mode_col_sf_bin_en:
+  addr: read_mode[9:10]
+  description: Column analog binning control for context A.  Use when skipping is
+    enabled by setting x_odd_inc.
+  writable: true
+read_mode_col_sf_bin_en_cb:
+  addr: read_mode[8:9]
+  description: Column analog binning control for context B.  Use when skipping is
+    enabled by setting x_odd_inc.
+  writable: true
+read_mode_col_sum:
+  addr: read_mode[5:6]
+  description: Column sum mode.  Pixel values are summed in the digital domain.  Use
+    when skipping is enabled by setting x_odd_inc.
+  max: 1
+  min: 0
+  writable: true
+read_mode_row_bin:
+  addr: read_mode[12:13]
+  description: Analog row binning control in context A.  Use when row-wise skipping
+    is enabled by setting y_odd_inc.  The y_addr_start must be an even number when
+    using row binning.
+  writable: true
+read_mode_row_bin_cb:
+  addr: read_mode[10:11]
+  description: Analog row binning control for context B.  Use when row-wise skipping
+    is enabled by setting y_odd_inc.  The y_addr_start must be an even number when
+    using row binning.
+  writable: true
+red_gain:
+  addr: red_gain[0:11]
+  address: '0x305A'
+  default: 128
+  description: Digital gain for Red pixels,  in format of xxxx.yyyyyyy.
+  max: 2047
+  min: 0
+  writable: true
+red_gain_cb:
+  addr: red_gain_cb[0:11]
+  address: '0x30C0'
+  default: 128
+  description: digital gain red context B
+  max: 2047
+  min: 0
+  writable: true
+reserved:
+  addr: mipi_timing_1[12:16]
+  description:
+    long: Reserved. Read as 0
+    short: MIPI_TIMING_1_CLK_PREPARE
+  max: 15
+  min: 0
+  writable: false
+reserved_0:
+  addr: mipi_timing_4[7:14]
+  description:
+    long: Reserved. Read as 0
+    short: RESERVED_0
+  writable: false
+reserved_0_collision_0:
+  addr: mipi_config_status[2:9]
+  description:
+    long: Reserved. Read as 0
+    short: RESERVED_0
+  writable: false
+reserved_1:
+  addr: mipi_config_status[10:16]
+  description:
+    long: Reserved. Read as 0
+    short: RESERVED_1
+  writable: false
+reserved_collision_0:
+  addr: mipi_timing_3[13:16]
+  description:
+    long: Reserved. Read as 0
+    short: RESERVED
+  writable: false
+reserved_mfr_3026:
+  addr: reserved_mfr_3026[0:16]
+  address: '0x3026'
+  default: 25856
+  max: 65535
+  min: 0
+  writable: false
+reserved_mfr_3044:
+  addr: reserved_mfr_3044[9:16]
+  address: '0x3044'
+  default: 1024
+  max: 52736
+  min: 0
+  writable: true
+reserved_mfr_304a:
+  addr: reserved_mfr_304a[0:10]
+  address: '0x304A'
+  max: 887
+  min: 0
+  writable: true
+reserved_mfr_304c:
+  addr: reserved_mfr_304c[0:16]
+  address: '0x304C'
+  default: 512
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_304e:
+  addr: reserved_mfr_304e[0:11]
+  address: '0x304E'
+  max: 2047
+  min: 0
+  writable: true
+reserved_mfr_3050:
+  addr: reserved_mfr_3050[0:16]
+  address: '0x3050'
+  max: 65527
+  min: 0
+  writable: true
+reserved_mfr_3052:
+  addr: reserved_mfr_3052[0:16]
+  address: '0x3052'
+  default: 41332
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3054:
+  addr: reserved_mfr_3054[0:16]
+  address: '0x3054'
+  max: 61199
+  min: 0
+  writable: true
+reserved_mfr_3062:
+  addr: reserved_mfr_3062[0:16]
+  address: '0x3062'
+  default: 819
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_306c:
+  addr: reserved_mfr_306c[0:16]
+  address: '0x306C'
+  default: 4096
+  max: 65535
+  min: 0
+  writable: false
+reserved_mfr_3092:
+  addr: reserved_mfr_3092[0:9]
+  address: '0x3092'
+  default: 15
+  max: 271
+  min: 0
+  writable: true
+reserved_mfr_3094:
+  addr: reserved_mfr_3094[0:12]
+  address: '0x3094'
+  max: 4095
+  min: 0
+  writable: true
+reserved_mfr_3096:
+  addr: reserved_mfr_3096[0:16]
+  address: '0x3096'
+  default: 128
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3098:
+  addr: reserved_mfr_3098[0:16]
+  address: '0x3098'
+  default: 128
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_30de:
+  addr: reserved_mfr_30de[0:16]
+  address: '0x30DE'
+  default: 4288
+  max: 62463
+  min: 0
+  writable: true
+reserved_mfr_30e0:
+  addr: reserved_mfr_30e0[0:16]
+  address: '0x30E0'
+  default: 4616
+  max: 62463
+  min: 0
+  writable: true
+reserved_mfr_30e2:
+  addr: reserved_mfr_30e2[0:16]
+  address: '0x30E2'
+  default: 40960
+  max: 62463
+  min: 0
+  writable: true
+reserved_mfr_30e4:
+  addr: reserved_mfr_30e4[0:16]
+  address: '0x30E4'
+  default: 4608
+  max: 62463
+  min: 0
+  writable: true
+reserved_mfr_30e6:
+  addr: reserved_mfr_30e6[0:16]
+  address: '0x30E6'
+  default: 16384
+  max: 62463
+  min: 0
+  writable: true
+reserved_mfr_30e8:
+  addr: reserved_mfr_30e8[0:16]
+  address: '0x30E8'
+  default: 4624
+  max: 62463
+  min: 0
+  writable: true
+reserved_mfr_30ea:
+  addr: reserved_mfr_30ea[0:16]
+  address: '0x30EA'
+  default: 4368
+  max: 62463
+  min: 0
+  writable: true
+reserved_mfr_30ec:
+  addr: reserved_mfr_30ec[0:16]
+  address: '0x30EC'
+  max: 62463
+  min: 0
+  writable: true
+reserved_mfr_30ee:
+  addr: reserved_mfr_30ee[0:16]
+  address: '0x30EE'
+  default: 4288
+  max: 62463
+  min: 0
+  writable: true
+reserved_mfr_30f0:
+  addr: reserved_mfr_30f0[0:16]
+  address: '0x30F0'
+  default: 4616
+  max: 62463
+  min: 0
+  writable: true
+reserved_mfr_30f2:
+  addr: reserved_mfr_30f2[0:16]
+  address: '0x30F2'
+  default: 4608
+  max: 62463
+  min: 0
+  writable: true
+reserved_mfr_30f4:
+  addr: reserved_mfr_30f4[0:16]
+  address: '0x30F4'
+  default: 40960
+  max: 62463
+  min: 0
+  writable: true
+reserved_mfr_30f6:
+  addr: reserved_mfr_30f6[0:16]
+  address: '0x30F6'
+  default: 4624
+  max: 62463
+  min: 0
+  writable: true
+reserved_mfr_30f8:
+  addr: reserved_mfr_30f8[0:16]
+  address: '0x30F8'
+  default: 4368
+  max: 62463
+  min: 0
+  writable: true
+reserved_mfr_30fa:
+  addr: reserved_mfr_30fa[0:16]
+  address: '0x30FA'
+  max: 62463
+  min: 0
+  writable: true
+reserved_mfr_30fc:
+  addr: reserved_mfr_30fc[0:16]
+  address: '0x30FC'
+  max: 62463
+  min: 0
+  writable: true
+reserved_mfr_30fe:
+  addr: reserved_mfr_30fe[0:12]
+  address: '0x30FE'
+  default: 128
+  max: 4095
+  min: 0
+  writable: true
+reserved_mfr_3130:
+  addr: reserved_mfr_3130[0:16]
+  address: '0x3130'
+  default: 3871
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3132:
+  addr: reserved_mfr_3132[0:16]
+  address: '0x3132'
+  default: 3871
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3134:
+  addr: reserved_mfr_3134[0:16]
+  address: '0x3134'
+  default: 6168
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3136:
+  addr: reserved_mfr_3136[0:16]
+  address: '0x3136'
+  default: 12593
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3138:
+  addr: reserved_mfr_3138[0:16]
+  address: '0x3138'
+  default: 17457
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_313a:
+  addr: reserved_mfr_313a[0:16]
+  address: '0x313A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_313c:
+  addr: reserved_mfr_313c[0:16]
+  address: '0x313C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_313e:
+  addr: reserved_mfr_313e[0:16]
+  address: '0x313E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3176:
+  addr: reserved_mfr_3176[0:16]
+  address: '0x3176'
+  default: 128
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3178:
+  addr: reserved_mfr_3178[0:16]
+  address: '0x3178'
+  default: 128
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_317a:
+  addr: reserved_mfr_317a[0:16]
+  address: '0x317A'
+  default: 128
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_317c:
+  addr: reserved_mfr_317c[0:16]
+  address: '0x317C'
+  default: 128
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_317e:
+  addr: reserved_mfr_317e[0:16]
+  address: '0x317E'
+  default: 34815
+  max: 36863
+  min: 0
+  writable: true
+reserved_mfr_3180:
+  addr: reserved_mfr_3180[0:16]
+  address: '0x3180'
+  default: 32905
+  max: 65279
+  min: 0
+  writable: true
+reserved_mfr_3182:
+  addr: reserved_mfr_3182[0:15]
+  address: '0x3182'
+  max: 32767
+  min: 0
+  writable: true
+reserved_mfr_3184:
+  addr: reserved_mfr_3184[0:15]
+  address: '0x3184'
+  max: 32767
+  min: 0
+  writable: true
+reserved_mfr_3186:
+  addr: reserved_mfr_3186[0:15]
+  address: '0x3186'
+  max: 32767
+  min: 0
+  writable: true
+reserved_mfr_3188:
+  addr: reserved_mfr_3188[0:15]
+  address: '0x3188'
+  max: 32767
+  min: 0
+  writable: true
+reserved_mfr_3192:
+  addr: reserved_mfr_3192[0:16]
+  address: '0x3192'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3194:
+  addr: reserved_mfr_3194[0:16]
+  address: '0x3194'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3196:
+  addr: reserved_mfr_3196[0:16]
+  address: '0x3196'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3198:
+  addr: reserved_mfr_3198[0:16]
+  address: '0x3198'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_31c2:
+  addr: reserved_mfr_31c2[0:16]
+  address: '0x31C2'
+  default: 65535
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_31c4:
+  addr: reserved_mfr_31c4[0:16]
+  address: '0x31C4'
+  default: 62805
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_31c8:
+  addr: reserved_mfr_31c8[0:16]
+  address: '0x31C8'
+  max: 65535
+  min: 0
+  writable: false
+reserved_mfr_31ca:
+  addr: reserved_mfr_31ca[0:16]
+  address: '0x31CA'
+  max: 65535
+  min: 0
+  writable: false
+reserved_mfr_31cc:
+  addr: reserved_mfr_31cc[0:16]
+  address: '0x31CC'
+  max: 65535
+  min: 0
+  writable: false
+reserved_mfr_31ce:
+  addr: reserved_mfr_31ce[0:16]
+  address: '0x31CE'
+  max: 65535
+  min: 0
+  writable: false
+reserved_mfr_31da:
+  addr: reserved_mfr_31da[0:16]
+  address: '0x31DA'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_31dc:
+  addr: reserved_mfr_31dc[0:16]
+  address: '0x31DC'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_31de:
+  addr: reserved_mfr_31de[0:8]
+  address: '0x31DE'
+  max: 255
+  min: 0
+  writable: true
+reserved_mfr_31e0:
+  addr: reserved_mfr_31e0[0:16]
+  address: '0x31E0'
+  default: 7681
+  max: 57091
+  min: 0
+  writable: true
+reserved_mfr_31e2:
+  addr: reserved_mfr_31e2[0:13]
+  address: '0x31E2'
+  max: 8191
+  min: 0
+  writable: true
+reserved_mfr_31e4:
+  addr: reserved_mfr_31e4[0:13]
+  address: '0x31E4'
+  max: 8191
+  min: 0
+  writable: true
+reserved_mfr_31e6:
+  addr: reserved_mfr_31e6[0:16]
+  address: '0x31E6'
+  max: 33023
+  min: 0
+  writable: true
+reserved_mfr_31f4:
+  addr: reserved_mfr_31f4[0:16]
+  address: '0x31F4'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_31f6:
+  addr: reserved_mfr_31f6[0:16]
+  address: '0x31F6'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_31f8:
+  addr: reserved_mfr_31f8[0:16]
+  address: '0x31F8'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_31fa:
+  addr: reserved_mfr_31fa[0:16]
+  address: '0x31FA'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_31fe:
+  addr: reserved_mfr_31fe[0:7]
+  address: '0x31FE'
+  max: 127
+  min: 0
+  writable: false
+reserved_mfr_3800:
+  addr: reserved_mfr_3800[0:16]
+  address: '0x3800'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3802:
+  addr: reserved_mfr_3802[0:16]
+  address: '0x3802'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3804:
+  addr: reserved_mfr_3804[0:16]
+  address: '0x3804'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3806:
+  addr: reserved_mfr_3806[0:16]
+  address: '0x3806'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3808:
+  addr: reserved_mfr_3808[0:16]
+  address: '0x3808'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_380a:
+  addr: reserved_mfr_380a[0:16]
+  address: '0x380A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_380c:
+  addr: reserved_mfr_380c[0:16]
+  address: '0x380C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_380e:
+  addr: reserved_mfr_380e[0:16]
+  address: '0x380E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3810:
+  addr: reserved_mfr_3810[0:16]
+  address: '0x3810'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3812:
+  addr: reserved_mfr_3812[0:16]
+  address: '0x3812'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3814:
+  addr: reserved_mfr_3814[0:16]
+  address: '0x3814'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3816:
+  addr: reserved_mfr_3816[0:16]
+  address: '0x3816'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3818:
+  addr: reserved_mfr_3818[0:16]
+  address: '0x3818'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_381a:
+  addr: reserved_mfr_381a[0:16]
+  address: '0x381A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_381c:
+  addr: reserved_mfr_381c[0:16]
+  address: '0x381C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_381e:
+  addr: reserved_mfr_381e[0:16]
+  address: '0x381E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3820:
+  addr: reserved_mfr_3820[0:16]
+  address: '0x3820'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3822:
+  addr: reserved_mfr_3822[0:16]
+  address: '0x3822'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3824:
+  addr: reserved_mfr_3824[0:16]
+  address: '0x3824'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3826:
+  addr: reserved_mfr_3826[0:16]
+  address: '0x3826'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3828:
+  addr: reserved_mfr_3828[0:16]
+  address: '0x3828'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_382a:
+  addr: reserved_mfr_382a[0:16]
+  address: '0x382A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_382c:
+  addr: reserved_mfr_382c[0:16]
+  address: '0x382C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_382e:
+  addr: reserved_mfr_382e[0:16]
+  address: '0x382E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3830:
+  addr: reserved_mfr_3830[0:16]
+  address: '0x3830'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3832:
+  addr: reserved_mfr_3832[0:16]
+  address: '0x3832'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3834:
+  addr: reserved_mfr_3834[0:16]
+  address: '0x3834'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3836:
+  addr: reserved_mfr_3836[0:16]
+  address: '0x3836'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3838:
+  addr: reserved_mfr_3838[0:16]
+  address: '0x3838'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_383a:
+  addr: reserved_mfr_383a[0:16]
+  address: '0x383A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_383c:
+  addr: reserved_mfr_383c[0:16]
+  address: '0x383C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_383e:
+  addr: reserved_mfr_383e[0:16]
+  address: '0x383E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3840:
+  addr: reserved_mfr_3840[0:16]
+  address: '0x3840'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3842:
+  addr: reserved_mfr_3842[0:16]
+  address: '0x3842'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3844:
+  addr: reserved_mfr_3844[0:16]
+  address: '0x3844'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3846:
+  addr: reserved_mfr_3846[0:16]
+  address: '0x3846'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3848:
+  addr: reserved_mfr_3848[0:16]
+  address: '0x3848'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_384a:
+  addr: reserved_mfr_384a[0:16]
+  address: '0x384A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_384c:
+  addr: reserved_mfr_384c[0:16]
+  address: '0x384C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_384e:
+  addr: reserved_mfr_384e[0:16]
+  address: '0x384E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3850:
+  addr: reserved_mfr_3850[0:16]
+  address: '0x3850'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3852:
+  addr: reserved_mfr_3852[0:16]
+  address: '0x3852'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3854:
+  addr: reserved_mfr_3854[0:16]
+  address: '0x3854'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3856:
+  addr: reserved_mfr_3856[0:16]
+  address: '0x3856'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3858:
+  addr: reserved_mfr_3858[0:16]
+  address: '0x3858'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_385a:
+  addr: reserved_mfr_385a[0:16]
+  address: '0x385A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_385c:
+  addr: reserved_mfr_385c[0:16]
+  address: '0x385C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_385e:
+  addr: reserved_mfr_385e[0:16]
+  address: '0x385E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3860:
+  addr: reserved_mfr_3860[0:16]
+  address: '0x3860'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3862:
+  addr: reserved_mfr_3862[0:16]
+  address: '0x3862'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3864:
+  addr: reserved_mfr_3864[0:16]
+  address: '0x3864'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3866:
+  addr: reserved_mfr_3866[0:16]
+  address: '0x3866'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3868:
+  addr: reserved_mfr_3868[0:16]
+  address: '0x3868'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_386a:
+  addr: reserved_mfr_386a[0:16]
+  address: '0x386A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_386c:
+  addr: reserved_mfr_386c[0:16]
+  address: '0x386C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_386e:
+  addr: reserved_mfr_386e[0:16]
+  address: '0x386E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3870:
+  addr: reserved_mfr_3870[0:16]
+  address: '0x3870'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3872:
+  addr: reserved_mfr_3872[0:16]
+  address: '0x3872'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3874:
+  addr: reserved_mfr_3874[0:16]
+  address: '0x3874'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3876:
+  addr: reserved_mfr_3876[0:16]
+  address: '0x3876'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3878:
+  addr: reserved_mfr_3878[0:16]
+  address: '0x3878'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_387a:
+  addr: reserved_mfr_387a[0:16]
+  address: '0x387A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_387c:
+  addr: reserved_mfr_387c[0:16]
+  address: '0x387C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_387e:
+  addr: reserved_mfr_387e[0:16]
+  address: '0x387E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3880:
+  addr: reserved_mfr_3880[0:16]
+  address: '0x3880'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3882:
+  addr: reserved_mfr_3882[0:16]
+  address: '0x3882'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3884:
+  addr: reserved_mfr_3884[0:16]
+  address: '0x3884'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3886:
+  addr: reserved_mfr_3886[0:16]
+  address: '0x3886'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3888:
+  addr: reserved_mfr_3888[0:16]
+  address: '0x3888'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_388a:
+  addr: reserved_mfr_388a[0:16]
+  address: '0x388A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_388c:
+  addr: reserved_mfr_388c[0:16]
+  address: '0x388C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_388e:
+  addr: reserved_mfr_388e[0:16]
+  address: '0x388E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3890:
+  addr: reserved_mfr_3890[0:16]
+  address: '0x3890'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3892:
+  addr: reserved_mfr_3892[0:16]
+  address: '0x3892'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3894:
+  addr: reserved_mfr_3894[0:16]
+  address: '0x3894'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3896:
+  addr: reserved_mfr_3896[0:16]
+  address: '0x3896'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3898:
+  addr: reserved_mfr_3898[0:16]
+  address: '0x3898'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_389a:
+  addr: reserved_mfr_389a[0:16]
+  address: '0x389A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_389c:
+  addr: reserved_mfr_389c[0:16]
+  address: '0x389C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_389e:
+  addr: reserved_mfr_389e[0:16]
+  address: '0x389E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38a0:
+  addr: reserved_mfr_38a0[0:16]
+  address: '0x38A0'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38a2:
+  addr: reserved_mfr_38a2[0:16]
+  address: '0x38A2'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38a4:
+  addr: reserved_mfr_38a4[0:16]
+  address: '0x38A4'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38a6:
+  addr: reserved_mfr_38a6[0:16]
+  address: '0x38A6'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38a8:
+  addr: reserved_mfr_38a8[0:16]
+  address: '0x38A8'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38aa:
+  addr: reserved_mfr_38aa[0:16]
+  address: '0x38AA'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38ac:
+  addr: reserved_mfr_38ac[0:16]
+  address: '0x38AC'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38ae:
+  addr: reserved_mfr_38ae[0:16]
+  address: '0x38AE'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38b0:
+  addr: reserved_mfr_38b0[0:16]
+  address: '0x38B0'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38b2:
+  addr: reserved_mfr_38b2[0:16]
+  address: '0x38B2'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38b4:
+  addr: reserved_mfr_38b4[0:16]
+  address: '0x38B4'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38b6:
+  addr: reserved_mfr_38b6[0:16]
+  address: '0x38B6'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38b8:
+  addr: reserved_mfr_38b8[0:16]
+  address: '0x38B8'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38ba:
+  addr: reserved_mfr_38ba[0:16]
+  address: '0x38BA'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38bc:
+  addr: reserved_mfr_38bc[0:16]
+  address: '0x38BC'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38be:
+  addr: reserved_mfr_38be[0:16]
+  address: '0x38BE'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38c0:
+  addr: reserved_mfr_38c0[0:16]
+  address: '0x38C0'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38c2:
+  addr: reserved_mfr_38c2[0:16]
+  address: '0x38C2'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38c4:
+  addr: reserved_mfr_38c4[0:16]
+  address: '0x38C4'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38c6:
+  addr: reserved_mfr_38c6[0:16]
+  address: '0x38C6'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38c8:
+  addr: reserved_mfr_38c8[0:16]
+  address: '0x38C8'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38ca:
+  addr: reserved_mfr_38ca[0:16]
+  address: '0x38CA'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38cc:
+  addr: reserved_mfr_38cc[0:16]
+  address: '0x38CC'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38ce:
+  addr: reserved_mfr_38ce[0:16]
+  address: '0x38CE'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38d0:
+  addr: reserved_mfr_38d0[0:16]
+  address: '0x38D0'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38d2:
+  addr: reserved_mfr_38d2[0:16]
+  address: '0x38D2'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38d4:
+  addr: reserved_mfr_38d4[0:16]
+  address: '0x38D4'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38d6:
+  addr: reserved_mfr_38d6[0:16]
+  address: '0x38D6'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38d8:
+  addr: reserved_mfr_38d8[0:16]
+  address: '0x38D8'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38da:
+  addr: reserved_mfr_38da[0:16]
+  address: '0x38DA'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38dc:
+  addr: reserved_mfr_38dc[0:16]
+  address: '0x38DC'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38de:
+  addr: reserved_mfr_38de[0:16]
+  address: '0x38DE'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38e0:
+  addr: reserved_mfr_38e0[0:16]
+  address: '0x38E0'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38e2:
+  addr: reserved_mfr_38e2[0:16]
+  address: '0x38E2'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38e4:
+  addr: reserved_mfr_38e4[0:16]
+  address: '0x38E4'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38e6:
+  addr: reserved_mfr_38e6[0:16]
+  address: '0x38E6'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38e8:
+  addr: reserved_mfr_38e8[0:16]
+  address: '0x38E8'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38ea:
+  addr: reserved_mfr_38ea[0:16]
+  address: '0x38EA'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38ec:
+  addr: reserved_mfr_38ec[0:16]
+  address: '0x38EC'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38ee:
+  addr: reserved_mfr_38ee[0:16]
+  address: '0x38EE'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38f0:
+  addr: reserved_mfr_38f0[0:16]
+  address: '0x38F0'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38f2:
+  addr: reserved_mfr_38f2[0:16]
+  address: '0x38F2'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38f4:
+  addr: reserved_mfr_38f4[0:16]
+  address: '0x38F4'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38f6:
+  addr: reserved_mfr_38f6[0:16]
+  address: '0x38F6'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38f8:
+  addr: reserved_mfr_38f8[0:16]
+  address: '0x38F8'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38fa:
+  addr: reserved_mfr_38fa[0:16]
+  address: '0x38FA'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38fc:
+  addr: reserved_mfr_38fc[0:16]
+  address: '0x38FC'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_38fe:
+  addr: reserved_mfr_38fe[0:16]
+  address: '0x38FE'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3900:
+  addr: reserved_mfr_3900[0:16]
+  address: '0x3900'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3902:
+  addr: reserved_mfr_3902[0:16]
+  address: '0x3902'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3904:
+  addr: reserved_mfr_3904[0:16]
+  address: '0x3904'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3906:
+  addr: reserved_mfr_3906[0:16]
+  address: '0x3906'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3908:
+  addr: reserved_mfr_3908[0:16]
+  address: '0x3908'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_390a:
+  addr: reserved_mfr_390a[0:16]
+  address: '0x390A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_390c:
+  addr: reserved_mfr_390c[0:16]
+  address: '0x390C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_390e:
+  addr: reserved_mfr_390e[0:16]
+  address: '0x390E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3910:
+  addr: reserved_mfr_3910[0:16]
+  address: '0x3910'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3912:
+  addr: reserved_mfr_3912[0:16]
+  address: '0x3912'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3914:
+  addr: reserved_mfr_3914[0:16]
+  address: '0x3914'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3916:
+  addr: reserved_mfr_3916[0:16]
+  address: '0x3916'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3918:
+  addr: reserved_mfr_3918[0:16]
+  address: '0x3918'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_391a:
+  addr: reserved_mfr_391a[0:16]
+  address: '0x391A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_391c:
+  addr: reserved_mfr_391c[0:16]
+  address: '0x391C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_391e:
+  addr: reserved_mfr_391e[0:16]
+  address: '0x391E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3920:
+  addr: reserved_mfr_3920[0:16]
+  address: '0x3920'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3922:
+  addr: reserved_mfr_3922[0:16]
+  address: '0x3922'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3924:
+  addr: reserved_mfr_3924[0:16]
+  address: '0x3924'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3926:
+  addr: reserved_mfr_3926[0:16]
+  address: '0x3926'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3928:
+  addr: reserved_mfr_3928[0:16]
+  address: '0x3928'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_392a:
+  addr: reserved_mfr_392a[0:16]
+  address: '0x392A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_392c:
+  addr: reserved_mfr_392c[0:16]
+  address: '0x392C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_392e:
+  addr: reserved_mfr_392e[0:16]
+  address: '0x392E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3930:
+  addr: reserved_mfr_3930[0:16]
+  address: '0x3930'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3932:
+  addr: reserved_mfr_3932[0:16]
+  address: '0x3932'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3934:
+  addr: reserved_mfr_3934[0:16]
+  address: '0x3934'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3936:
+  addr: reserved_mfr_3936[0:16]
+  address: '0x3936'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3938:
+  addr: reserved_mfr_3938[0:16]
+  address: '0x3938'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_393a:
+  addr: reserved_mfr_393a[0:16]
+  address: '0x393A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_393c:
+  addr: reserved_mfr_393c[0:16]
+  address: '0x393C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_393e:
+  addr: reserved_mfr_393e[0:16]
+  address: '0x393E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3940:
+  addr: reserved_mfr_3940[0:16]
+  address: '0x3940'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3942:
+  addr: reserved_mfr_3942[0:16]
+  address: '0x3942'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3944:
+  addr: reserved_mfr_3944[0:16]
+  address: '0x3944'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3946:
+  addr: reserved_mfr_3946[0:16]
+  address: '0x3946'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3948:
+  addr: reserved_mfr_3948[0:16]
+  address: '0x3948'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_394a:
+  addr: reserved_mfr_394a[0:16]
+  address: '0x394A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_394c:
+  addr: reserved_mfr_394c[0:16]
+  address: '0x394C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_394e:
+  addr: reserved_mfr_394e[0:16]
+  address: '0x394E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3950:
+  addr: reserved_mfr_3950[0:16]
+  address: '0x3950'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3952:
+  addr: reserved_mfr_3952[0:16]
+  address: '0x3952'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3954:
+  addr: reserved_mfr_3954[0:16]
+  address: '0x3954'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3956:
+  addr: reserved_mfr_3956[0:16]
+  address: '0x3956'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3958:
+  addr: reserved_mfr_3958[0:16]
+  address: '0x3958'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_395a:
+  addr: reserved_mfr_395a[0:16]
+  address: '0x395A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_395c:
+  addr: reserved_mfr_395c[0:16]
+  address: '0x395C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_395e:
+  addr: reserved_mfr_395e[0:16]
+  address: '0x395E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3960:
+  addr: reserved_mfr_3960[0:16]
+  address: '0x3960'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3962:
+  addr: reserved_mfr_3962[0:16]
+  address: '0x3962'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3964:
+  addr: reserved_mfr_3964[0:16]
+  address: '0x3964'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3966:
+  addr: reserved_mfr_3966[0:16]
+  address: '0x3966'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3968:
+  addr: reserved_mfr_3968[0:16]
+  address: '0x3968'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_396a:
+  addr: reserved_mfr_396a[0:16]
+  address: '0x396A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_396c:
+  addr: reserved_mfr_396c[0:16]
+  address: '0x396C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_396e:
+  addr: reserved_mfr_396e[0:16]
+  address: '0x396E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3970:
+  addr: reserved_mfr_3970[0:16]
+  address: '0x3970'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3972:
+  addr: reserved_mfr_3972[0:16]
+  address: '0x3972'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3974:
+  addr: reserved_mfr_3974[0:16]
+  address: '0x3974'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3976:
+  addr: reserved_mfr_3976[0:16]
+  address: '0x3976'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3978:
+  addr: reserved_mfr_3978[0:16]
+  address: '0x3978'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_397a:
+  addr: reserved_mfr_397a[0:16]
+  address: '0x397A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_397c:
+  addr: reserved_mfr_397c[0:16]
+  address: '0x397C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_397e:
+  addr: reserved_mfr_397e[0:16]
+  address: '0x397E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3980:
+  addr: reserved_mfr_3980[0:16]
+  address: '0x3980'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3982:
+  addr: reserved_mfr_3982[0:16]
+  address: '0x3982'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3984:
+  addr: reserved_mfr_3984[0:16]
+  address: '0x3984'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3986:
+  addr: reserved_mfr_3986[0:16]
+  address: '0x3986'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3988:
+  addr: reserved_mfr_3988[0:16]
+  address: '0x3988'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_398a:
+  addr: reserved_mfr_398a[0:16]
+  address: '0x398A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_398c:
+  addr: reserved_mfr_398c[0:16]
+  address: '0x398C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_398e:
+  addr: reserved_mfr_398e[0:16]
+  address: '0x398E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3990:
+  addr: reserved_mfr_3990[0:16]
+  address: '0x3990'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3992:
+  addr: reserved_mfr_3992[0:16]
+  address: '0x3992'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3994:
+  addr: reserved_mfr_3994[0:16]
+  address: '0x3994'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3996:
+  addr: reserved_mfr_3996[0:16]
+  address: '0x3996'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3998:
+  addr: reserved_mfr_3998[0:16]
+  address: '0x3998'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_399a:
+  addr: reserved_mfr_399a[0:16]
+  address: '0x399A'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_399c:
+  addr: reserved_mfr_399c[0:16]
+  address: '0x399C'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_399e:
+  addr: reserved_mfr_399e[0:16]
+  address: '0x399E'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39a0:
+  addr: reserved_mfr_39a0[0:16]
+  address: '0x39A0'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39a2:
+  addr: reserved_mfr_39a2[0:16]
+  address: '0x39A2'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39a4:
+  addr: reserved_mfr_39a4[0:16]
+  address: '0x39A4'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39a6:
+  addr: reserved_mfr_39a6[0:16]
+  address: '0x39A6'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39a8:
+  addr: reserved_mfr_39a8[0:16]
+  address: '0x39A8'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39aa:
+  addr: reserved_mfr_39aa[0:16]
+  address: '0x39AA'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39ac:
+  addr: reserved_mfr_39ac[0:16]
+  address: '0x39AC'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39ae:
+  addr: reserved_mfr_39ae[0:16]
+  address: '0x39AE'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39b0:
+  addr: reserved_mfr_39b0[0:16]
+  address: '0x39B0'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39b2:
+  addr: reserved_mfr_39b2[0:16]
+  address: '0x39B2'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39b4:
+  addr: reserved_mfr_39b4[0:16]
+  address: '0x39B4'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39b6:
+  addr: reserved_mfr_39b6[0:16]
+  address: '0x39B6'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39b8:
+  addr: reserved_mfr_39b8[0:16]
+  address: '0x39B8'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39ba:
+  addr: reserved_mfr_39ba[0:16]
+  address: '0x39BA'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39bc:
+  addr: reserved_mfr_39bc[0:16]
+  address: '0x39BC'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39be:
+  addr: reserved_mfr_39be[0:16]
+  address: '0x39BE'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39c0:
+  addr: reserved_mfr_39c0[0:16]
+  address: '0x39C0'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39c2:
+  addr: reserved_mfr_39c2[0:16]
+  address: '0x39C2'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39c4:
+  addr: reserved_mfr_39c4[0:16]
+  address: '0x39C4'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39c6:
+  addr: reserved_mfr_39c6[0:16]
+  address: '0x39C6'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39c8:
+  addr: reserved_mfr_39c8[0:16]
+  address: '0x39C8'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39ca:
+  addr: reserved_mfr_39ca[0:16]
+  address: '0x39CA'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39cc:
+  addr: reserved_mfr_39cc[0:16]
+  address: '0x39CC'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39ce:
+  addr: reserved_mfr_39ce[0:16]
+  address: '0x39CE'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39d0:
+  addr: reserved_mfr_39d0[0:16]
+  address: '0x39D0'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39d2:
+  addr: reserved_mfr_39d2[0:16]
+  address: '0x39D2'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39d4:
+  addr: reserved_mfr_39d4[0:16]
+  address: '0x39D4'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39d6:
+  addr: reserved_mfr_39d6[0:16]
+  address: '0x39D6'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39d8:
+  addr: reserved_mfr_39d8[0:16]
+  address: '0x39D8'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39da:
+  addr: reserved_mfr_39da[0:16]
+  address: '0x39DA'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39dc:
+  addr: reserved_mfr_39dc[0:16]
+  address: '0x39DC'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39de:
+  addr: reserved_mfr_39de[0:16]
+  address: '0x39DE'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39e0:
+  addr: reserved_mfr_39e0[0:16]
+  address: '0x39E0'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39e2:
+  addr: reserved_mfr_39e2[0:16]
+  address: '0x39E2'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39e4:
+  addr: reserved_mfr_39e4[0:16]
+  address: '0x39E4'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39e6:
+  addr: reserved_mfr_39e6[0:16]
+  address: '0x39E6'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39e8:
+  addr: reserved_mfr_39e8[0:16]
+  address: '0x39E8'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39ea:
+  addr: reserved_mfr_39ea[0:16]
+  address: '0x39EA'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39ec:
+  addr: reserved_mfr_39ec[0:16]
+  address: '0x39EC'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39ee:
+  addr: reserved_mfr_39ee[0:16]
+  address: '0x39EE'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39f0:
+  addr: reserved_mfr_39f0[0:16]
+  address: '0x39F0'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39f2:
+  addr: reserved_mfr_39f2[0:16]
+  address: '0x39F2'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39f4:
+  addr: reserved_mfr_39f4[0:16]
+  address: '0x39F4'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39f6:
+  addr: reserved_mfr_39f6[0:16]
+  address: '0x39F6'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39f8:
+  addr: reserved_mfr_39f8[0:16]
+  address: '0x39F8'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39fa:
+  addr: reserved_mfr_39fa[0:16]
+  address: '0x39FA'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39fc:
+  addr: reserved_mfr_39fc[0:16]
+  address: '0x39FC'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_39fe:
+  addr: reserved_mfr_39fe[0:16]
+  address: '0x39FE'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3ecc:
+  addr: reserved_mfr_3ecc[0:16]
+  address: '0x3ECC'
+  default: 4109
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3ece:
+  addr: reserved_mfr_3ece[0:16]
+  address: '0x3ECE'
+  default: 4863
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3ed0:
+  addr: reserved_mfr_3ed0[0:16]
+  address: '0x3ED0'
+  default: 58614
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3ed2:
+  addr: reserved_mfr_3ed2[0:16]
+  address: '0x3ED2'
+  default: 326
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3ed4:
+  addr: reserved_mfr_3ed4[0:16]
+  address: '0x3ED4'
+  default: 36668
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3ed6:
+  addr: reserved_mfr_3ed6[0:16]
+  address: '0x3ED6'
+  default: 13158
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3ed8:
+  addr: reserved_mfr_3ed8[0:16]
+  address: '0x3ED8'
+  default: 34370
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3eda:
+  addr: reserved_mfr_3eda[0:16]
+  address: '0x3EDA'
+  default: 34971
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3edc:
+  addr: reserved_mfr_3edc[0:16]
+  address: '0x3EDC'
+  default: 34915
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3ede:
+  addr: reserved_mfr_3ede[0:16]
+  address: '0x3EDE'
+  default: 43524
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3ee0:
+  addr: reserved_mfr_3ee0[0:16]
+  address: '0x3EE0'
+  default: 5616
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3ee2:
+  addr: reserved_mfr_3ee2[0:16]
+  address: '0x3EE2'
+  default: 27979
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3ee4:
+  addr: reserved_mfr_3ee4[0:16]
+  address: '0x3EE4'
+  default: 37451
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3ee6:
+  addr: reserved_mfr_3ee6[0:16]
+  address: '0x3EE6'
+  default: 140
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3ee8:
+  addr: reserved_mfr_3ee8[0:16]
+  address: '0x3EE8'
+  default: 8228
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3eea:
+  addr: reserved_mfr_3eea[0:16]
+  address: '0x3EEA'
+  default: 65311
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3eec:
+  addr: reserved_mfr_3eec[0:16]
+  address: '0x3EEC'
+  default: 24351
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3f02:
+  addr: reserved_mfr_3f02[0:10]
+  address: '0x3F02'
+  default: 48
+  max: 1023
+  min: 0
+  writable: true
+reserved_mfr_3f04:
+  addr: reserved_mfr_3f04[0:10]
+  address: '0x3F04'
+  default: 288
+  max: 1023
+  min: 0
+  writable: true
+reserved_mfr_3f06:
+  addr: reserved_mfr_3f06[0:11]
+  address: '0x3F06'
+  default: 1130
+  max: 2047
+  min: 0
+  writable: true
+reserved_mfr_3f08:
+  addr: reserved_mfr_3f08[0:11]
+  address: '0x3F08'
+  default: 880
+  max: 2047
+  min: 0
+  writable: true
+reserved_mfr_3fe0:
+  addr: reserved_mfr_3fe0[0:16]
+  address: '0x3FE0'
+  max: 65535
+  min: 0
+  writable: true
+reserved_mfr_3fe2:
+  addr: reserved_mfr_3fe2[0:8]
+  address: '0x3FE2'
+  max: 247
+  min: 0
+  writable: false
+reserved_mfr_3fe4:
+  addr: reserved_mfr_3fe4[0:16]
+  address: '0x3FE4'
+  max: 65535
+  min: 0
+  writable: false
+reserved_mfr_3fe6:
+  addr: reserved_mfr_3fe6[0:16]
+  address: '0x3FE6'
+  max: 65535
+  min: 0
+  writable: false
+reserved_mfr_3fe8:
+  addr: reserved_mfr_3fe8[0:16]
+  address: '0x3FE8'
+  max: 65535
+  min: 0
+  writable: false
+reserved_mfr_3fea:
+  addr: reserved_mfr_3fea[0:16]
+  address: '0x3FEA'
+  max: 65535
+  min: 0
+  writable: false
+reserved_mfr_3fec:
+  addr: reserved_mfr_3fec[0:16]
+  address: '0x3FEC'
+  max: 65535
+  min: 0
+  writable: false
+reserved_mfr_3fee:
+  addr: reserved_mfr_3fee[0:16]
+  address: '0x3FEE'
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_1000:
+  addr: reserved_param_1000[0:1]
+  address: '0x1000'
+  default: 1
+  max: 1
+  min: 0
+  writable: false
+reserved_param_1004:
+  addr: reserved_param_1004[0:16]
+  address: '0x1004'
+  default: 1
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_1006:
+  addr: reserved_param_1006[0:16]
+  address: '0x1006'
+  default: 1
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_1008:
+  addr: reserved_param_1008[0:16]
+  address: '0x1008'
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_100a:
+  addr: reserved_param_100a[0:16]
+  address: '0x100A'
+  default: 900
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_1080:
+  addr: reserved_param_1080[0:1]
+  address: '0x1080'
+  default: 1
+  max: 1
+  min: 0
+  writable: false
+reserved_param_1084:
+  addr: reserved_param_1084[0:16]
+  address: '0x1084'
+  datatype: ufixed8
+  default: 1
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_1086:
+  addr: reserved_param_1086[0:16]
+  address: '0x1086'
+  datatype: ufixed8
+  default: 2047
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_1088:
+  addr: reserved_param_1088[0:16]
+  address: '0x1088'
+  datatype: ufixed8
+  default: 1
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_1100:
+  addr: reserved_param_1100[0:32]
+  address: '0x1100'
+  datatype: float
+  default: 1073741824
+  max: 4294967295
+  min: 0
+  writable: false
+reserved_param_1104:
+  addr: reserved_param_1104[0:32]
+  address: '0x1104'
+  datatype: float
+  default: 1115684864
+  max: 4294967295
+  min: 0
+  writable: false
+reserved_param_1108:
+  addr: reserved_param_1108[0:16]
+  address: '0x1108'
+  default: 1
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_110a:
+  addr: reserved_param_110a[0:16]
+  address: '0x110A'
+  default: 64
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_110c:
+  addr: reserved_param_110c[0:32]
+  address: '0x110C'
+  datatype: float
+  default: 1082130432
+  max: 4294967295
+  min: 0
+  writable: false
+reserved_param_1110:
+  addr: reserved_param_1110[0:32]
+  address: '0x1110'
+  datatype: float
+  default: 1103101952
+  max: 4294967295
+  min: 0
+  writable: false
+reserved_param_1114:
+  addr: reserved_param_1114[0:16]
+  address: '0x1114'
+  default: 32
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_1116:
+  addr: reserved_param_1116[0:16]
+  address: '0x1116'
+  default: 384
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_1118:
+  addr: reserved_param_1118[0:32]
+  address: '0x1118'
+  datatype: float
+  default: 1136656384
+  max: 4294967295
+  min: 0
+  writable: false
+reserved_param_111c:
+  addr: reserved_param_111c[0:32]
+  address: '0x111C'
+  datatype: float
+  default: 1145044992
+  max: 4294967295
+  min: 0
+  writable: false
+reserved_param_1120:
+  addr: reserved_param_1120[0:16]
+  address: '0x1120'
+  default: 1
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_1122:
+  addr: reserved_param_1122[0:16]
+  address: '0x1122'
+  default: 16
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_1124:
+  addr: reserved_param_1124[0:32]
+  address: '0x1124'
+  datatype: float
+  default: 1106247680
+  max: 4294967295
+  min: 0
+  writable: false
+reserved_param_1128:
+  addr: reserved_param_1128[0:32]
+  address: '0x1128'
+  datatype: float
+  default: 1144627200
+  max: 4294967295
+  min: 0
+  writable: false
+reserved_param_112c:
+  addr: reserved_param_112c[0:32]
+  address: '0x112C'
+  datatype: float
+  default: 1086324736
+  max: 4294967295
+  min: 0
+  writable: false
+reserved_param_1130:
+  addr: reserved_param_1130[0:32]
+  address: '0x1130'
+  datatype: float
+  default: 1117028352
+  max: 4294967295
+  min: 0
+  writable: false
+reserved_param_1134:
+  addr: reserved_param_1134[0:16]
+  address: '0x1134'
+  default: 4
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_1136:
+  addr: reserved_param_1136[0:16]
+  address: '0x1136'
+  default: 16
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_1140:
+  addr: reserved_param_1140[0:16]
+  address: '0x1140'
+  default: 12
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_1142:
+  addr: reserved_param_1142[0:16]
+  address: '0x1142'
+  default: 65535
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_1144:
+  addr: reserved_param_1144[0:16]
+  address: '0x1144'
+  default: 988
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_1146:
+  addr: reserved_param_1146[0:16]
+  address: '0x1146'
+  default: 65534
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_1148:
+  addr: reserved_param_1148[0:16]
+  address: '0x1148'
+  default: 96
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_114a:
+  addr: reserved_param_114a[0:16]
+  address: '0x114A'
+  default: 6
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_1180:
+  addr: reserved_param_1180[0:16]
+  address: '0x1180'
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_1182:
+  addr: reserved_param_1182[0:16]
+  address: '0x1182'
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_1184:
+  addr: reserved_param_1184[0:16]
+  address: '0x1184'
+  default: 2315
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_1186:
+  addr: reserved_param_1186[0:16]
+  address: '0x1186'
+  default: 1543
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_11c0:
+  addr: reserved_param_11c0[0:16]
+  address: '0x11C0'
+  default: 1
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_11c2:
+  addr: reserved_param_11c2[0:16]
+  address: '0x11C2'
+  default: 1
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_11c4:
+  addr: reserved_param_11c4[0:16]
+  address: '0x11C4'
+  default: 1
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_11c6:
+  addr: reserved_param_11c6[0:16]
+  address: '0x11C6'
+  default: 5
+  max: 65535
+  min: 0
+  writable: false
+reserved_param_1200:
+  addr: reserved_param_1200[0:2]
+  address: '0x1200'
+  max: 3
+  min: 0
+  writable: false
+reserved_param_1400:
+  addr: reserved_param_1400[0:16]
+  address: '0x1400'
+  datatype: fixed8
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_1402:
+  addr: reserved_param_1402[0:16]
+  address: '0x1402'
+  datatype: fixed8
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_1404:
+  addr: reserved_param_1404[0:16]
+  address: '0x1404'
+  datatype: fixed8
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_1406:
+  addr: reserved_param_1406[0:16]
+  address: '0x1406'
+  datatype: fixed8
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_1408:
+  addr: reserved_param_1408[0:16]
+  address: '0x1408'
+  datatype: fixed8
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_140a:
+  addr: reserved_param_140a[0:16]
+  address: '0x140A'
+  datatype: fixed8
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_140c:
+  addr: reserved_param_140c[0:16]
+  address: '0x140C'
+  datatype: fixed8
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_140e:
+  addr: reserved_param_140e[0:16]
+  address: '0x140E'
+  datatype: fixed8
+  max: 65535
+  min: 0
+  writable: true
+reserved_param_1410:
+  addr: reserved_param_1410[0:16]
+  address: '0x1410'
+  datatype: fixed8
+  max: 65535
+  min: 0
+  writable: true
+reset:
+  addr: reset_register[0:1]
+  description: 'This bit always reads as 0. Setting this bit initiates a reset sequence:
+    the frame being generated will be truncated.'
+  max: 1
+  min: 0
+  writable: true
+reset_register_unused:
+  addr: reset_register[4:5]
+  max: 1
+  min: 0
+  writable: true
+restart:
+  addr: reset_register[1:2]
+  description: This bit always reads as 0. Setting this bit causes the sensor to truncate
+    the current frame at the end of the current row and start resetting (integrating)
+    the first row. The delay before the first valid frame is read out is equal to
+    the integration time.
+  max: 1
+  min: 0
+  writable: true
+restart_bad:
+  addr: reset_register[10:11]
+  description: 1 = a restart is forced any time a bad frame is detected. This can
+    shorten the delay when waiting for a good frame, since the delay for masking out
+    a bad frame will be the integration time rather than the full-frame time.
+  max: 1
+  min: 0
+  writable: true
+revision_number:
+  addr: revision_number[0:8]
+  address: '0x300E'
+  max: 255
+  min: 0
+  writable: true
+row_speed:
+  addr: row_speed[4:7]
+  address: '0x3028'
+  default: 16
+  description: 'Bits [6:4] of this register define the phase of the output pixclk.
+    2 set of values are correct:  a) 000, 010, 100, 110 => 0 delay (rising edge of
+    pixclk coincides DOUT change).  b) 001, 011, 101, 111 => 1/2 clk delay (falling
+    edge of pixclk coincides DOUT change).'
+  max: 112
+  min: 0
+  writable: true
+seq_data_port:
+  addr: seq_data_port[0:16]
+  address: '0x3086'
+  description: Register used to write to or read from the sequencer RAM.
+  max: 65535
+  min: 0
+  writable: true
+sequencer_stopped:
+  addr: seq_ctrl_port[15:16]
+  description: Showing that sequencer is stopped (STANDBY mode) and the RAM is available
+    for read or write.
+  writable: false
+serial_format:
+  addr: serial_format[0:10]
+  address: '0x31AE'
+  default: 772
+  description: When the serial interface is enabled (reset_register[12]=0), this register
+    controls which serial interface is in use. Any non-zero serial_format_descriptor
+    value is a legal value for this register. The upper byte of this register (interface
+    type) is read-only. The lower byte is read/write.
+  max: 775
+  min: 0
+  writable: true
+shutter_always_open:
+  addr: grr_control1[7:8]
+  description: When set to 1, the shutter pin will always be asserted (OPEN) in GRR
+    mode.
+  writable: true
+shutter_disable:
+  addr: grr_control1[6:7]
+  description: When set to 1, the shutter pin will be disabled (CLOSED) in GRR mode.
+  writable: true
+slave_mode:
+  addr: grr_control1[4:5]
+  description: When set to 1, the sensor readout start will be synchronized with the
+    rising edge of the input trigger signal.  (applied to pad TRIGGER).
+  writable: true
+slew_rate_ctrl_parallel:
+  addr: datapath_select[13:16]
+  description: Selects the slew (edge) rate for the DOUT[9:0], FRAME_VALID, LINE_VALID
+    and FLASH outputs. Only affects the FLASH output when parallel data output is
+    disabled. The value 7 results in the fastest edge rates on these signals. Slowing
+    down the edge rate can reduce ringing and electro-magnetic emissions.
+  max: 7
+  min: 0
+  writable: true
+slew_rate_ctrl_pixclk:
+  addr: datapath_select[10:13]
+  description: Selects the slew (edge) rate for the PIXCLK output. Has no effect when
+    parallel data output is disabled. The value 7 results in the fastest edge rates
+    on this signal. Slowing down the edge rate can reduce ringing and electromagnetic
+    emissions.
+  max: 7
+  min: 0
+  writable: true
+smia_serialiser_dis:
+  addr: reset_register[12:13]
+  description: This bit disables the serial interfaces (MIPI and HiSPi)
+  max: 1
+  min: 0
+  writable: true
+software_reset:
+  addr: software_reset[0:1]
+  address: '0x3021'
+  description: This bit is an alias of reset_register[0].
+  max: 1
+  min: 0
+  writable: true
+special_line_valid:
+  addr: datapath_select[0:2]
+  description: 00 = Normal behavior of LINE_VALID  01 = LINE_VALID is driven continuously
+    (continue generating LINE_VALID during vertical blanking)  10 = LINE_VALID is
+    driven continuously as LINE_VALID XOR FRAME_VALID
+  max: 3
+  min: 0
+  writable: true
+standby_status:
+  addr: frame_status[1:2]
+  description:
+    long: This bit indicates that  the sensor is in standby state. It can be polled
+      after standby is entered to see when the real low-power state is entered; which
+      can happen at the end of row or frame depending on bit reset_register[4].
+    short: Chip is in standby state.
+  max: 1
+  min: 0
+  writable: false
+start_checksum:
+  addr: mipi_config_status[9:10]
+  description:
+    long: start checksum When asserted (= 1) a 16-bit checksum will be  calculated
+      over the next complete frame
+    short: start checksum
+  max: 1
+  min: 0
+  writable: true
+stat_frame_id:
+  addr: stat_frame_id[0:16]
+  address: '0x31D2'
+  max: 65535
+  min: 0
+  writable: true
+stream:
+  addr: reset_register[2:3]
+  description: Setting this bit places the sensor in streaming mode. Clearing this
+    bit places the sensor in a low power mode. The result of clearing this bit depends
+    upon the operating mode of the sensor.  Entry and exit from streaming mode can
+    also be controlled from the signal interface.
+  max: 1
+  min: 0
+  writable: true
+streaming_mode:
+  addr: hispi_control_status[2:3]
+  description:
+    long: "This register bit can be used to configure the HiSPi output between the\
+      \ Streaming SP and Packetized SP protocol.  This register bit is only effective\
+      \ when hispi_mode_sel is configured to \u201C1\u201D.  Value 0, data will be\
+      \ transmitted in 'packetized' format when hispiSP protocol is selected  Value\
+      \ 1, data will be transmitted in 'streaming' format when hispiSP protocol is\
+      \ selected"
+    short: streaming mode
+  max: 1
+  min: 0
+  writable: true
+strobe:
+  addr: flash[15:16]
+  description: Reflects the current state of the FLASH output signal. Read-only.
+  max: 1
+  min: 0
+  writable: false
+t_bgap:
+  addr: mipi_timing_2[12:16]
+  description:
+    long: bandgap settling time. This is the top 4 bits of a 5 bit register.  The
+      lsb is tied to 1.   Time to enable the bandgap before driving the LP  drivers
+      in 512 clk cycles
+    short: bandgap settling time
+  max: 15
+  min: 0
+  writable: true
+t_clk_post:
+  addr: mipi_timing_2[0:6]
+  description:
+    long: Time, in op_pix_clk periods, to drive the HS clock after the data lane has
+      gone into low-power mode
+    short: T_CLK_POST
+  max: 63
+  min: 0
+  writable: true
+t_clk_pre:
+  addr: mipi_timing_2[6:12]
+  description:
+    long: Time, in op_pix_clk periods, to drive the HS clock before any data lane
+      might start up
+    short: T_CLK_PRE
+  max: 63
+  min: 0
+  writable: true
+t_clk_trail:
+  addr: mipi_timing_0[0:4]
+  description:
+    long: Time, in op_pix_clk periods, to drive HS differentialstate after last payload
+      clock bit of an HS transmission burst
+    short: T_CLK_TRAIL
+  max: 15
+  min: 0
+  writable: true
+t_clk_zero:
+  addr: mipi_timing_1[0:6]
+  description:
+    long: Minimum time, in op_pix_clk periods, to drive HS-0 on clock lane prior to
+      starting clock
+    short: T_CLK_ZERO
+  max: 63
+  min: 0
+  writable: true
+t_hs_exit:
+  addr: mipi_timing_1[6:12]
+  description:
+    long: Time, in op_pix_clk periods, to drive LP-11 after HS burst
+    short: T_HS_EXIT
+  max: 63
+  min: 0
+  writable: true
+t_hs_trail:
+  addr: mipi_timing_0[4:8]
+  description:
+    long: Time, in op_pix_clk periods, to drive flipped differential state after last
+      payload data bit of an HS transmission burst
+    short: T_HS_TRAIL
+  max: 15
+  min: 0
+  writable: true
+t_hs_zero:
+  addr: mipi_timing_0[8:12]
+  description:
+    long: Time, in op_pix_clk periods, to drive HS-0 before the sync sequence
+    short: T_HS_ZERO
+  max: 15
+  min: 0
+  writable: true
+t_init:
+  addr: mipi_timing_4[0:7]
+  description:
+    long: Initialisation time when first entering stop state (LP-11) after powerup
+      or reset. LP-11 is transmitted for a minimum of (1024) * T_INIT * op_pix_clk.
+    short: T_INIT
+  max: 127
+  min: 0
+  writable: true
+t_lpx:
+  addr: mipi_timing_3[7:13]
+  description:
+    long: Time, in op_pix_clk periods, of any low-power state period
+    short: T_LPX
+  max: 63
+  min: 0
+  writable: true
+t_wake_up:
+  addr: mipi_timing_3[0:7]
+  description:
+    long: Time to recover from ultra low-power mode (ULPM). ULPM is exited by applying
+      a mark state for (8192) * T_WAKE_UP * op_pix_clk
+    short: T_WAKE_UP
+  max: 127
+  min: 0
+  writable: true
+test_data_blue:
+  addr: test_data_blue[0:12]
+  address: '0x3076'
+  description: The value for blue pixels in the Bayer data used for the solid color
+    test pattern and the test cursors.
+  max: 4095
+  min: 0
+  writable: true
+test_data_greenb:
+  addr: test_data_greenb[0:12]
+  address: '0x3078'
+  description: The value for green pixels in blue/green rows of the Bayer data used
+    for the solid color test pattern and the test cursors.
+  max: 4095
+  min: 0
+  writable: true
+test_data_greenr:
+  addr: test_data_greenr[0:12]
+  address: '0x3074'
+  description: The value for green pixels in red/green rows of the Bayer data used
+    for the solid color test pattern and the test cursors.
+  max: 4095
+  min: 0
+  writable: true
+test_data_red:
+  addr: test_data_red[0:12]
+  address: '0x3072'
+  description: The value for red pixels in the Bayer data used for the solid color
+    test pattern and the test cursors.
+  max: 4095
+  min: 0
+  writable: true
+test_enable:
+  addr: hispi_control_status[7:8]
+  description:
+    long: When asserted, the test pattern is output through the HiSPi PHY interface.
+    short: Test enable
+  max: 1
+  min: 0
+  writable: true
+test_mode:
+  addr: hispi_control_status[4:7]
+  description:
+    long: 'For the MIPI interface: 0 = transmit LP-00 on all enabled data and clock
+      lanes 1 = transmit LP-11 on all enabled data and clock lanes 2 = transmit HS-0
+      on all enabled data and clock lanes 3 = transmit HS-1 on all enabled data and
+      clock lanes 4 = transmit a square wave at half the potential serial data rate
+      on all enabled data and clock lanes 5 = transmit a square wave at the pixel
+      data rate on all  enabled data and clock lanes 6 = transmit a LP square wave
+      at half the pixel data rate on all enabled data and clock lanes 7 = transmit
+      a continuous, repeated, sequence of pseudo random data (non-packetised), copied
+      on all enabled data lanes  For the HiSPi interface: 0 = reserved 1 = reserved
+      2 = transmit differential 0 on all enabled data lanes 3 = transmit differential
+      1 on all enabled data lanes 4 = transmit a square wave at half the potential
+      serial data rate on all enabled data lanes 5 = transmit a square wave at the
+      pixel data rate on all  enabled data lanes 6 = reserved 7 = transmit a continuous,
+      repeated, sequence of pseudo random data, with no SAV code, copied on all enabled
+      data lanes'
+    short: Test mode
+  max: 7
+  min: 0
+  writable: true
+test_pattern_mode:
+  addr: test_pattern_mode[0:9]
+  address: '0x3070'
+  description: 0 = Normal operation. Generate output data from pixel array   1 = Solid
+    color test pattern.   2 = Full color bar test pattern   3 = Fade to grey color
+    bar test pattern   256 = Marching 1 test pattern (12 bit)   other = Reserved.
+  max: 263
+  min: 0
+  writable: true
+test_raw_mode:
+  addr: test_raw_mode[0:2]
+  address: '0x307A'
+  max: 3
+  min: 0
+  writable: true
+triggered:
+  addr: flash[14:15]
+  description: Indicates that the FLASH output signal was asserted for the current
+    frame. Read-only.
+  max: 1
+  min: 0
+  writable: false
+vert_flip:
+  addr: image_orientation[1:2]
+  description:
+    long: 0 = Normal readout  1 = Readout is flipped (mirrored) vertically so that
+      the row specified by y_addr_end_ (+1)  is read out of the sensor first.  Changing
+      this register can only be done when streaming is disabled
+    short: This bit is an alias of read_mode[15].
+  max: 1
+  min: 0
+  writable: true
+vert_flip_collision_0:
+  addr: read_mode[15:16]
+  description: 0 = Normal readout  1 = Readout is flipped (mirrored) vertically so
+    that the row specified by y_addr_end_ (+1)  is read out of the sensor first.  Changing
+    this register can only be done when streaming is disabled
+  max: 1
+  min: 0
+  writable: true
+vert_left_bar_en:
+  addr: hispi_control_status[0:1]
+  description:
+    long: Inserts the optional filler (FLR) data described in the HiSPi protocol specification.  When
+      the filler codes are enabled, the receiver must window the received image to
+      eliminate first 4 data words (columns per PHYs).
+    short: vert_left_bar_en
+  max: 1
+  min: 0
+  writable: true
+vertical_cursor_position:
+  addr: vertical_cursor_position[0:12]
+  address: '0x31EA'
+  description: Specify the start column for the test cursor.
+  max: 4095
+  min: 0
+  writable: true
+vertical_cursor_width:
+  addr: vertical_cursor_width[0:12]
+  address: '0x31EE'
+  description: Specify the width, in columns, of the vertical test cursor. A width
+    of 0 disables the cursor.
+  max: 4095
+  min: 0
+  writable: true
+vt_pix_clk_div:
+  addr: vt_pix_clk_div[0:5]
+  address: '0x302A'
+  default: 6
+  description: Input is the vt_sys_clk.  The output is the vt_pix_clk .    The vt_pix_clk
+    is the CLK_PIX when the sensor is configured to use the serial MIPI or HiSPI transmitter.  It
+    is the CLK_OP when the sensor is configured to use the parallel interface.
+  max: 31
+  min: 0
+  writable: true
+vt_sys_clk_div:
+  addr: vt_sys_clk_div[0:5]
+  address: '0x302C'
+  default: 1
+  description: Divides the input VCO clock and outputs the vt_sys_clk.  Set this divider
+    to "2" to enable 2-lane MIPI and "4" to enable 1-lane MIPI.  Refer to the sensor
+    datasheet for more details.
+  max: 31
+  min: 0
+  writable: true
+x_addr_end:
+  addr: x_addr_end[0:12]
+  address: '0x3008'
+  default: 2309
+  description: The last column of visible pixels to be read out.
+  max: 4095
+  min: 0
+  writable: true
+x_addr_end_cb:
+  addr: x_addr_end_cb[0:12]
+  address: '0x308E'
+  default: 2181
+  description: X_ADDR_END for context B
+  max: 4095
+  min: 0
+  writable: true
+x_addr_start:
+  addr: x_addr_start[0:12]
+  address: '0x3004'
+  default: 6
+  description: The  first column of visible pixels to be read out (not counting any
+    dark  columns that may be read). To move the image window, set this register  to
+    the starting X value.
+  max: 4095
+  min: 0
+  writable: true
+x_addr_start_cb:
+  addr: x_addr_start_cb[0:12]
+  address: '0x308A'
+  default: 134
+  description: x_address_start context B
+  max: 4095
+  min: 0
+  writable: true
+x_even_inc:
+  addr: x_even_inc[0:1]
+  address: '0x30A0'
+  default: 1
+  description: Read-only.
+  max: 1
+  min: 0
+  writable: false
+x_odd_inc:
+  addr: x_odd_inc[0:3]
+  address: '0x30A2'
+  default: 1
+  description: '1 : No skip. 3:  Skip 2. 5:  Skip 3. Other values are not supported.'
+  max: 7
+  min: 0
+  writable: true
+x_odd_inc_cb:
+  addr: x_odd_inc_cb[0:3]
+  address: '0x30AE'
+  default: 5
+  description: X_ODD_INC context B
+  max: 7
+  min: 0
+  writable: true
+xenon_frames_delay:
+  addr: flash[0:3]
+  description: 'XENON_FRAMES_DELAY[2:0]: Number of the frames before the first time
+    Xenon flash is actuated.'
+  writable: true
+xenon_frames_enable:
+  addr: flash[3:6]
+  description: XENON_FRAMES_ENABLE[2:0] 0     =>  Xenon flash disabled. 1-6 =>  Number
+    of frames with Xenon flash. 7     =>  Xenon flash enable for all frames.
+  writable: true
+y_addr_end:
+  addr: y_addr_end[0:11]
+  address: '0x3006'
+  default: 1419
+  description: The last row of visible pixels to be read out.
+  max: 2047
+  min: 0
+  writable: true
+y_addr_end_cb:
+  addr: y_addr_end_cb[0:11]
+  address: '0x3090'
+  default: 1539
+  description: Y_ADDR_END for context B
+  max: 2047
+  min: 0
+  writable: true
+y_addr_start:
+  addr: y_addr_start[0:11]
+  address: '0x3002'
+  default: 124
+  description: The  first row of visible pixels to be read out (not counting any dark
+    rows  that may be read). To move the image window, set this register to the  starting
+    Y value.
+  max: 2047
+  min: 0
+  writable: true
+y_addr_start_cb:
+  addr: y_addr_start_cb[0:11]
+  address: '0x308C'
+  default: 4
+  description: Y_ADDR_START for context B
+  max: 2047
+  min: 0
+  writable: true
+y_even_inc:
+  addr: y_even_inc[0:1]
+  address: '0x30A4'
+  default: 1
+  description: Read-only.
+  max: 1
+  min: 0
+  writable: false
+y_odd_inc:
+  addr: y_odd_inc[0:3]
+  address: '0x30A6'
+  default: 1
+  description: '1 : No skip. 3:  Skip 2. 5:  Skip 3. Other values are not supported.'
+  max: 7
+  min: 0
+  writable: true
+y_odd_inc_cb:
+  addr: y_odd_inc_cb[0:3]
+  address: '0x30A8'
+  default: 1
+  description: Y_ODD_INC context B
+  max: 7
+  min: 0
+  writable: true

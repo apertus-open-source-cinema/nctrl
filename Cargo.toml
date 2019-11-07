@@ -1,5 +1,5 @@
 [package]
-name = "ctrlv2"
+name = "nctrl"
 version = "0.1.0"
 authors = ["Robin Ole Heinemann <robin.ole.heinemann@t-online.de>"]
 edition = "2018"
@@ -10,6 +10,9 @@ env_logger = "*"
 libc = "*"
 ftable = { path = "ftable" }
 btree = { path = "btree" }
+fuseable = { path = "fuseable", features = ["bimap"] }
+fuseable_derive = { path = "fuseable_derive" }
+parse_num = { path = "parse_num" }
 structopt = "*"
 serde = { version = "*", features = ["rc"] }
 serde_derive = "*"

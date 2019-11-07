@@ -1,0 +1,22 @@
+[package]
+name = "fuseable"
+version = "0.1.0"
+authors = ["Robin Ole Heinemann <robin.ole.heinemann@t-online.de>"]
+edition = "2018"
+
+[features]
+default = []
+bimap = ["isomorphism"]
+
+[dependencies]
+log = "*"
+failure = "*"
+fuse_mt = "*"
+itertools = "*"
+lru = "*"
+time = "*"
+
+isomorphism = { version = "*", optional = true }
+
+[lib]
+name = "fuseable"
