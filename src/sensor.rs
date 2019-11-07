@@ -720,14 +720,7 @@ impl<'de> Deserialize<'de> for Camera {
 
         let CameraWithoutScripts { model, registers } = CameraWithoutScripts::deserialize(deserializer)?;
 
-
         let scripts = scripts_from_model(&model);
-
-        /*
-        let mut scripts = HashMap::new();
-        let reset: Box<dyn Script> = Box::new(Reset::default());
-        scripts.insert("reset".to_owned(), reset);
-        */
 
         Ok(Camera { scripts, model, registers })
     }
