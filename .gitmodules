@@ -1,0 +1,3 @@
+[submodule "rust-fuse"]
+	path = rust-fuse
+	url = https://github.com/zargony/rust-fuse
