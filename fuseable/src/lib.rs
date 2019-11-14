@@ -1,4 +1,3 @@
-#![feature(core_intrinsics)]
 use failure::{Error, Fail};
 use std::{
     collections::{BTreeMap, HashMap},
@@ -56,7 +55,7 @@ impl FuseableError {
     }
 }
 
-pub fn type_name<T>(_: &T) -> &'static str { std::intrinsics::type_name::<T>() }
+pub fn type_name<T>(_: &T) -> &'static str { std::any::type_name::<T>() }
 
 pub trait Fuseable {
     fn is_dir(&self, path: &mut dyn Iterator<Item = &str>) -> Result<bool>;
