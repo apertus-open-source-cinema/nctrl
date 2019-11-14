@@ -11,7 +11,7 @@ fuseable = { path = "fuseable", features = ["bimap"] }
 fuseable_derive = { path = "fuseable_derive" }
 parse_num = { path = "parse_num" }
 
-fuse = { git = "https://github.com/zargony/rust-fuse" }
+fuse = { path = "rust-fuse" }
 
 env_logger = "*"
 log = "*"
