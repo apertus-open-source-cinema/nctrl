@@ -1,4 +1,3 @@
-#![feature(const_fn)]
 use btree::{BTree, BTreeDFIter, BTreeIdx, BTreeProxy};
 use std::{ffi::OsStr, fmt::Debug};
 
@@ -36,27 +35,27 @@ impl Into<u64> for Inode {
 }
 
 impl Inode {
-    pub const EMPTY: Inode = Inode::empty();
-    pub const NONE: Inode = Inode::none();
-    pub const ROOT: Inode = Inode::root();
+    pub const EMPTY: Inode = Inode(std::u64::MAX - 1);
+    pub const NONE: Inode = Inode(std::u64::MAX);
+    pub const ROOT: Inode = Inode(1);
 
-    pub const fn none() -> Inode { Inode(std::u64::MAX) }
+    pub fn none() -> Inode { Inode::NONE }
 
-    pub const fn empty() -> Inode { Inode(std::u64::MAX - 1) }
+    pub fn empty() -> Inode { Inode::EMPTY }
 
-    pub const fn root() -> Inode { Inode(1) }
+    pub fn root() -> Inode { Inode::ROOT }
 
-    pub const fn is_some(self) -> bool { (!self.is_none()) & (!self.is_empty()) }
+    pub fn is_some(self) -> bool { (!self.is_none()) & (!self.is_empty()) }
 
-    pub const fn is_root(self) -> bool { self.0 == Inode::ROOT.0 }
+    pub fn is_root(self) -> bool { self.0 == Inode::ROOT.0 }
 
-    pub const fn is_none(self) -> bool { self.0 == Inode::NONE.0 }
+    pub fn is_none(self) -> bool { self.0 == Inode::NONE.0 }
 
-    pub const fn is_empty(self) -> bool { self.0 == Inode::EMPTY.0 }
+    pub fn is_empty(self) -> bool { self.0 == Inode::EMPTY.0 }
 
     // TODO(robin): this is used only when indexing into a array of
     // entries, maybe add check we aren't None or Empty?
-    pub const fn as_usize(self) -> usize { self.0 as usize }
+    pub fn as_usize(self) -> usize { self.0 as usize }
 }
 
 #[derive(Debug, Clone)]
