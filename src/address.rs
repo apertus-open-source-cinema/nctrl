@@ -1,4 +1,4 @@
-use crate::sensor::Register;
+use crate::sensor::RawRegister;
 use failure::Error;
 use fuseable::Either;
 use fuseable_derive::Fuseable;
@@ -27,7 +27,7 @@ pub struct Address {
 impl Address {
     fn parse_internal(
         str: &str,
-        register_set: Option<&HashMap<String, Register>>,
+        register_set: Option<&HashMap<String, RawRegister>>,
         width: Option<u8>,
     ) -> Result<Address, Error> {
         lazy_static! {
@@ -135,7 +135,7 @@ impl Address {
         }
     }
 
-    pub fn parse_named(address: &str, regs: &HashMap<String, Register>) -> Result<Address, Error> {
+    pub fn parse_named(address: &str, regs: &HashMap<String, RawRegister>) -> Result<Address, Error> {
         Address::parse_internal(address, Some(regs), None)
     }
 

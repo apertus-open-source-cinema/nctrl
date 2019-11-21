@@ -32,7 +32,7 @@ enum Description {
 }
 
 #[derive(Debug, Serialize, Fuseable, Clone)]
-pub struct Register {
+pub struct RawRegister {
     #[fuseable(ro)]
     pub address: Address,
     #[fuseable(ro)]
@@ -49,7 +49,7 @@ pub struct Register {
     description: Option<Description>,
 }
 
-impl<'de> Deserialize<'de> for Register {
+impl<'de> Deserialize<'de> for RawRegister {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -71,7 +71,7 @@ impl<'de> Deserialize<'de> for Register {
         let address = Address::parse(&reg.address, reg.width.map(|v| v as usize))
             .map_err(|_| D::Error::custom("error parsing address"))?;
 
-        Ok(Register {
+        Ok(RawRegister {
             address,
             width: reg.width,
             mask: reg.mask,
@@ -90,7 +90,7 @@ fn to_hex(v: Vec<u8>) -> String {
     }
 }
 
-impl Register {
+impl RawRegister {
     fn read_value(
         &self,
         path: &mut dyn Iterator<Item = &str>,
@@ -120,8 +120,8 @@ impl Register {
 
                     while value.len() < width as usize {
                         value.insert(0, 0); // TODO(robin): which way around?,
-                                            // really efficient this way around
-                                            // (vs value.push(0))
+                                            // really efficient the other way
+                                            // (value.push(0))
                     }
 
                     let value = match mask {
@@ -167,40 +167,40 @@ impl Register {
 }
 
 #[derive(Debug)]
-pub struct RegisterSetting {
+pub struct Device {
     channel: CommunicationChannel,
-    map: HashMap<String, Register>,
-    functions: HashMap<String, Function>,
+    raw: HashMap<String, RawRegister>,
+    cooked: HashMap<String, CookedRegister>,
 }
 
-impl RegisterSetting {
-    pub fn read_register(&self, name: &str) -> fuseable::Result<String> {
+impl Device {
+    pub fn read_raw(&self, name: &str) -> fuseable::Result<String> {
         println!("reading {}", name);
-        self.map[name].read_value(&mut std::iter::empty(), &self.channel).map(|v| match v {
+        self.raw[name].read_value(&mut std::iter::empty(), &self.channel).map(|v| match v {
             Either::Right(s) => s,
             _ => panic!("got directory entries from a register"),
         })
     }
 
-    pub fn write_register<T: ToString>(&self, name: &str, value: T) -> fuseable::Result<()> {
+    pub fn write_raw<T: ToString>(&self, name: &str, value: T) -> fuseable::Result<()> {
         println!("writing to {}", name);
-        self.map[name].write_value(
+        self.raw[name].write_value(
             &mut std::iter::empty(),
             value.to_string().as_bytes().to_vec(),
             &self.channel,
         )
     }
 
-    pub fn read_function(&self, name: &str) -> fuseable::Result<String> {
-        self.functions[name].read_value(&mut std::iter::empty(), &self.channel).map(|v| match v {
+    pub fn read_cooked(&self, name: &str) -> fuseable::Result<String> {
+        self.cooked[name].read_value(&mut std::iter::empty(), &self.channel).map(|v| match v {
             Either::Right(s) => s,
             _ => panic!("got directory entries from a register"),
         })
     }
 
-    pub fn write_function<T: ToString>(&self, name: &str, value: T) -> fuseable::Result<()> {
+    pub fn write_cooked<T: ToString>(&self, name: &str, value: T) -> fuseable::Result<()> {
         println!("reading {}", name);
-        self.functions[name].write_value(
+        self.cooked[name].write_value(
             &mut std::iter::empty(),
             value.to_string().as_bytes().to_vec(),
             &self.channel,
@@ -208,32 +208,32 @@ impl RegisterSetting {
     }
 }
 
-impl Fuseable for RegisterSetting {
+impl Fuseable for Device {
     fn is_dir(&self, path: &mut dyn Iterator<Item = &str>) -> fuseable::Result<bool> {
         match path.next() {
             Some("channel") => self.channel.is_dir(path),
-            Some("map") => {
+            Some("raw") => {
                 let (mut peek, mut path) = path.tee();
                 let reg_name = peek.next();
                 let reg_field = peek.next();
 
                 match (reg_name, reg_field) {
                     (Some(name), Some("value")) => {
-                        self.map.is_dir(&mut std::iter::once(name)).map(|_| false)
+                        self.raw.is_dir(&mut std::iter::once(name)).map(|_| false)
                     }
-                    _ => self.map.is_dir(&mut path),
+                    _ => self.raw.is_dir(&mut path),
                 }
             }
-            Some("functions") => {
+            Some("cooked") => {
                 let (mut peek, mut path) = path.tee();
                 let reg_name = peek.next();
                 let reg_field = peek.next();
 
                 match (reg_name, reg_field) {
                     (Some(name), Some("value")) => {
-                        self.functions.is_dir(&mut std::iter::once(name)).map(|_| false)
+                        self.cooked.is_dir(&mut std::iter::once(name)).map(|_| false)
                     }
-                    _ => self.functions.is_dir(&mut path),
+                    _ => self.cooked.is_dir(&mut path),
                 }
             }
             Some(name) => Err(FuseableError::not_found(name)),
@@ -247,13 +247,13 @@ impl Fuseable for RegisterSetting {
     ) -> fuseable::Result<Either<Vec<String>, String>> {
         match path.next() {
             Some("channel") => self.channel.read(path),
-            Some("map") => {
+            Some("raw") => {
                 let (mut peek, mut path) = path.tee();
                 let reg_name = peek.next();
                 let reg_field = peek.next();
 
                 match (reg_name, reg_field) {
-                    (Some(_), None) => self.map.read(&mut path).map(|value| match value {
+                    (Some(_), None) => self.raw.read(&mut path).map(|value| match value {
                         Either::Left(mut dir_entries) => {
                             dir_entries.push("value".to_owned());
                             Either::Left(dir_entries)
@@ -263,20 +263,20 @@ impl Fuseable for RegisterSetting {
                         }
                     }),
                     (Some(name), Some("value")) => self
-                        .map
+                        .raw
                         .get(name)
                         .ok_or_else(|| FuseableError::not_found(name))?
                         .read_value(&mut std::iter::empty(), &self.channel),
-                    _ => self.map.read(&mut path),
+                    _ => self.raw.read(&mut path),
                 }
             }
-            Some("functions") => {
+            Some("cooked") => {
                 let (mut peek, mut path) = path.tee();
                 let reg_name = peek.next();
                 let reg_field = peek.next();
 
                 match (reg_name, reg_field) {
-                    (Some(_), None) => self.functions.read(&mut path).map(|value| match value {
+                    (Some(_), None) => self.cooked.read(&mut path).map(|value| match value {
                         Either::Left(mut dir_entries) => {
                             dir_entries.push("value".to_owned());
                             Either::Left(dir_entries)
@@ -286,18 +286,18 @@ impl Fuseable for RegisterSetting {
                         }
                     }),
                     (Some(name), Some("value")) => self
-                        .functions
+                        .cooked
                         .get(name)
                         .ok_or_else(|| FuseableError::not_found(name))?
                         .read_value(&mut std::iter::empty(), &self.channel),
-                    _ => self.functions.read(&mut path),
+                    _ => self.cooked.read(&mut path),
                 }
             }
             Some(name) => Err(FuseableError::not_found(name)),
             None => Ok(Either::Left(vec![
                 "channel".to_owned(),
-                "map".to_owned(),
-                "functions".to_owned(),
+                "raw".to_owned(),
+                "cooked".to_owned(),
             ])),
         }
     }
@@ -309,32 +309,32 @@ impl Fuseable for RegisterSetting {
     ) -> fuseable::Result<()> {
         match path.next() {
             Some("channel") => Err(FuseableError::unsupported("write", type_name(&self.channel))),
-            Some("map") => {
+            Some("raw") => {
                 let (mut peek, mut path) = path.tee();
                 let reg_name = peek.next();
                 let reg_field = peek.next();
 
                 match (reg_name, reg_field) {
                     (Some(name), Some("value")) => self
-                        .map
+                        .raw
                         .get(name)
                         .ok_or_else(|| FuseableError::not_found(name))?
                         .write_value(&mut std::iter::empty(), value, &self.channel),
-                    _ => self.map.write(&mut path, value),
+                    _ => self.raw.write(&mut path, value),
                 }
             }
-            Some("functions") => {
+            Some("cooked") => {
                 let (mut peek, mut path) = path.tee();
                 let reg_name = peek.next();
                 let reg_field = peek.next();
 
                 match (reg_name, reg_field) {
                     (Some(name), Some("value")) => self
-                        .functions
+                        .cooked
                         .get(name)
                         .ok_or_else(|| FuseableError::not_found(name))?
                         .write_value(&mut std::iter::empty(), value, &self.channel),
-                    _ => self.functions.write(&mut path, value),
+                    _ => self.cooked.write(&mut path, value),
                 }
             }
             Some(name) => Err(FuseableError::not_found(name)),
@@ -343,13 +343,13 @@ impl Fuseable for RegisterSetting {
     }
 }
 
-impl<'de> Deserialize<'de> for RegisterSetting {
+impl<'de> Deserialize<'de> for Device {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         #[derive(Debug, Deserialize)]
-        struct FunctionStringAddr {
+        struct CookedRegisterStringAddr {
             addr: String,
             desc: Option<Description>,
             #[serde(default, deserialize_with = "deser_valuemap")]
@@ -360,44 +360,44 @@ impl<'de> Deserialize<'de> for RegisterSetting {
         }
 
         #[derive(Debug, Deserialize)]
-        struct RegisterSettingConfig {
+        struct DeviceConfig {
             channel: CommunicationChannel,
             #[serde(deserialize_with = "by_path")]
-            map: HashMap<String, Register>,
+            raw: HashMap<String, RawRegister>,
             #[serde(deserialize_with = "by_path")]
-            functions: HashMap<String, FunctionStringAddr>,
+            cooked: HashMap<String, CookedRegisterStringAddr>,
         }
 
-        let settings = RegisterSettingConfig::deserialize(deserializer)?;
+        let settings = DeviceConfig::deserialize(deserializer)?;
 
-        let RegisterSettingConfig { channel, map, functions } = settings;
+        let DeviceConfig { channel, raw, cooked } = settings;
 
-        let functions = functions
+        let cooked = cooked
             .into_iter()
-            .map(|(name, func)| {
-                let addr = Address::parse_named(&func.addr, &map).map_err(|_| {
+            .map(|(name, cooked_reg)| {
+                let addr = Address::parse_named(&cooked_reg.addr, &raw).map_err(|_| {
                     D::Error::custom(format!(
-                        "could not parse the address of this function ({})",
-                        func.addr
+                        "could not parse the address of this cooked register ({})",
+                        cooked_reg.addr
                     ))
                 })?;
 
-                Ok((name.clone(), Function {
+                Ok((name.clone(), CookedRegister {
                     addr,
-                    desc: func.desc,
-                    map: func.map,
-                    default: func.default,
-                    writable: func.writable,
+                    desc: cooked_reg.desc,
+                    map: cooked_reg.map,
+                    default: cooked_reg.default,
+                    writable: cooked_reg.writable,
                 }))
             })
-            .collect::<Result<HashMap<String, Function>, _>>()?;
+            .collect::<Result<HashMap<String, CookedRegister>, _>>()?;
 
-        Ok(RegisterSetting { channel, map, functions })
+        Ok(Device { channel, raw, cooked })
     }
 }
 
 #[derive(Debug, Serialize, Fuseable)]
-pub struct Function {
+pub struct CookedRegister {
     #[fuseable(ro)]
     addr: Address,
     #[fuseable(ro)]
@@ -412,7 +412,7 @@ pub struct Function {
     default: Option<u64>,
 }
 
-impl Function {
+impl CookedRegister  {
     fn read_value(
         &self,
         path: &mut dyn Iterator<Item = &str>,
@@ -448,7 +448,7 @@ impl Function {
                                 parse_num_mask(String::from_utf8_lossy(&value))?;
 
                             if value.len() > width as usize {
-                                return Err(format_err!("value {:?} to write was longer ({}) than function {:?} with width of {}", value, value.len(), self, width));
+                                return Err(format_err!("value {:?} to write was longer ({}) than cooked register {:?} with width of {}", value, value.len(), self, width));
                             }
 
                             while value.len() < width as usize {
@@ -470,7 +470,7 @@ impl Function {
                                 None => value,
                             }
                         } else {
-                            panic!("the function written to {:?} did not specify a width, don't know what to do", self)
+                            panic!("the cooked register written to {:?} did not specify a width, don't know what to do", self)
                         }
                     }
                 };
@@ -520,13 +520,13 @@ macro_rules! script {
             impl Script for $struct_name {
                 #[allow(unused_variables)]
                 fn read(&$self_read, cam: &Camera) -> fuseable::Result<String> {
-                    $(let $regs_read = cam.registers[stringify!($regs_read)].lock().unwrap();)*
+                    $(let $regs_read = cam.devices[stringify!($regs_read)].lock().unwrap();)*
 
                     $body_read
                 }
                 #[allow(unused_variables)]
                 fn write(&$self_write, cam: &Camera, $value_name: Vec<u8>) -> fuseable::Result<()> {
-                    $(let $regs_write = cam.registers[stringify!($regs_write)].lock().unwrap();)*
+                    $(let $regs_write = cam.devices[stringify!($regs_write)].lock().unwrap();)*
 
                     $body_write
                 }
@@ -558,13 +558,13 @@ script! {
         write [value] => (self, sensor, sensor_io) {
             println!("writing {:?}", value);
 
-            sensor_io.write_register("reset", 1)?;
+            sensor_io.write_raw("reset", 1)?;
 
             std::thread::sleep(std::time::Duration::from_millis(10));
 
-            sensor_io.write_register("reset", 0)?;
-            sensor.write_function("software_reset", 0)?;
-            sensor.write_function("stream", 1)?;
+            sensor_io.write_raw("reset", 0)?;
+            sensor.write_cooked("software_reset", 0)?;
+            sensor.write_cooked("stream", 1)?;
 
             Ok(())
         }
@@ -597,25 +597,25 @@ script! {
             let extclk = 24000000;
             // init
             // toggle reset (active low)
-            sensor_io.write_register("reset", 0x7)?;
+            sensor_io.write_raw("reset", 0x7)?;
             std::thread::sleep(std::time::Duration::from_millis(1));
-            sensor_io.write_register("reset", 0x0)?;
+            sensor_io.write_raw("reset", 0x0)?;
             std::thread::sleep(std::time::Duration::from_millis(1));
-            sensor_io.write_register("reset", 0x7)?;
+            sensor_io.write_raw("reset", 0x7)?;
 
             // magic init
-            sensor.write_register("magic_init_config", 0xa114)?;
-            sensor.write_register("magic_init_start", 0x0070)?;
+            sensor.write_raw("magic_init_config", 0xa114)?;
+            sensor.write_raw("magic_init_start", 0x0070)?;
 
             std::thread::sleep(std::time::Duration::from_millis(1));
 
             // check chip_version
-            let chip_version = sensor.read_register("chip_version_reg")?;
+            let chip_version = sensor.read_raw("chip_version_reg")?;
             // assert(chip_version == "0x2304");
 
             println!("chip_version {}", chip_version);
-            println!("reserved_chiprev {}", sensor.read_register("reserved_chiprev")?);
-            println!("version {}", sensor.read_register("test_data_red")?);
+            println!("reserved_chiprev {}", sensor.read_raw("reserved_chiprev")?);
+            println!("version {}", sensor.read_raw("test_data_red")?);
 
             /*
             write("magic_patch1", 0x0146);
@@ -674,33 +674,33 @@ script! {
             let op_sys_clk_div =  2;
             let op_pix_clk_div = 12;
 
-            sensor.write_register("vt_pix_clk_div", vt_pix_clk_div)?;
-            sensor.write_register("vt_sys_clk_div", vt_sys_clk_div)?;
-            sensor.write_register("pre_pll_clk_div", pre_pll_clk_div)?;
-            sensor.write_register("pll_multiplier", pll_multiplier)?;
-            sensor.write_register("op_pix_clk_div", op_pix_clk_div)?;
-            sensor.write_register("op_sys_clk_div", op_sys_clk_div)?;
+            sensor.write_raw("vt_pix_clk_div", vt_pix_clk_div)?;
+            sensor.write_raw("vt_sys_clk_div", vt_sys_clk_div)?;
+            sensor.write_raw("pre_pll_clk_div", pre_pll_clk_div)?;
+            sensor.write_raw("pll_multiplier", pll_multiplier)?;
+            sensor.write_raw("op_pix_clk_div", op_pix_clk_div)?;
+            sensor.write_raw("op_sys_clk_div", op_sys_clk_div)?;
 
             // pll lock time
             std::thread::sleep(std::time::Duration::from_millis(1));
 
             // data format setting
             // 0xc0c - 12bit raw uncompressed
-            sensor.write_register("data_format_bits", 0x0c0c)?;
+            sensor.write_raw("data_format_bits", 0x0c0c)?;
             // serial output format
             // select hivcm (1V8)
-            sensor.write_register("datapath_select", 1 << 9)?;
+            sensor.write_raw("datapath_select", 1 << 9)?;
 
 
             // hispi enable, test pattern all ones
             // write("hispi_control_status", int("0000 0011 1101 0100".replace(' ', ''), 2))
             // !!!! IMPORTANT  !!!! the 0x0400 bit toggles streaming s -> packetized sp
-            sensor.write_register("hispi_control_status", 0b1000_0100_0000_0000)?;
-            sensor.write_register("mipi_config_status", 0xc)?;
+            sensor.write_raw("hispi_control_status", 0b1000_0100_0000_0000)?;
+            sensor.write_raw("mipi_config_status", 0xc)?;
 
             // 0x0202 - 2 lane mipi
             // 0x0304 - 4 lane hispi
-            sensor.write_register("serial_format", 0x0304)?;
+            sensor.write_raw("serial_format", 0x0304)?;
 
             // test pattern mode
             // 0   - no test pattern
@@ -708,25 +708,25 @@ script! {
             // 2   - solid color bars
             // 3   - fade to gray color bars
             // 256 - walking 1s
-            sensor.write_register("test_pattern_mode", 0)?;
+            sensor.write_raw("test_pattern_mode", 0)?;
 
             // unlock write to data_pedestal
-            sensor.write_register("reset_register", 0b10000)?;
-            sensor.write_register("test_raw_mode", 2)?;
-            sensor.write_register("data_pedestal", 0)?;
+            sensor.write_raw("reset_register", 0b10000)?;
+            sensor.write_raw("test_raw_mode", 2)?;
+            sensor.write_raw("data_pedestal", 0)?;
 
             // dubious, we have duplicate addresses for this one
             // sensor.write_register("dark_control", 0)?;
 
-            sensor.write_register("analog_gain", 0x0010)?;
-            sensor.write_register("global_gain", 0b0000000010000000)?;
-            sensor.write_register("coarse_integration_time", 1200)?;
-            sensor.write_register("fine_integration_time", 0)?;
+            sensor.write_raw("analog_gain", 0x0010)?;
+            sensor.write_raw("global_gain", 0b0000000010000000)?;
+            sensor.write_raw("coarse_integration_time", 1200)?;
+            sensor.write_raw("fine_integration_time", 0)?;
 
             // reset hispi_timing
-            sensor.write_register("hispi_timing", 0b1_000_000_000_000_000)?;
+            sensor.write_raw("hispi_timing", 0b1_000_000_000_000_000)?;
             // streaming enable
-            sensor.write_register("mode_select", 1)?;
+            sensor.write_raw("mode_select", 1)?;
 
             Ok(())
         }
@@ -743,13 +743,13 @@ script! {
         write [value] => (self, sensor, sensor_io) {
             println!("writing {:?}", value);
 
-            sensor_io.write_register("reset", 1)?;
+            sensor_io.write_raw("reset", 1)?;
 
             std::thread::sleep(std::time::Duration::from_millis(10));
 
-            sensor_io.write_register("reset", 0)?;
-            sensor.write_function("software_reset", 0)?;
-            sensor.write_function("stream", 1)?;
+            sensor_io.write_raw("reset", 0)?;
+            sensor.write_cooked("software_reset", 0)?;
+            sensor.write_cooked("stream", 1)?;
 
             Ok(())
         }
@@ -773,16 +773,16 @@ script_config!(AR0330Scripts => "ar0330", AR0331Scripts => "ar0331");
 
 #[derive(Debug)]
 pub struct Camera {
-    model: String,
-    pub registers: HashMap<String, Arc<Mutex<RegisterSetting>>>,
+    camera_model: String,
+    pub devices: HashMap<String, Arc<Mutex<Device>>>,
     scripts: HashMap<String, Box<dyn Script>>,
 }
 
 impl Fuseable for Camera {
     fn is_dir(&self, path: &mut dyn Iterator<Item = &str>) -> fuseable::Result<bool> {
         match path.next() {
-            Some("model") => self.model.is_dir(path),
-            Some("registers") => self.registers.is_dir(path),
+            Some("camera_model") => self.camera_model.is_dir(path),
+            Some("devices") => self.devices.is_dir(path),
             Some("scripts") => {
                 let (mut peek, mut path) = path.tee();
                 let script_name = peek.next();
@@ -805,8 +805,8 @@ impl Fuseable for Camera {
         path: &mut dyn Iterator<Item = &str>,
     ) -> fuseable::Result<Either<Vec<String>, String>> {
         match path.next() {
-            Some("model") => self.model.read(path),
-            Some("registers") => self.registers.read(path),
+            Some("camera_model") => self.camera_model.read(path),
+            Some("devices") => self.devices.read(path),
             Some("scripts") => {
                 let (mut peek, mut path) = path.tee();
                 let script_name = peek.next();
@@ -835,8 +835,8 @@ impl Fuseable for Camera {
             }
             Some(name) => Err(FuseableError::not_found(name)),
             None => Ok(Either::Left(vec![
-                "model".to_owned(),
-                "registers".to_owned(),
+                "camera_model".to_owned(),
+                "devices".to_owned(),
                 "scripts".to_owned(),
             ])),
         }
@@ -848,8 +848,8 @@ impl Fuseable for Camera {
         value: Vec<u8>,
     ) -> fuseable::Result<()> {
         match path.next() {
-            Some("model") => Err(FuseableError::unsupported("write", "Camera.model")),
-            Some("registers") => self.registers.write(path, value),
+            Some("camera_model") => Err(FuseableError::unsupported("write", "Camera.camera_model")),
+            Some("devices") => self.devices.write(path, value),
             Some("scripts") => {
                 let (mut peek, mut path) = path.tee();
                 let script_name = peek.next();
@@ -880,22 +880,22 @@ impl<'de> Deserialize<'de> for Camera {
     {
         #[derive(Debug, Deserialize)]
         pub struct CameraWithoutScripts {
-            model: String,
-            registers: HashMap<String, Arc<Mutex<RegisterSetting>>>,
+            camera_model: String,
+            devices: HashMap<String, Arc<Mutex<Device>>>,
         }
 
-        let CameraWithoutScripts { model, registers } =
+        let CameraWithoutScripts { camera_model, devices } =
             CameraWithoutScripts::deserialize(deserializer)?;
 
-        let scripts = scripts_from_model(&model);
+        let scripts = scripts_from_model(&camera_model);
 
-        Ok(Camera { scripts, model, registers })
+        Ok(Camera { scripts, camera_model, devices })
     }
 }
 
 impl Camera {
     pub fn mocked(&mut self, mock: bool) {
-        for rs in self.registers.values_mut() {
+        for rs in self.devices.values_mut() {
             rs.lock().unwrap().channel.mock_mode(mock);
         }
     }
