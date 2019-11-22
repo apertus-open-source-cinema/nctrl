@@ -158,7 +158,11 @@ impl CommChannel for MMAPGPIO {
                     .bytes()
                     .ok_or_else(|| format_err!("MMAPGPIO doesn't support unbounded read"))?;
 
-                mmap_dev.get(offset..(offset + bytes)).map(|v| v.to_vec()).ok_or_else(|| {
+                mmap_dev.get(offset..(offset + bytes)).map(|v| {
+                    let mut v = v.to_vec();
+                    v.reverse();
+                    v
+                }).ok_or_else(|| {
                     format_err!(
                         "could not read region {} to {} at {} of /dev/mem",
                         offset,
@@ -177,7 +181,7 @@ impl CommChannel for MMAPGPIO {
         with_dev(
             &self.dev,
             |mmap_dev| {
-                for (i, byte) in value.iter().enumerate() {
+                for (i, byte) in value.iter().rev().enumerate() {
                     mmap_dev[offset + i] = *byte;
                 }
                 Ok(())
