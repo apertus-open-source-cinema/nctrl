@@ -1,9 +1,9 @@
-camera_model: "ar0330"
+camera_model: "beta"
 
 devices:
     cmv12000:
         channel:
-            mode: "mmaped-gpio"
+            mode: "cmv-spi-bridge"
             base: 0x60000000
             len: 0x00020000
         raw: "cmv12000_raw.yml"
