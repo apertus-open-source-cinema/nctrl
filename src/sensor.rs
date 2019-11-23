@@ -1,7 +1,7 @@
 use crate::{
     address::Address,
     communication_channel::CommunicationChannel,
-    serde_util::{bool_false, by_path, by_string_option_num},
+    serde_util::{bool_true, by_path, by_string_option_num},
     valuemap::*,
 };
 use failure::format_err;
@@ -354,7 +354,7 @@ impl<'de> Deserialize<'de> for Device {
             desc: Option<Description>,
             #[serde(default, deserialize_with = "deser_valuemap")]
             map: Option<ValueMap>,
-            #[serde(default = "bool_false")]
+            #[serde(default = "bool_true")]
             writable: bool,
             default: Option<u64>,
         }
