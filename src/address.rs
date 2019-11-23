@@ -150,6 +150,17 @@ impl Address {
 
     */
 
+    pub fn set_base_from_u64(&mut self, mut new_base: u64) {
+        let mut base = [0u8; 8];
+
+        for i in 0..7 {
+            base[i] = (new_base & 0xf) as u8;
+            new_base >>= 8;
+        }
+
+        self.base = base.to_vec();
+    }
+
     // TODO(robin): this could suffer from endianess fuckup
     // TODO(robin): to fix this use byteorder crate and specify the byteorder of
     // base byteorder of base should be big endian to match all the other stuff

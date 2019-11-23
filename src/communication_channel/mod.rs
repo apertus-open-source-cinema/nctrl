@@ -94,6 +94,35 @@ struct MMAPGPIO {
     mock: bool,
 }
 
+#[derive(Derivative, Serialize, Fuseable)]
+#[derivative(Debug, PartialEq)]
+struct CMVSPIBridge {
+    base: u64,
+    len: u64,
+    #[derivative(Debug = "ignore", PartialEq = "ignore")]
+    channel: MMAPGPIO
+}
+
+impl<'de> Deserialize<'de> for CMVSPIBridge {
+    fn deserialize<D>(deserializer: D) -> core::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Debug, Deserialize)]
+        pub struct CMVSPIBridgeConfig {
+            base: u64,
+            len: u64,
+        }
+
+        let CMVSPIBridgeConfig { base, len } =
+            CMVSPIBridgeConfig::deserialize(deserializer)?;
+
+        let channel = MMAPGPIO { base, len, dev: RwLock::new(None), mock: false };
+
+        Ok(CMVSPIBridge { base, len, channel })
+    }
+}
+
 impl I2CCdev {
     fn init(&self) -> Result<LinuxI2CDevice> {
         LinuxI2CDevice::new(format!("/dev/i2c-{}", self.bus), u16::from(self.address))
@@ -218,6 +247,30 @@ where
     }
 }
 
+impl CMVSPIBridge  {
+    fn addr_to_mmap_addr(address: &Address) -> Address {
+        let spi_reg = address.as_u64();
+        let base = 4 * spi_reg;
+        let mut address = address.clone();
+        address.set_base_from_u64(base);
+        address
+    }
+}
+
+impl CommChannel for CMVSPIBridge {
+    fn read_value_real(&self, address: &Address) -> Result<Vec<u8>> {
+        self.channel.read_value_real(&Self::addr_to_mmap_addr(address))
+    }
+
+    fn write_value_real(&self, address: &Address, value: Vec<u8>) -> Result<()> {
+        self.channel.write_value_real(&Self::addr_to_mmap_addr(address), value)
+    }
+
+    fn mock_mode(&mut self, mock: bool) { self.channel.mock_mode(mock); }
+
+    fn get_mock_mode(&self) -> bool { self.channel.get_mock_mode() }
+}
+
 macro_rules! comm_channel_config {
     ( $($struct:ident => $tag:tt),* ) => {
         paste::item!{
@@ -246,7 +299,7 @@ macro_rules! comm_channel_config {
     }
 }
 
-comm_channel_config!(I2CCdev => "i2c-cdev", MMAPGPIO => "mmaped-gpio");
+comm_channel_config!(I2CCdev => "i2c-cdev", MMAPGPIO => "mmaped-gpio", CMVSPIBridge => "cmv-spi-bridge");
 
 impl<'de> Deserialize<'de> for Box<dyn CommChannel> {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>

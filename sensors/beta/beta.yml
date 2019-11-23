@@ -1,0 +1,10 @@
+camera_model: "ar0330"
+
+devices:
+    cmv12000:
+        channel:
+            mode: "mmaped-gpio"
+            base: 0x60000000
+            len: 0x00020000
+        raw: "cmv12000_raw.yml"
+        cooked: "cmv12000_cooked.yml"

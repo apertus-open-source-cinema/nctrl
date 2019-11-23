@@ -769,7 +769,11 @@ script_set! {
     }
 }
 
-script_config!(AR0330Scripts => "ar0330", AR0331Scripts => "ar0331");
+script_set! {
+    BetaScripts => {}
+}
+
+script_config!(AR0330Scripts => "ar0330", AR0331Scripts => "ar0331", BetaScripts => "beta");
 
 #[derive(Debug)]
 pub struct Camera {

@@ -528,7 +528,7 @@ lock_control:
   max: 65535
   min: 0
   writable: true
-  map: 
+  map:
     0xBEEF: "unlock"
     _: "locked"
 lock_reg:
@@ -783,7 +783,7 @@ serial_format:
   max: 775
   min: 0
   writable: true
-  map: 
+  map:
     0x0201: "1_lane_mipi"
     0x0202: "2_lane_mipi"
     0x0204: "4_lane_mipi"
@@ -1055,7 +1055,7 @@ test_mode:
   max: 7
   min: 0
   writable: true
-  map: 
+  map:
     2: "always_0"
     3: "always_1"
     4: "square_half_rate"
