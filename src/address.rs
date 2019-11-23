@@ -1,5 +1,5 @@
 use crate::sensor::RawRegister;
-use failure::Error;
+use failure::{Error, format_err};
 use fuseable::Either;
 use fuseable_derive::Fuseable;
 use lazy_static::lazy_static;
@@ -123,7 +123,12 @@ impl Address {
                         None => 0,
                     };
 
-                    Slice { start, end }
+                    if start >= end {
+                        panic!("slice of address {} had a start bigger than or equal to the end bit: {} >= {}", str, start, end)
+                    } else {
+                        Slice { start, end }
+                    }
+
                 });
 
                 Ok(Address { base, slice })
