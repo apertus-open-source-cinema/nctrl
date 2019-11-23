@@ -1,0 +1,203 @@
+bin_en:
+  addr: monochrome_settings[2]
+  default: 0
+  description: >
+    binning enable
+sub_en:
+  addr: monochrome_settings[1]
+  default: 0
+  description: >
+    subsampling enable
+color:
+  addr: monochrome_settings[0]
+  default: 1
+  description: >
+    0: Color sensor
+    1: Monochrome sensor
+color_exp:
+  addr: monochrome_settings[3]
+  default: 1
+  description: >
+    0: Color sensor
+    1: Monochrome sensor
+image_flipping:
+  addr: image_flipping[0:2]
+  default: 0
+  description: >
+    0: No mirroring
+    1: Mirror in Y
+exp_ext:
+  addr: exposure_mode[0]
+  description: >
+    0: Internal Exposure Mode. Exposure time is defined by register 71-72.
+    1: External Exposure Mode. Exposure time is defined by T_EXPx and FRAME_REQ triggers.
+  map:
+    0: internal
+    1: external
+exp_dual:
+  addr: exposure_mode[1]
+  description: Interleaved HDR enable.
+
+exp_time_low:
+    addr: exp_time_low[0:16]
+    default: 1536
+    description: Sets the exposure time in Internal Exposure Mode. Sets the exposure time for the even columns in interleaved HDR mode.
+exp_time_high:
+    addr: exp_time_high[0:8]
+    default: 0
+    description: Sets the exposure time in Internal Exposure Mode. Sets the exposure time for the even columns in interleaved HDR mode.
+exp_time2_low:
+    addr: exp_time_low2[0:16]
+    default: 1536
+    description: Sets the exposure time for the odd columns in interleaved HDR mode.
+exp_time2_high:
+    addr: exp_time_high2[0:8]
+    default: 0
+    description: Sets the exposure time for the odd columns in interleaved HRD mode.
+exp_kp1_low:
+    addr: exp_kp1_low[0:16]
+    default: 0
+    description: Sets the exposure time of kneepoint 1
+exp_kp1_high:
+    addr: exp_kp1_high[0:8]
+    default: 0
+    description: Sets the exposure time of kneepoint 1
+exp_kp2_low:
+    addr: exp_kp2_low[0:16]
+    default: 0
+    description: Sets the exposure time of kneepoint 2
+exp_kp2_high:
+    addr: exp_kp2_high[0:8]
+    default: 0
+    description: Sets the exposure time of kneepoint 2
+number_slopes:
+    addr: number_slopes[0:2]
+    default: 1
+    description: Sets the number of slopes (min=1, max=3)
+disable_top:
+    addr: output_mode[5]
+    default: 0
+    description: "Disable the top channels"
+output_mode:
+    addr: output_mode[0:5]
+    default: 0
+    description: "number of outputs to use on each side"
+    map:
+      0: 32
+      1: 16
+      3: 8
+      7: 4
+      15: 2
+      31: 1
+offset_bot:
+    addr: offset_bot[0:12]
+    default: 780
+    description: >
+      Sets the relative offset of the dark level for the bottom outputs following a 2’s-complement code.
+      1815: 12b
+      510: 10b
+      520: 8b
+offset_top:
+    addr: offset_top[0:12]
+    default: 780
+    description: >
+      Sets the relative offset of the dark level for the top outputs following a 2’s-complement code.
+      1815: 12b
+      510: 10b
+      520: 8b
+black_col_en:
+    addr: black_col_and_training_pattern[15]
+    default: 0
+    description: enable the black reference columns
+training_pattern:
+    addr: black_col_and_training_pattern[0:12]
+    default: 85
+    description: "Sets the training pattern value."
+channel_en:
+    addr: channel_en[0:3]
+    default: 7
+    description: >
+      Bit 0: Output clock channel
+      Bit 1: Control channel
+      Bit 2: Input clock channel
+      0: Disabled
+      1: Enabled
+adc_range_mult2:
+    addr: adc_range_mult2[0:2]
+    default: 0
+    description: >
+      Change multiplier of the slope and the input range of the ramp used by the ADC for lower clock speeds. Only use with ADC_range_mult=3.
+    map:
+      0: 3
+      1: 8
+      3: 16
+vtfl2:
+    addr: vtfl[0:7]
+    default: 64
+    description: >
+      Sets the level of kneepoint 1:
+        Bit [6] = 0/1: Enable/Disable DAC
+        Bits [5:0]: Vtfl2 voltage level
+vtfl3:
+    addr: vtfl[7:14]
+    default: 64
+    description: >
+      Sets the level of kneepoint 2:
+        Bit [6] = 0/1: Enable/Disable DAC
+        Bits [5:0]: Vtfl3 voltage level
+vramp1:
+    addr: vramp[0:7]
+vramp2:
+    addr: vramp[7:14]
+pga_gain:
+    addr: pga[0:3]
+    description: analog gain
+    map:
+      0: 1
+      1: 2
+      3: 3
+      7: 4
+pga_div:
+    addr: pga[3]
+    description: analog gain divider
+    map:
+      0: 1
+      1: 3
+adc_range:
+    addr: adc_range[0:8]
+    default: 127
+    description: >
+      Change the slope and the input range of the ramp used
+      by the ADC
+      205: 8b
+      165: 10b
+      230: 12b
+adc_range_mult:
+  addr: adc_range[8:10]
+  description:
+    Change multiplier of the slope and the input range of the ramp used by the ADC
+  map:
+    0: 1
+    1: 2
+    3: 4
+dig_gain:
+    addr: dig_gain[0:5]
+    default: 4
+    description: >
+      Set to 1,2,3,4,6,8,10,12,14,16 to get the appropriate digital gain. For unity gain use:
+      1: 12b
+      4: 10b
+      6: 8b
+bit_mode:
+    addr: bit_mode[0:2]
+    default: 1
+    description: >
+      0: 12b (12 bits per pixel)
+      1: 10b (10 bits per pixel)
+      2: 8b (8 bits per pixel)
+test:
+    addr: test_pattern[0:2]
+    description: enable test pattern
+    map:
+      0: off
+      3: on
