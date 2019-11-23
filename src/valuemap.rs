@@ -152,8 +152,7 @@ impl ValueMap {
                 }
             }
             ValueMap::Fixed(map) => {
-                let wanted_value: u64 =
-                    Cursor::new(parse_num(s.clone())?).read_u64::<BigEndian>()?;
+                let wanted_value: u64 = to_u64(&parse_num(s.clone())?);
 
                 let (v, _) = map
                     .iter()
@@ -188,6 +187,19 @@ impl ValueMap {
             }
         }
     }
+}
+
+fn to_u64(bytes: &[u8]) -> u64 {
+    assert!(bytes.len() < 9, "base should be no longer than 8 bytes");
+
+    let mut out: u64 = 0;
+
+    for byte in bytes.iter().rev() {
+        out <<= 8;
+        out |= u64::from(*byte);
+    }
+
+    out
 }
 
 pub fn deser_valuemap<'de, D>(deserializer: D) -> std::result::Result<Option<ValueMap>, D::Error>
