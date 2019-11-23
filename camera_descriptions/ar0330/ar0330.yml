@@ -1,4 +1,4 @@
-camera_model: "ar0330"
+camera_model: "micro-r2"
 
 devices:
     sensor_io:

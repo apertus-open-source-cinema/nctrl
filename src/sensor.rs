@@ -757,15 +757,9 @@ script! {
 }
 
 script_set! {
-    AR0330Scripts => {
+    MicroR2Scripts => {
         "reset": Reset,
         "kick": Kick
-    }
-}
-
-script_set! {
-    AR0331Scripts => {
-        "reset": ResetAR0331
     }
 }
 
@@ -773,7 +767,7 @@ script_set! {
     BetaScripts => {}
 }
 
-script_config!(AR0330Scripts => "ar0330", AR0331Scripts => "ar0331", BetaScripts => "beta");
+script_config!(MicroR2Scripts => "micro-r2", BetaScripts => "beta");
 
 #[derive(Debug)]
 pub struct Camera {
