@@ -362,9 +362,9 @@ impl<'de> Deserialize<'de> for Device {
         #[derive(Debug, Deserialize)]
         struct DeviceConfig {
             channel: CommunicationChannel,
-            #[serde(deserialize_with = "by_path")]
+            #[serde(deserialize_with = "by_path", default)]
             raw: HashMap<String, RawRegister>,
-            #[serde(deserialize_with = "by_path")]
+            #[serde(deserialize_with = "by_path", default)]
             cooked: HashMap<String, CookedRegisterStringAddr>,
         }
 
