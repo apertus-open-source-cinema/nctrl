@@ -154,7 +154,7 @@ impl Address {
         let mut base = [0u8; 8];
 
         for i in 0..7 {
-            base[i] = (new_base & 0xf) as u8;
+            base[i] = (new_base & 0xff) as u8;
             new_base >>= 8;
         }
 
