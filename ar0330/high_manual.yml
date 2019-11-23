@@ -1,0 +1,1271 @@
+access_address:
+  addr: seq_ctrl_port[0:9]
+  description: 'When in STANDBY (not streaming)  mode: address pointer to the sequencer
+    RAM.'
+  writable: true
+auto_inc_on_read:
+  addr: seq_ctrl_port[14:15]
+  description: If 1 => The access_address is incremented (by 1) after each read operation
+    from seq_data_port (which returns only 1 byte)
+  max: 1
+  min: 0
+  writable: true
+blanking_data_enable:
+  addr: hispi_control_status[3:4]
+  description:
+    long: This parameter allows the user to define the idle (IDL) data output during
+      horizontal and vertical blanking periods.  This parameter will affect the HiSPi
+      transmitter when it is configured to Streaming SP.  Value 0, the default pattern
+      (constant 1) is output during horizontal and vertical blanking periods  Value
+      1, the pattern defined by the blanking_data input is output during horizontal
+      and vertical blanking periods
+    short: blanking data enable
+  max: 1
+  min: 0
+  writable: true
+blue_gain:
+  addr: blue_gain[0:11]
+  default: 128
+  description: Digital gain for Blue pixels, in format of xxxx.yyyyyyy.
+  max: 2047
+  min: 0
+  writable: true
+blue_gain_cb:
+  addr: blue_gain_cb[0:11]
+  default: 128
+  description: digital gain blue context B
+  max: 2047
+  min: 0
+  writable: true
+chip_version_reg:
+  addr: chip_version_reg[0:16]
+  default: 9732
+  description:
+    long: Model ID. Read-only. Can be made read/write by clearing R0x301A-B[3].
+    short: Read-only. Can be made read/write by clearing R0x301A-B[3].
+  max: 65535
+  min: 0
+  writable: true
+clock_del:
+  addr: hispi_timing[12:15]
+  description:
+    long: Delay applied to the clock lane in 1/8 unit interval (UI) steps.
+    short: CLOCK_DEL
+  max: 7
+  min: 0
+  writable: true
+coarse_gain:
+  addr: analog_gain[4:6]
+  description: Coarse Analog gain in context A.
+  writable: true
+  map:
+      0: "1.0"
+      1: "2.0"
+      2: "4.0"
+      3: "8.0"
+coarse_gain_cb:
+  addr: analog_gain[12:14]
+  description: Coarse Analog gain in context B.
+  writable: true
+  map:
+      0: 1.0
+      1: 2.0
+      2: 4.0
+      3: 8.0
+coarse_integration_time:
+  addr: coarse_integration_time[0:16]
+  default: 16
+  description: Integration time specified in multiples of line_length_pck_.
+  max: 65535
+  min: 0
+  writable: true
+coarse_integration_time_cb:
+  addr: coarse_integration_time_cb[0:16]
+  default: 16
+  description: Coarse integration time in context B.
+  max: 65535
+  min: 0
+  writable: true
+compression_enable:
+  addr: compression[0:1]
+  description: Enables A-LAW compression.  Inputs 12-bit RAW pixel data.  Outputs
+    10-bit compressed data using A-LAW compression.
+  writable: true
+cont_tx_clk:
+  addr: mipi_timing_4[15:16]
+  description:
+    long: Reserved. Read as 0
+    short: Enable the continuous clocking of the Mipi clock
+  writable: false
+context:
+  addr: digital_test[13:14]
+  description: 0 = Use context A 1 = Use Context B
+  writable: true
+  map:
+      0: "A"
+      0: "B"
+data0_del:
+  addr: hispi_timing[0:3]
+  description:
+    long: Delay applied to Data Lane 0 in 1/8 unit interval (UI) steps.
+    short: DATA0_DEL
+  max: 7
+  min: 0
+  writable: true
+data1_del:
+  addr: hispi_timing[3:6]
+  description:
+    long: Delay applied to Data Lane 1 in 1/8 unit interval (UI) steps.
+    short: DATA1_DEL
+  max: 7
+  min: 0
+  writable: true
+data2_del:
+  addr: hispi_timing[6:9]
+  description:
+    long: Delay applied to Data Lane 2 in 1/8 unit interval (UI) steps.
+    short: DATA2_DEL
+  max: 7
+  min: 0
+  writable: true
+data3_del:
+  addr: hispi_timing[9:12]
+  description:
+    long: Delay applied to Data Lane 3 in 1/8 unit interval (UI) steps.
+    short: DATA3_DEL
+  max: 7
+  min: 0
+  writable: true
+data_format_bits_uncompressed:
+  addr: data_format_bits[8:16]
+  default: 10
+  description: 'The bit-width of the uncompressed pixel data'
+  max: 255
+  min: 0
+  writable: true
+data_format_bits_compressed:
+  addr: data_format_bits[0:8]
+  default: 10
+  description: 'The bit-width of the compressed pixel data'
+  max: 255
+  min: 0
+  writable: true
+data_pedestal:
+  addr: data_pedestal[0:12]
+  default: 168
+  description: Constant offset that is added to pixel values at the end of datapath
+    (after all corrections).
+  max: 4095
+  min: 0
+  writable: true
+dither_enable:
+  addr: digital_ctrl[5:6]
+  description: Enables dithering after digital gain.
+  max: 1
+  min: 0
+  writable: true
+drive_pins:
+  addr: reset_register[6:7]
+  description: 0 = The parallel data interface (DOUT[11:0], LINE_VALID, FRAME_VALID,
+    and PIXCLK) may enter a high-impedance state (depending upon the enabling and
+    use of the pad OE_BAR) 1 = The parallel data interface is driven.  This bit is
+    "do not care" unless bit[7]=1.
+  max: 1
+  min: 0
+  writable: true
+embedded_data:
+  addr: smia_test[8:9]
+  description: 1 = Frames of data out of the sensor include 2 rows of embedded data.  0
+    = Frames out of the sensor exclude the embedded data.  This register field should
+    only be change while the sensor is in software standby.  Disabling the embedded
+    data will not reduce the number of vertical blanking rows.
+  writable: true
+en_flash:
+  addr: flash[8:9]
+  description: Enables the flash. The flash is asserted when an integration (either
+    T1, T2 or T3 is ongoing).
+  max: 1
+  min: 0
+  writable: true
+poly_sc_enable:
+  addr: poly_sc_enable[15:16]
+  description: Turn on shading correction.
+  max: 1
+  min: 0
+  writable: true
+ext_shut_delay:
+  addr: grr_control4[0:16]
+  max: 65535
+  min: 0
+  writable: true
+ext_shut_pulse_width:
+  addr: grr_control3[0:16]
+  description: Width of the external shutter pulse in clock cycles.   When set to
+    zero, the shutter pulse will be controlled by GRR_CONTROL4.
+  max: 65535
+  min: 0
+  writable: true
+extra_delay:
+  addr: extra_delay[0:16]
+  description: The last row in the frame is extended by the number of the sensor core
+    clock periods specified here. The extra_delay must be configured to an even value.  This
+    register can be used to fine-tune the sensor maximum frame-rate.
+  max: 65535
+  min: 0
+  writable: true
+fine_gain:
+  addr: analog_gain[0:4]
+  description: Fine analog gain in context A.
+  max: 15
+  min: 0
+  writable: true
+  map:
+    0: 1.00
+    1: 1.03
+    2: 1.07
+    3: 1.10
+    4: 1.14
+    5: 1.19
+    6: 1.23
+    7: 1.28
+    8: 1.33
+    9: 1.39
+    10: 1.45
+    11: 1.52
+    12: 1.60
+    13: 1.68
+    14: 1.78
+    15: 1.88
+fine_gain_cb:
+  addr: analog_gain[8:12]
+  description: Fine analog gain in context b
+  writable: true
+  map:
+    0: 1.00
+    1: 1.03
+    2: 1.07
+    3: 1.10
+    4: 1.14
+    5: 1.19
+    6: 1.23
+    7: 1.28
+    8: 1.33
+    9: 1.39
+    10: 1.45
+    11: 1.52
+    12: 1.60
+    13: 1.68
+    14: 1.78
+    15: 1.88
+fine_integration_time:
+  addr: fine_integration_time[0:16]
+  description: Fine integration is used to delay the shutter operation after the sample
+    operation is finished. Thus, the integration time is decreased. The resolution
+    is 1 pixel clock time. Note that for short line length (R0x300c, R0x303e) values,
+    the available time for fine shutter is limited. If programmed for more than available
+    time, the normal sensor operation will be distrupted.
+  max: 65535
+  min: 0
+  writable: true
+fine_integration_time_cb:
+  addr: fine_integration_time_cb[0:16]
+  description: Fine integration time in context B.
+  max: 65535
+  min: 0
+  writable: true
+flash2:
+  addr: flash2[0:16]
+  default: 256
+  description: Xenon flash pulse width in clock periods.
+  max: 65535
+  min: 0
+  writable: true
+forced_pll_on:
+  addr: reset_register[11:12]
+  description: When this bit is set, the PLL will be enabled even when the sensor
+    is in "standby" (low power mode).
+  writable: true
+frame_cnt_mode:
+  addr: mipi_config_status[0:2]
+  description:
+    long: 'MIPI frame start and frame end short packets contain a 16-bit frame number
+      field. The behaviour of the frame number field is controlled as follows:  0:
+      the frame number is always set to 0.  1: The frame number is reset during sensor
+      reset. The frame number for the first frame generated in streaming mode after
+      reset is 1, and the frame number increments for subsequent frames. The frame
+      number wraps from 0xFF to 0x01.  2: The frame number is reset when the sensor
+      is in the software standby system state. The frame number for the first frame
+      generated in streaming mode is 1, and the frame number increments for subsequent
+      frames. The frame number wraps from 0xFF to 0x01.  3: Reserved.'
+    short: FRAME_CNT_MODE
+  max: 3
+  min: 0
+  writable: true
+  map:
+      0: "constant_1"
+      1: "reset_on_reset"
+      2: "reset_on_standby"
+frame_count:
+  addr: frame_count[0:16]
+  default: 65535
+  description: Counts the number of output frames. At the startup is initialized to
+    0xffff.
+  max: 65535
+  min: 0
+  writable: true
+frame_length_lines:
+  addr: frame_length_lines[0:16]
+  default: 1308
+  description: The number of complete lines (rows) in the frame timing. This includes
+    visible lines and vertical blanking lines.
+  max: 65535
+  min: 0
+  writable: true
+frame_length_lines_cb:
+  addr: frame_length_lines_cb[0:16]
+  default: 1548
+  description: FRAME_LENGTH_LINES context B. See description for R0x300a
+  max: 65535
+  min: 0
+  writable: true
+frame_preamble:
+  addr: frame_preamble[0:16]
+  default: 36
+  description: 'MIPI timing configuration: Number of clock cycles for frame short
+    packet and transition from LP to HS.'
+  max: 65535
+  min: 0
+  writable: true
+frame_start_mode:
+  addr: grr_control1[5:6]
+  description: When set to 1, the sensor will match the frame time to the  frame length
+    lines and line_length_pck.  It will not increase the frame time even if the integration
+    time specified by coarse integration time is longer than the minimum frame-time.
+  writable: true
+framesync:
+  addr: frame_status[0:1]
+  description:
+    long: Set on register write and reset on frame synchronization. Acts as debug
+      flag to verify that register writes completed before last frame synchronization.
+    short: Set on register write and reset on frame synchronization.
+  max: 1
+  min: 0
+  writable: false
+global_gain:
+  addr: global_gain[0:11]
+  default: 128
+  description:
+    long: Writing a gain to this register is equivalent to writing that code to each
+      of the 4 color-specific gain registers. Reading from this register returns the
+      value most recently written to the green1_gain register.
+    short: "xxxx.yyyyyyy The x's represent a 4-bit integer value. The seven y\u2019\
+      s represent the values \xBD, \xBC, 1/8, 1/16, 1/32, 1/64 ,1/128 respectively.\
+      \ For instance, to get a gain of 6.75x you need the value 0b01101100000."
+  max: 2047
+  min: 0
+  writable: true
+global_gain_cb:
+  addr: global_gain_cb[0:11]
+  default: 128
+  description: global digital gain context B
+  max: 2047
+  min: 0
+  writable: true
+gpi_en:
+  addr: reset_register[8:9]
+  description: 0 = the primary input buffers associated with the OUTPUT_ENABLE_N,
+    TRIGGER and STANDBY inputs are powered down and cannot be used.  1 = the input
+    buffers are enabled and can be read through R0x3026-7.
+  max: 1
+  min: 0
+  writable: true
+gr_delay:
+  addr: grr_control2[0:8]
+  description: Delay between external trigger and global reset in number of rows.
+  max: 255
+  min: 0
+  writable: true
+green1_gain:
+  addr: green1_gain[0:11]
+  default: 128
+  description: Digital gain for green1 (Gr) pixels, in format of xxxx.yyyyyyy.
+  max: 2047
+  min: 0
+  writable: true
+green1_gain_cb:
+  addr: green1_gain_cb[0:11]
+  default: 128
+  description: Digital gain green1 context B
+  max: 2047
+  min: 0
+  writable: true
+green2_gain:
+  addr: green2_gain[0:11]
+  default: 128
+  description: Digital gain for green2 (Gb) pixels in format of xxxx.yyyyyyy.
+  max: 2047
+  min: 0
+  writable: true
+green2_gain_cb:
+  addr: green2_gain_cb[0:11]
+  default: 128
+  description: digital gain green 2 context B
+  max: 2047
+  min: 0
+  writable: true
+grr_mode:
+  addr: grr_control1[0:1]
+  description: '0: Normal ERS mode. 1: Global reset release mode.'
+  max: 1
+  min: 0
+  writable: true
+vcm_mode:
+  addr: datapath_select[9:10]
+  description: 'Configures the sensor to use the normal or high VCM mode in the AR0330
+    sensor.  0: Low Vcm. VDD_HiSPI_TX = 0.4V - 0.8V  1: High Vcm. VDD_HISPI_TX = 1.7V
+    - 1.9V  This register must be changed when the sensor streaming is disabled. (R0x301A[2]=0)'
+  max: 1
+  min: 0
+  writable: true
+  map:
+      0: "low_vcm"
+      1: "high_vcm"
+hispi_mode_sel:
+  addr: hispi_control_status[10:12]
+  description:
+    long: 'Select the HiSPi output protocol: b00: Streaming S  b01: Streaming SP or
+      Packetized SP note: Use the streaming_mode parameter to configure between Streaming
+      SP and Packetized SP.'
+    short: Mode select
+  max: 3
+  min: 0
+  writable: true
+  map:
+      0: "streaming_s"
+      1: "sp"
+horiz_mirror:
+  addr: image_orientation[0:1]
+  description:
+    long: 0 = Normal readout  1 = Readout is mirrored horizontally so that the column
+      specified by x_addr_end_  (+1)is read out of the sensor first.  Changing this
+      register can only be done when streaming is disabled
+    short: This bit is an alias of R0x3040[14].
+  max: 1
+  min: 0
+  writable: true
+horizontal_cursor_position:
+  addr: horizontal_cursor_position[0:11]
+  description: Specify the start row for the test cursor.
+  max: 2047
+  min: 0
+  writable: true
+horizontal_cursor_width:
+  addr: horizontal_cursor_width[0:11]
+  description: Specify the width, in rows, of the horizontal test cursor. A width
+    of 0 disables the cursor.
+  max: 2047
+  min: 0
+  writable: true
+i2c_id_default:
+  addr: i2c_ids[0:8]
+  default: 0x20
+  description: default i2c address (saddr low)
+  max: 255
+  min: 0
+  writable: true
+i2c_id_alternate:
+  addr: i2c_ids[8:16]
+  default: 0x30
+  description: alternate i2c address (saddr high)
+  max: 255
+  min: 0
+  writable: true
+i2c_wrt_checksum:
+  addr: i2c_wrt_checksum[0:16]
+  default: 65535
+  description: Checksum of I2C write operations.
+  max: 65535
+  min: 0
+  writable: true
+invert_flash:
+  addr: flash[7:8]
+  description: Invert flash output signal. When set, the FLASH output signal will
+    be active low.
+  max: 1
+  min: 0
+  writable: true
+line_length_pck:
+  addr: line_length_pck[0:16]
+  default: 1248
+  description: The number of pixel clock periods in one line (row) time. This includes
+    visible pixels and horizontal blanking time. Only even values are allowed.
+  max: 65535
+  min: 0
+  writable: true
+line_length_pck_cb:
+  addr: line_length_pck_cb[0:16]
+  default: 1248
+  description: Line length in context b. The number of pixel clock periods in one
+    line (row) time. This includes visible pixels and horizontal blanking time. Only
+    even values are allowed.
+  max: 65535
+  min: 0
+  writable: true
+line_preamble:
+  addr: line_preamble[0:16]
+  default: 12
+  description: 'MIPI timing: Number of clock cycles for line transition from LP to
+    HS.'
+  max: 65535
+  min: 0
+  writable: true
+lock_control:
+  addr: lock_control[0:16]
+  default: 48879
+  description: This register protects the mirror mode select (register read mode).
+    When set to value 0xBEEF, the horizontal and vertical mirror modes can be changed,
+    otherwise these values are locked.
+  max: 65535
+  min: 0
+  writable: true
+  map:
+    0xBEEF: "unlock"
+    _: "locked"
+lock_reg:
+  addr: reset_register[3:4]
+  description: Many parameter limitation registers that are specified as read-only
+    are actually implemented as read/write registers. Clearing this bit allows such
+    registers to be written.
+  max: 1
+  min: 0
+  writable: true
+  map:
+      1: "lock"
+      0: "unlock"
+mask_bad:
+  addr: reset_register[9:10]
+  description: 0 = The sensor will produce bad (corrupted) frames as a result of some
+    register changes.  1 = Bad (corrupted) frames are masked within the sensor by
+    extending the vertical blanking time for the duration of the bad frame.
+  max: 1
+  min: 0
+  writable: true
+mipi_heavy_lp_load:
+  addr: mipi_timing_4[14:15]
+  description:
+    long: contol  of phy heavy_lp_load pin
+    short: MIPI_HEAVY_LP_LOAD
+  max: 1
+  min: 0
+  writable: true
+mipi_line_byte_error:
+  addr: datapath_status[4:5]
+  max: 1
+  min: 0
+  writable: true
+mipi_preamble_error:
+  addr: datapath_status[5:6]
+  description: MIPI_PREAMBLE_ERROR
+  max: 1
+  min: 0
+  writable: true
+mipi_timing_0_t_hs_prepare:
+  addr: mipi_timing_0[12:16]
+  description:
+    long: Time (in clk cycles) to drive LP-00 prior to entering HS data transmission
+      mode
+    short: LP-00 drive time
+  max: 15
+  min: 0
+  writable: true
+mode_select:
+  addr: mode_select[0:1]
+  description: This bit is an alias of R0x301A-B[2].
+  max: 1
+  min: 0
+  writable: true
+  map:
+      0: "standby"
+      1: "streaming"
+op_pix_clk_div:
+  addr: op_pix_clk_div[0:5]
+  default: 12
+  description: Clock divisor applied to the op_sys_clk to generate the output pixel
+    clock.  The divisor indicates the bit-depth of the output pixel word. (i.e. "12"
+    12-bit, "10" 10-bit, "8", 8-bit)
+  max: 31
+  min: 0
+  writable: true
+op_sys_clk_div:
+  addr: op_sys_clk_div[0:5]
+  default: 1
+  description: Clock divisor applied to PLL output clock to generate output system
+    clock. Can only be programmed to "1" in the AR0330 sensor.  Read-only.
+  max: 31
+  min: 0
+  writable: true
+operation_mode_ctrl:
+  addr: operation_mode_ctrl[0:2]
+  default: 1
+  max: 3
+  min: 0
+  writable: false
+output_msb_first:
+  addr: hispi_control_status[1:2]
+  description:
+    long: 'Configures the active data transmitted by the HiSPi interface to MSB or
+      LSB first.   Value 0: Active data will be in LSB Value 1: Active data will be
+      in MSB  Note:  The SYNC code and idle (IDL) data are not affected by the output_msb_first
+      bit.'
+    short: 'Configures the active data transmitted by the HiSPi interface to MSB or
+      LSB first.   Value 0: Active data will be in LSB  Value 1: Active data will
+      be in MSB  Note:  The SYNC code and idle (IDL) data are not affected by the
+      output_msb_first bit.'
+  max: 1
+  min: 0
+  writable: true
+parallel_en:
+  addr: reset_register[7:8]
+  description: 0 = The parallel data interface (DOUT[11:0], LINE_VALID, FRAME_VALID,
+    and PIXCLK) is disabled and the outputs are placed in a high-impedance state.  1
+    = The parallel data interface is enabled. The output signals can be switched between
+    a driven and a high-impedance state using output-enable control.
+  max: 1
+  min: 0
+  writable: true
+pll_multiplier:
+  addr: pll_multiplier[0:8]
+  default: 98
+  description: PLL_MULTIPLIER
+  max: 255
+  min: 0
+  writable: true
+poly_origin_c:
+  addr: poly_origin_c[0:12]
+  description: 'Origin of polynomial function: applied as offset to X (col) coordinate
+    of pixel.'
+  max: 4095
+  min: 0
+  writable: true
+poly_origin_r:
+  addr: poly_origin_r[0:11]
+  default: 772
+  description: 'Origin of polynomial function: applied as offset to Y (row) coordinate
+    of pixel.'
+  max: 2047
+  min: 0
+  writable: true
+pre_pll_clk_div:
+  addr: pre_pll_clk_div[0:6]
+  default: 4
+  description: Divides the input clock before being multiplied by the VCO.
+  max: 63
+  min: 0
+  writable: true
+read_mode_col_bin:
+  addr: read_mode[13:14]
+  description: Column binning mode in context A.  Pixel values are averaged in the
+    digital domain.  Use when skipping is enabled by setting x_odd_inc.
+  writable: true
+read_mode_col_bin_cb:
+  addr: read_mode[11:12]
+  description: Column binning mode in context B.  Pixel values are averaged in the
+    digital domain.  Use when skipping is enabled by setting x_odd_inc.
+  writable: true
+read_mode_col_sf_bin_en:
+  addr: read_mode[9:10]
+  description: Column analog binning control for context A.  Use when skipping is
+    enabled by setting x_odd_inc.
+  writable: true
+read_mode_col_sf_bin_en_cb:
+  addr: read_mode[8:9]
+  description: Column analog binning control for context B.  Use when skipping is
+    enabled by setting x_odd_inc.
+  writable: true
+read_mode_col_sum:
+  addr: read_mode[5:6]
+  description: Column sum mode.  Pixel values are summed in the digital domain.  Use
+    when skipping is enabled by setting x_odd_inc.
+  max: 1
+  min: 0
+  writable: true
+read_mode_row_bin:
+  addr: read_mode[12:13]
+  description: Analog row binning control in context A.  Use when row-wise skipping
+    is enabled by setting y_odd_inc.  The y_addr_start must be an even number when
+    using row binning.
+  writable: true
+read_mode_row_bin_cb:
+  addr: read_mode[10:11]
+  description: Analog row binning control for context B.  Use when row-wise skipping
+    is enabled by setting y_odd_inc.  The y_addr_start must be an even number when
+    using row binning.
+  writable: true
+red_gain:
+  addr: red_gain[0:11]
+  default: 128
+  description: Digital gain for Red pixels,  in format of xxxx.yyyyyyy.
+  max: 2047
+  min: 0
+  writable: true
+red_gain_cb:
+  addr: red_gain_cb[0:11]
+  default: 128
+  description: digital gain red context B
+  max: 2047
+  min: 0
+  writable: true
+reset:
+  addr: reset_register[0:1]
+  description: 'This bit always reads as 0. Setting this bit initiates a reset sequence:
+    the frame being generated will be truncated.'
+  max: 1
+  min: 0
+  writable: true
+restart:
+  addr: reset_register[1:2]
+  description: This bit always reads as 0. Setting this bit causes the sensor to truncate
+    the current frame at the end of the current row and start resetting (integrating)
+    the first row. The delay before the first valid frame is read out is equal to
+    the integration time.
+  max: 1
+  min: 0
+  writable: true
+restart_bad:
+  addr: reset_register[10:11]
+  description: 1 = a restart is forced any time a bad frame is detected. This can
+    shorten the delay when waiting for a good frame, since the delay for masking out
+    a bad frame will be the integration time rather than the full-frame time.
+  max: 1
+  min: 0
+  writable: true
+revision_number:
+  addr: revision_number[0:8]
+  max: 255
+  min: 0
+  writable: true
+row_speed:
+  addr: row_speed[4:7]
+  default: 16
+  description: 'Bits [6:4] of this register define the phase of the output pixclk.
+    2 set of values are correct:  a) 000, 010, 100, 110 => 0 delay (rising edge of
+    pixclk coincides DOUT change).  b) 001, 011, 101, 111 => 1/2 clk delay (falling
+    edge of pixclk coincides DOUT change).'
+  max: 112
+  min: 0
+  writable: true
+  0: 0
+  2: 0
+  4: 0
+  6: 0
+  1: 0.5
+  3: 0.5
+  5: 0.5
+  7: 0.5
+seq_data_port:
+  addr: seq_data_port[0:16]
+  description: Register used to write to or read from the sequencer RAM.
+  max: 65535
+  min: 0
+  writable: true
+sequencer_stopped:
+  addr: seq_ctrl_port[15:16]
+  description: Showing that sequencer is stopped (STANDBY mode) and the RAM is available
+    for read or write.
+  writable: false
+serial_format:
+  addr: serial_format[0:10]
+  default: 772
+  description: When the serial interface is enabled (reset_register[12]=0), this register
+    controls which serial interface is in use. Any non-zero serial_format_descriptor
+    value is a legal value for this register. The upper byte of this register (interface
+    type) is read-only. The lower byte is read/write.
+  max: 775
+  min: 0
+  writable: true
+  map:
+    0x0201: "1_lane_mipi"
+    0x0202: "2_lane_mipi"
+    0x0204: "4_lane_mipi"
+    0x0302: "2_lane_hispi"
+    0x0304: "4_lane_hispi"
+shutter_always_open:
+  addr: grr_control1[7:8]
+  description: When set to 1, the shutter pin will always be asserted (OPEN) in GRR
+    mode.
+  writable: true
+shutter_disable:
+  addr: grr_control1[6:7]
+  description: When set to 1, the shutter pin will be disabled (CLOSED) in GRR mode.
+  writable: true
+slave_mode:
+  addr: grr_control1[4:5]
+  description: When set to 1, the sensor readout start will be synchronized with the
+    rising edge of the input trigger signal.  (applied to pad TRIGGER).
+  writable: true
+slew_rate_ctrl_parallel:
+  addr: datapath_select[13:16]
+  description: Selects the slew (edge) rate for the DOUT[9:0], FRAME_VALID, LINE_VALID
+    and FLASH outputs. Only affects the FLASH output when parallel data output is
+    disabled. The value 7 results in the fastest edge rates on these signals. Slowing
+    down the edge rate can reduce ringing and electro-magnetic emissions.
+  max: 7
+  min: 0
+  writable: true
+slew_rate_ctrl_pixclk:
+  addr: datapath_select[10:13]
+  description: Selects the slew (edge) rate for the PIXCLK output. Has no effect when
+    parallel data output is disabled. The value 7 results in the fastest edge rates
+    on this signal. Slowing down the edge rate can reduce ringing and electromagnetic
+    emissions.
+  max: 7
+  min: 0
+  writable: true
+smia_serialiser_dis:
+  addr: reset_register[12:13]
+  description: This bit disables the serial interfaces (MIPI and HiSPi)
+  max: 1
+  min: 0
+  writable: true
+software_reset:
+  addr: software_reset[0:1]
+  description: This bit is an alias of R0x301A-B[0].
+  max: 1
+  min: 0
+  writable: true
+special_line_valid:
+  addr: datapath_select[0:2]
+  description: 00 = Normal behavior of LINE_VALID  01 = LINE_VALID is driven continuously
+    (continue generating LINE_VALID during vertical blanking)  10 = LINE_VALID is
+    driven continuously as LINE_VALID XOR FRAME_VALID
+  max: 3
+  min: 0
+  writable: true
+  map:
+      0: "normal"
+      1: "during_vblank"
+      2: "xor_frame_valid"
+standby_status:
+  addr: frame_status[1:2]
+  description:
+    long: This bit indicates that  the sensor is in standby state. It can be polled
+      after standby is entered to see when the real low-power state is entered; which
+      can happen at the end of row or frame depending on bit R0x301A[4].
+    short: Chip is in standby state.
+  max: 1
+  min: 0
+  writable: false
+start_checksum:
+  addr: mipi_config_status[9:10]
+  description:
+    long: start checksum When asserted (= 1) a 16-bit checksum will be  calculated
+      over the next complete frame
+    short: start checksum
+  max: 1
+  min: 0
+  writable: true
+stat_frame_id:
+  addr: stat_frame_id[0:16]
+  max: 65535
+  min: 0
+  writable: true
+stream:
+  addr: reset_register[2:3]
+  description: Setting this bit places the sensor in streaming mode. Clearing this
+    bit places the sensor in a low power mode. The result of clearing this bit depends
+    upon the operating mode of the sensor.  Entry and exit from streaming mode can
+    also be controlled from the signal interface.
+  max: 1
+  min: 0
+  writable: true
+streaming_mode:
+  addr: hispi_control_status[2:3]
+  description:
+    long: "This register bit can be used to configure the HiSPi output between the\
+      \ Streaming SP and Packetized SP protocol.  This register bit is only effective\
+      \ when hispi_mode_sel is configured to \u201C1\u201D.  Value 0, data will be\
+      \ transmitted in 'packetized' format when hispiSP protocol is selected  Value\
+      \ 1, data will be transmitted in 'streaming' format when hispiSP protocol is\
+      \ selected"
+    short: streaming mode
+  max: 1
+  min: 0
+  writable: true
+  map:
+      0: "packetized_sp"
+      1: "streaming_sp"
+strobe:
+  addr: flash[15:16]
+  description: Reflects the current state of the FLASH output signal. Read-only.
+  max: 1
+  min: 0
+  writable: false
+t_bgap:
+  addr: mipi_timing_2[12:16]
+  description:
+    long: bandgap settling time. This is the top 4 bits of a 5 bit register.  The
+      lsb is tied to 1.   Time to enable the bandgap before driving the LP  drivers
+      in 512 clk cycles
+    short: bandgap settling time
+  max: 15
+  min: 0
+  writable: true
+t_clk_post:
+  addr: mipi_timing_2[0:6]
+  description:
+    long: Time, in op_pix_clk periods, to drive the HS clock after the data lane has
+      gone into low-power mode
+    short: T_CLK_POST
+  max: 63
+  min: 0
+  writable: true
+t_clk_pre:
+  addr: mipi_timing_2[6:12]
+  description:
+    long: Time, in op_pix_clk periods, to drive the HS clock before any data lane
+      might start up
+    short: T_CLK_PRE
+  max: 63
+  min: 0
+  writable: true
+t_clk_trail:
+  addr: mipi_timing_0[0:4]
+  description:
+    long: Time, in op_pix_clk periods, to drive HS differentialstate after last payload
+      clock bit of an HS transmission burst
+    short: T_CLK_TRAIL
+  max: 15
+  min: 0
+  writable: true
+t_clk_zero:
+  addr: mipi_timing_1[0:6]
+  description:
+    long: Minimum time, in op_pix_clk periods, to drive HS-0 on clock lane prior to
+      starting clock
+    short: T_CLK_ZERO
+  max: 63
+  min: 0
+  writable: true
+t_hs_exit:
+  addr: mipi_timing_1[6:12]
+  description:
+    long: Time, in op_pix_clk periods, to drive LP-11 after HS burst
+    short: T_HS_EXIT
+  max: 63
+  min: 0
+  writable: true
+t_hs_trail:
+  addr: mipi_timing_0[4:8]
+  description:
+    long: Time, in op_pix_clk periods, to drive flipped differential state after last
+      payload data bit of an HS transmission burst
+    short: T_HS_TRAIL
+  max: 15
+  min: 0
+  writable: true
+t_hs_zero:
+  addr: mipi_timing_0[8:12]
+  description:
+    long: Time, in op_pix_clk periods, to drive HS-0 before the sync sequence
+    short: T_HS_ZERO
+  max: 15
+  min: 0
+  writable: true
+t_init:
+  addr: mipi_timing_4[0:7]
+  description:
+    long: Initialisation time when first entering stop state (LP-11) after powerup
+      or reset. LP-11 is transmitted for a minimum of (1024) * T_INIT * op_pix_clk.
+    short: T_INIT
+  max: 127
+  min: 0
+  writable: true
+t_lpx:
+  addr: mipi_timing_3[7:13]
+  description:
+    long: Time, in op_pix_clk periods, of any low-power state period
+    short: T_LPX
+  max: 63
+  min: 0
+  writable: true
+t_wake_up:
+  addr: mipi_timing_3[0:7]
+  description:
+    long: Time to recover from ultra low-power mode (ULPM). ULPM is exited by applying
+      a mark state for (8192) * T_WAKE_UP * op_pix_clk
+    short: T_WAKE_UP
+  max: 127
+  min: 0
+  writable: true
+test_data_blue:
+  addr: test_data_blue[0:12]
+  description: The value for blue pixels in the Bayer data used for the solid color
+    test pattern and the test cursors.
+  max: 4095
+  min: 0
+  writable: true
+test_data_greenb:
+  addr: test_data_greenb[0:12]
+  description: The value for green pixels in blue/green rows of the Bayer data used
+    for the solid color test pattern and the test cursors.
+  max: 4095
+  min: 0
+  writable: true
+test_data_greenr:
+  addr: test_data_greenr[0:12]
+  description: The value for green pixels in red/green rows of the Bayer data used
+    for the solid color test pattern and the test cursors.
+  max: 4095
+  min: 0
+  writable: true
+test_data_red:
+  addr: test_data_red[0:12]
+  description: The value for red pixels in the Bayer data used for the solid color
+    test pattern and the test cursors.
+  max: 4095
+  min: 0
+  writable: true
+test_enable:
+  addr: hispi_control_status[7:8]
+  description:
+    long: When asserted, the test pattern is output through the HiSPi PHY interface.
+    short: Test enable
+  max: 1
+  min: 0
+  writable: true
+test_mode:
+  addr: hispi_control_status[4:7]
+  description:
+    long: 'For the MIPI interface: 0 = transmit LP-00 on all enabled data and clock
+      lanes 1 = transmit LP-11 on all enabled data and clock lanes 2 = transmit HS-0
+      on all enabled data and clock lanes 3 = transmit HS-1 on all enabled data and
+      clock lanes 4 = transmit a square wave at half the potential serial data rate
+      on all enabled data and clock lanes 5 = transmit a square wave at the pixel
+      data rate on all  enabled data and clock lanes 6 = transmit a LP square wave
+      at half the pixel data rate on all enabled data and clock lanes 7 = transmit
+      a continuous, repeated, sequence of pseudo random data (non-packetised), copied
+      on all enabled data lanes  For the HiSPi interface: 0 = reserved 1 = reserved
+      2 = transmit differential 0 on all enabled data lanes 3 = transmit differential
+      1 on all enabled data lanes 4 = transmit a square wave at half the potential
+      serial data rate on all enabled data lanes 5 = transmit a square wave at the
+      pixel data rate on all  enabled data lanes 6 = reserved 7 = transmit a continuous,
+      repeated, sequence of pseudo random data, with no SAV code, copied on all enabled
+      data lanes'
+    short: Test mode
+  max: 7
+  min: 0
+  writable: true
+  map:
+    2: "always_0"
+    3: "always_1"
+    4: "square_half_rate"
+    5: "square_pixel_rate"
+    7: "prng"
+test_pattern_mode:
+  addr: test_pattern_mode[0:9]
+  description: 0 = Normal operation. Generate output data from pixel array   1 = Solid
+    color test pattern.   2 = Full color bar test pattern   3 = Fade to grey color
+    bar test pattern   256 = Marching 1 test pattern (12 bit)   other = Reserved.
+  max: 263
+  min: 0
+  writable: true
+  map:
+    0: "disabled"
+    1: "solid_color"
+    2: "color_bar"
+    3: "fade_to_grey_color_bar"
+    256: "walking_ones"
+test_pat_override:
+  addr: test_raw_mode[1:2]
+  max: 1
+  min: 0
+  desc: "Prevents test_pattern from turning of corrections"
+  writable: true
+raw_data:
+  addr: test_raw_mode[0:1]
+  max: 1
+  min: 0
+  desc: "Enable this bit to turn off all corrections"
+  writable: true
+triggered:
+  addr: flash[14:15]
+  description: Indicates that the FLASH output signal was asserted for the current
+    frame. Read-only.
+  max: 1
+  min: 0
+  writable: false
+vert_flip:
+  addr: image_orientation[1:2]
+  description:
+    long: 0 = Normal readout  1 = Readout is flipped (mirrored) vertically so that
+      the row specified by y_addr_end_ (+1)  is read out of the sensor first.  Changing
+      this register can only be done when streaming is disabled
+    short: This bit is an alias of R0x3040[15].
+  max: 1
+  min: 0
+  writable: true
+vert_left_bar_en:
+  addr: hispi_control_status[0:1]
+  description:
+    long: Inserts the optional filler (FLR) data described in the HiSPi protocol specification.  When
+      the filler codes are enabled, the receiver must window the received image to
+      eliminate first 4 data words (columns per PHYs).
+    short: vert_left_bar_en
+  max: 1
+  min: 0
+  writable: true
+vertical_cursor_position:
+  addr: vertical_cursor_position[0:12]
+  description: Specify the start column for the test cursor.
+  max: 4095
+  min: 0
+  writable: true
+vertical_cursor_width:
+  addr: vertical_cursor_width[0:12]
+  description: Specify the width, in columns, of the vertical test cursor. A width
+    of 0 disables the cursor.
+  max: 4095
+  min: 0
+  writable: true
+vt_pix_clk_div:
+  addr: vt_pix_clk_div[0:5]
+  default: 6
+  description: Input is the vt_sys_clk.  The output is the vt_pix_clk .    The vt_pix_clk
+    is the CLK_PIX when the sensor is configured to use the serial MIPI or HiSPI transmitter.  It
+    is the CLK_OP when the sensor is configured to use the parallel interface.
+  max: 31
+  min: 0
+  writable: true
+vt_sys_clk_div:
+  addr: vt_sys_clk_div[0:5]
+  default: 1
+  description: Divides the input VCO clock and outputs the vt_sys_clk.  Set this divider
+    to "2" to enable 2-lane MIPI and "4" to enable 1-lane MIPI.  Refer to the sensor
+    datasheet for more details.
+  max: 31
+  min: 0
+  writable: true
+x_addr_end:
+  addr: x_addr_end[0:12]
+  default: 2309
+  description: The last column of visible pixels to be read out.
+  max: 4095
+  min: 0
+  writable: true
+x_addr_end_cb:
+  addr: x_addr_end_cb[0:12]
+  default: 2181
+  description: X_ADDR_END for context B
+  max: 4095
+  min: 0
+  writable: true
+x_addr_start:
+  addr: x_addr_start[0:12]
+  default: 6
+  description: The  first column of visible pixels to be read out (not counting any
+    dark  columns that may be read). To move the image window, set this register  to
+    the starting X value.
+  max: 4095
+  min: 0
+  writable: true
+x_addr_start_cb:
+  addr: x_addr_start_cb[0:12]
+  default: 134
+  description: x_address_start context B
+  max: 4095
+  min: 0
+  writable: true
+x_even_inc:
+  addr: x_even_inc[0:1]
+  default: 1
+  description: Read-only.
+  max: 1
+  min: 0
+  writable: false
+x_odd_inc:
+  addr: x_odd_inc[0:3]
+  default: 1
+  description: '1 : No skip. 3:  Skip 2. 5:  Skip 3. Other values are not supported.'
+  max: 7
+  min: 0
+  writable: true
+  map:
+      1: 1
+      3: 3
+      5: 5
+x_odd_inc_cb:
+  addr: x_odd_inc_cb[0:3]
+  default: 5
+  description: X_ODD_INC context B
+  max: 7
+  min: 0
+  writable: true
+  map:
+      1: 1
+      3: 3
+      5: 5
+xenon_frames_delay:
+  addr: flash[0:3]
+  description: 'XENON_FRAMES_DELAY[2:0]: Number of the frames before the first time
+    Xenon flash is actuated.'
+  writable: true
+xenon_frames_enable:
+  addr: flash[3:6]
+  description: XENON_FRAMES_ENABLE[2:0] 0     =>  Xenon flash disabled. 1-6 =>  Number
+    of frames with Xenon flash. 7     =>  Xenon flash enable for all frames.
+  writable: true
+y_addr_end:
+  addr: y_addr_end[0:11]
+  default: 1419
+  description: The last row of visible pixels to be read out.
+  max: 2047
+  min: 0
+  writable: true
+y_addr_end_cb:
+  addr: y_addr_end_cb[0:11]
+  default: 1539
+  description: Y_ADDR_END for context B
+  max: 2047
+  min: 0
+  writable: true
+y_addr_start:
+  addr: y_addr_start[0:11]
+  default: 124
+  description: The  first row of visible pixels to be read out (not counting any dark
+    rows  that may be read). To move the image window, set this register to the  starting
+    Y value.
+  max: 2047
+  min: 0
+  writable: true
+y_addr_start_cb:
+  addr: y_addr_start_cb[0:11]
+  default: 4
+  description: Y_ADDR_START for context B
+  max: 2047
+  min: 0
+  writable: true
+y_even_inc:
+  addr: y_even_inc[0:1]
+  default: 1
+  description: Read-only.
+  max: 1
+  min: 0
+  writable: false
+y_odd_inc:
+  addr: y_odd_inc[0:3]
+  default: 1
+  description: '1 : No skip. 3:  Skip 2. 5:  Skip 3. Other values are not supported.'
+  max: 7
+  min: 0
+  writable: true
+  map:
+      1: 1
+      3: 3
+      5: 5
+y_odd_inc_cb:
+  addr: y_odd_inc_cb[0:3]
+  default: 1
+  description: Y_ODD_INC context B
+  max: 7
+  min: 0
+  writable: true
