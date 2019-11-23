@@ -103,7 +103,7 @@ context:
   writable: true
   map:
       0: "A"
-      0: "B"
+      1: "B"
 data0_del:
   addr: hispi_timing[0:3]
   description:
