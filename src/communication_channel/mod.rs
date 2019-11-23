@@ -44,17 +44,17 @@ pub trait CommChannel: Debug + Fuseable {
     }
 
     fn write_value(&self, address: &Address, value: Vec<u8>) -> Result<()> {
-        let new_value = if address.nontrivial_slice() {
-            let mut old_value = self.read_value(address)?;
+        let new_value = if !address.unbounded() {
+            let mut old_value = self.read_value_real(address)?;
 
             slice_write(&mut old_value, value, address);
 
             old_value
-        } else if !address.unbounded() {
+        } /* else if !address.unbounded() { TODO(robin): we could optimize the case where the slice starts and end at a byte boundary, as we just need to adjust the address base, but that carries the assumption, that addreses are always byte granularity, so maybe we actually cant do that? (for example the CMVSPIBridge has addresses that are 4 bytes per unit increment)
             // the slice starts and ends at a byte boundary and is not unbounded
             let Slice { start, end } = address.slice.as_ref().unwrap();
             value[(start >> 3) as usize..(end >> 3) as usize].to_vec()
-        } else {
+        }*/ else {
             value
         };
 

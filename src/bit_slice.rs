@@ -128,6 +128,21 @@ mod tests {
     };
 
     #[test]
+    fn dummy_test2() {
+        let address =
+            Address { base: vec![], slice: Some(Slice { start: 3, end: 4 }) };
+
+        let mut dest = vec![0x03, 0x00];
+
+        let v = vec![0x1];
+
+        slice_write(&mut dest, v, &address);
+
+        println!("dest {:08b}", dest[0]);
+        // panic!();
+    }
+
+    #[test]
     fn dummy_test() {
         let v = vec![0x00, 0x00, 0x00];
 
