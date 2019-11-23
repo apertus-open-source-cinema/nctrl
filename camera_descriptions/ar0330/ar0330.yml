@@ -3,7 +3,7 @@ camera_model: "micro-r2"
 devices:
     sensor_io:
         channel:
-            mode: "mmaped-gpio"
+            mode: "memory-map"
             base: 0x41200000
             len: 4096
         raw: "io.yml"

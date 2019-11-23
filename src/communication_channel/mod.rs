@@ -82,7 +82,7 @@ struct I2CCdev {
 
 #[derive(Derivative, Serialize, Deserialize, Fuseable)]
 #[derivative(Debug, PartialEq)]
-struct MMAPGPIO {
+struct MemoryMap {
     base: u64,
     len: u64,
     #[fuseable(skip)]
@@ -100,7 +100,7 @@ struct CMVSPIBridge {
     base: u64,
     len: u64,
     #[derivative(Debug = "ignore", PartialEq = "ignore")]
-    channel: MMAPGPIO
+    channel: MemoryMap
 }
 
 impl<'de> Deserialize<'de> for CMVSPIBridge {
@@ -117,7 +117,7 @@ impl<'de> Deserialize<'de> for CMVSPIBridge {
         let CMVSPIBridgeConfig { base, len } =
             CMVSPIBridgeConfig::deserialize(deserializer)?;
 
-        let channel = MMAPGPIO { base, len, dev: RwLock::new(None), mock: false };
+        let channel = MemoryMap { base, len, dev: RwLock::new(None), mock: false };
 
         Ok(CMVSPIBridge { base, len, channel })
     }
@@ -130,7 +130,7 @@ impl I2CCdev {
     }
 }
 
-impl MMAPGPIO {
+impl MemoryMap {
     fn init(&self) -> Result<MmapMut> {
         unsafe {
             let file = OpenOptions::new().read(true).write(true).create(true).open("/dev/mem")?;
@@ -176,7 +176,7 @@ impl CommChannel for I2CCdev {
     fn get_mock_mode(&self) -> bool { self.mock }
 }
 
-impl CommChannel for MMAPGPIO {
+impl CommChannel for MemoryMap {
     fn read_value_real(&self, address: &Address) -> Result<Vec<u8>> {
         let offset = address.as_u64() as usize;
 
@@ -185,7 +185,7 @@ impl CommChannel for MMAPGPIO {
             |mmap_dev| {
                 let bytes = address
                     .bytes()
-                    .ok_or_else(|| format_err!("MMAPGPIO doesn't support unbounded read"))?;
+                    .ok_or_else(|| format_err!("MemoryMap doesn't support unbounded read"))?;
 
                 mmap_dev.get(offset..(offset + bytes)).map(|v| {
                     let mut v = v.to_vec();
@@ -299,7 +299,7 @@ macro_rules! comm_channel_config {
     }
 }
 
-comm_channel_config!(I2CCdev => "i2c-cdev", MMAPGPIO => "mmaped-gpio", CMVSPIBridge => "cmv-spi-bridge");
+comm_channel_config!(I2CCdev => "i2c-cdev", MemoryMap => "memory-map", CMVSPIBridge => "cmv-spi-bridge");
 
 impl<'de> Deserialize<'de> for Box<dyn CommChannel> {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
