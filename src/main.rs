@@ -33,7 +33,7 @@ fn main() {
     let mut sensor: Camera = serde_yaml::from_str(&contents).unwrap();
     sensor.mocked(opt.mock);
 
-    let options = ["-o", "rw", "-o", "fsname=propfs", "-o", "auto_unmount"]
+    let options = ["-o", "allow_other", "-o", "rw", "-o", "fsname=propfs", "-o", "auto_unmount"]
         .iter()
         .map(|o| o.as_ref())
         .collect::<Vec<&OsStr>>();
