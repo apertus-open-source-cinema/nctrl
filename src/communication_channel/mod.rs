@@ -45,7 +45,11 @@ pub trait CommChannel: Debug + Fuseable {
 
     fn write_value(&self, address: &Address, value: Vec<u8>) -> Result<()> {
         let new_value = if !address.unbounded() {
-            let mut old_value = self.read_value_real(address)?;
+            let mut old_value = if self.get_mock_mode() {
+                self.read_value_mock(address)?
+            } else {
+                self.read_value_real(address)?
+            };
 
             slice_write(&mut old_value, value, address);
 
