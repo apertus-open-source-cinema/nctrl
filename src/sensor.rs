@@ -350,8 +350,8 @@ impl<'de> Deserialize<'de> for Device {
     {
         #[derive(Debug, Deserialize)]
         struct CookedRegisterStringAddr {
-            addr: String,
-            desc: Option<Description>,
+            address: String,
+            description: Option<Description>,
             #[serde(default, deserialize_with = "deser_valuemap")]
             map: Option<ValueMap>,
             #[serde(default = "bool_true")]
@@ -375,16 +375,16 @@ impl<'de> Deserialize<'de> for Device {
         let cooked = cooked
             .into_iter()
             .map(|(name, cooked_reg)| {
-                let addr = Address::parse_named(&cooked_reg.addr, &raw).map_err(|_| {
+                let address = Address::parse_named(&cooked_reg.address, &raw).map_err(|_| {
                     D::Error::custom(format!(
                         "could not parse the address of this cooked register ({})",
-                        cooked_reg.addr
+                        cooked_reg.address
                     ))
                 })?;
 
                 Ok((name.clone(), CookedRegister {
-                    addr,
-                    desc: cooked_reg.desc,
+                    address,
+                    description: cooked_reg.description,
                     map: cooked_reg.map,
                     default: cooked_reg.default,
                     writable: cooked_reg.writable,
@@ -399,9 +399,9 @@ impl<'de> Deserialize<'de> for Device {
 #[derive(Debug, Serialize, Fuseable)]
 pub struct CookedRegister {
     #[fuseable(ro)]
-    addr: Address,
+    address: Address,
     #[fuseable(ro)]
-    desc: Option<Description>,
+    description: Option<Description>,
     // #[fuseable(skip)]
     #[serde(default, deserialize_with = "deser_valuemap")]
     map: Option<ValueMap>,
@@ -421,7 +421,7 @@ impl CookedRegister  {
         match path.next() {
             Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
             None => {
-                let value = comm_channel.read_value(&self.addr)?;
+                let value = comm_channel.read_value(&self.address)?;
 
                 match &self.map {
                     Some(map) => map.lookup(value).map(Either::Right),
@@ -443,7 +443,7 @@ impl CookedRegister  {
                 let value = match &self.map {
                     Some(map) => map.encode(String::from_utf8(value)?)?,
                     None => {
-                        if let Some(width) = self.addr.bytes() {
+                        if let Some(width) = self.address.bytes() {
                             let (mask, mut value) =
                                 parse_num_mask(String::from_utf8_lossy(&value))?;
 
@@ -461,7 +461,7 @@ impl CookedRegister  {
                                         mask.insert(0, 0);
                                     }
 
-                                    let current_value = comm_channel.read_value(&self.addr)?;
+                                    let current_value = comm_channel.read_value(&self.address)?;
 
                                     izip!(mask, value, current_value)
                                         .map(|(m, val, cur)| (val & m) | (cur & !m))
@@ -477,7 +477,7 @@ impl CookedRegister  {
 
                 println!("encoded value: {:?}", value);
 
-                comm_channel.write_value(&self.addr, value)
+                comm_channel.write_value(&self.address, value)
             }
         }
     }

@@ -1,572 +1,572 @@
 bitslip_channel_0:
-    addr: 0x0[31]
+    address: 0x0[31]
     default: 0x0
     description: Bitslip Channel 0
 pattern_match_channel_0:
-    addr: 0x0[29]
+    address: 0x0[29]
     description: Pattern Match Channel 0
     writeable: false
 pattern_mismatch_channel_0:
-    addr: 0x0[28]
+    address: 0x0[28]
     description: Pattern Mismatch Channel 0
     writeable: false
 delay_value_channel_0:
-    addr: 0x0[0:5]
+    address: 0x0[0:5]
     description: Delay Value Channel 0
     writeable: true
     default: 0
 bitslip_channel_1:
-    addr: 0x4[31]
+    address: 0x4[31]
     default: 0x0
     description: Bitslip Channel 1
 pattern_match_channel_1:
-    addr: 0x4[29]
+    address: 0x4[29]
     description: Pattern Match Channel 1
     writeable: false
 pattern_mismatch_channel_1:
-    addr: 0x4[28]
+    address: 0x4[28]
     description: Pattern Mismatch Channel 1
     writeable: false
 delay_value_channel_1:
-    addr: 0x4[0:5]
+    address: 0x4[0:5]
     description: Delay Value Channel 1
     writeable: true
     default: 0
 bitslip_channel_2:
-    addr: 0x8[31]
+    address: 0x8[31]
     default: 0x0
     description: Bitslip Channel 2
 pattern_match_channel_2:
-    addr: 0x8[29]
+    address: 0x8[29]
     description: Pattern Match Channel 2
     writeable: false
 pattern_mismatch_channel_2:
-    addr: 0x8[28]
+    address: 0x8[28]
     description: Pattern Mismatch Channel 2
     writeable: false
 delay_value_channel_2:
-    addr: 0x8[0:5]
+    address: 0x8[0:5]
     description: Delay Value Channel 2
     writeable: true
     default: 0
 bitslip_channel_3:
-    addr: 0xc[31]
+    address: 0xc[31]
     default: 0x0
     description: Bitslip Channel 3
 pattern_match_channel_3:
-    addr: 0xc[29]
+    address: 0xc[29]
     description: Pattern Match Channel 3
     writeable: false
 pattern_mismatch_channel_3:
-    addr: 0xc[28]
+    address: 0xc[28]
     description: Pattern Mismatch Channel 3
     writeable: false
 delay_value_channel_3:
-    addr: 0xc[0:5]
+    address: 0xc[0:5]
     description: Delay Value Channel 3
     writeable: true
     default: 0
 bitslip_channel_4:
-    addr: 0x10[31]
+    address: 0x10[31]
     default: 0x0
     description: Bitslip Channel 4
 pattern_match_channel_4:
-    addr: 0x10[29]
+    address: 0x10[29]
     description: Pattern Match Channel 4
     writeable: false
 pattern_mismatch_channel_4:
-    addr: 0x10[28]
+    address: 0x10[28]
     description: Pattern Mismatch Channel 4
     writeable: false
 delay_value_channel_4:
-    addr: 0x10[0:5]
+    address: 0x10[0:5]
     description: Delay Value Channel 4
     writeable: true
     default: 0
 bitslip_channel_5:
-    addr: 0x14[31]
+    address: 0x14[31]
     default: 0x0
     description: Bitslip Channel 5
 pattern_match_channel_5:
-    addr: 0x14[29]
+    address: 0x14[29]
     description: Pattern Match Channel 5
     writeable: false
 pattern_mismatch_channel_5:
-    addr: 0x14[28]
+    address: 0x14[28]
     description: Pattern Mismatch Channel 5
     writeable: false
 delay_value_channel_5:
-    addr: 0x14[0:5]
+    address: 0x14[0:5]
     description: Delay Value Channel 5
     writeable: true
     default: 0
 bitslip_channel_6:
-    addr: 0x18[31]
+    address: 0x18[31]
     default: 0x0
     description: Bitslip Channel 6
 pattern_match_channel_6:
-    addr: 0x18[29]
+    address: 0x18[29]
     description: Pattern Match Channel 6
     writeable: false
 pattern_mismatch_channel_6:
-    addr: 0x18[28]
+    address: 0x18[28]
     description: Pattern Mismatch Channel 6
     writeable: false
 delay_value_channel_6:
-    addr: 0x18[0:5]
+    address: 0x18[0:5]
     description: Delay Value Channel 6
     writeable: true
     default: 0
 bitslip_channel_7:
-    addr: 0x1c[31]
+    address: 0x1c[31]
     default: 0x0
     description: Bitslip Channel 7
 pattern_match_channel_7:
-    addr: 0x1c[29]
+    address: 0x1c[29]
     description: Pattern Match Channel 7
     writeable: false
 pattern_mismatch_channel_7:
-    addr: 0x1c[28]
+    address: 0x1c[28]
     description: Pattern Mismatch Channel 7
     writeable: false
 delay_value_channel_7:
-    addr: 0x1c[0:5]
+    address: 0x1c[0:5]
     description: Delay Value Channel 7
     writeable: true
     default: 0
 bitslip_channel_8:
-    addr: 0x20[31]
+    address: 0x20[31]
     default: 0x0
     description: Bitslip Channel 8
 pattern_match_channel_8:
-    addr: 0x20[29]
+    address: 0x20[29]
     description: Pattern Match Channel 8
     writeable: false
 pattern_mismatch_channel_8:
-    addr: 0x20[28]
+    address: 0x20[28]
     description: Pattern Mismatch Channel 8
     writeable: false
 delay_value_channel_8:
-    addr: 0x20[0:5]
+    address: 0x20[0:5]
     description: Delay Value Channel 8
     writeable: true
     default: 0
 bitslip_channel_9:
-    addr: 0x24[31]
+    address: 0x24[31]
     default: 0x0
     description: Bitslip Channel 9
 pattern_match_channel_9:
-    addr: 0x24[29]
+    address: 0x24[29]
     description: Pattern Match Channel 9
     writeable: false
 pattern_mismatch_channel_9:
-    addr: 0x24[28]
+    address: 0x24[28]
     description: Pattern Mismatch Channel 9
     writeable: false
 delay_value_channel_9:
-    addr: 0x24[0:5]
+    address: 0x24[0:5]
     description: Delay Value Channel 9
     writeable: true
     default: 0
 bitslip_channel_10:
-    addr: 0x28[31]
+    address: 0x28[31]
     default: 0x0
     description: Bitslip Channel 10
 pattern_match_channel_10:
-    addr: 0x28[29]
+    address: 0x28[29]
     description: Pattern Match Channel 10
     writeable: false
 pattern_mismatch_channel_10:
-    addr: 0x28[28]
+    address: 0x28[28]
     description: Pattern Mismatch Channel 10
     writeable: false
 delay_value_channel_10:
-    addr: 0x28[0:5]
+    address: 0x28[0:5]
     description: Delay Value Channel 10
     writeable: true
     default: 0
 bitslip_channel_11:
-    addr: 0x2c[31]
+    address: 0x2c[31]
     default: 0x0
     description: Bitslip Channel 11
 pattern_match_channel_11:
-    addr: 0x2c[29]
+    address: 0x2c[29]
     description: Pattern Match Channel 11
     writeable: false
 pattern_mismatch_channel_11:
-    addr: 0x2c[28]
+    address: 0x2c[28]
     description: Pattern Mismatch Channel 11
     writeable: false
 delay_value_channel_11:
-    addr: 0x2c[0:5]
+    address: 0x2c[0:5]
     description: Delay Value Channel 11
     writeable: true
     default: 0
 bitslip_channel_12:
-    addr: 0x30[31]
+    address: 0x30[31]
     default: 0x0
     description: Bitslip Channel 12
 pattern_match_channel_12:
-    addr: 0x30[29]
+    address: 0x30[29]
     description: Pattern Match Channel 12
     writeable: false
 pattern_mismatch_channel_12:
-    addr: 0x30[28]
+    address: 0x30[28]
     description: Pattern Mismatch Channel 12
     writeable: false
 delay_value_channel_12:
-    addr: 0x30[0:5]
+    address: 0x30[0:5]
     description: Delay Value Channel 12
     writeable: true
     default: 0
 bitslip_channel_13:
-    addr: 0x34[31]
+    address: 0x34[31]
     default: 0x0
     description: Bitslip Channel 13
 pattern_match_channel_13:
-    addr: 0x34[29]
+    address: 0x34[29]
     description: Pattern Match Channel 13
     writeable: false
 pattern_mismatch_channel_13:
-    addr: 0x34[28]
+    address: 0x34[28]
     description: Pattern Mismatch Channel 13
     writeable: false
 delay_value_channel_13:
-    addr: 0x34[0:5]
+    address: 0x34[0:5]
     description: Delay Value Channel 13
     writeable: true
     default: 0
 bitslip_channel_14:
-    addr: 0x38[31]
+    address: 0x38[31]
     default: 0x0
     description: Bitslip Channel 14
 pattern_match_channel_14:
-    addr: 0x38[29]
+    address: 0x38[29]
     description: Pattern Match Channel 14
     writeable: false
 pattern_mismatch_channel_14:
-    addr: 0x38[28]
+    address: 0x38[28]
     description: Pattern Mismatch Channel 14
     writeable: false
 delay_value_channel_14:
-    addr: 0x38[0:5]
+    address: 0x38[0:5]
     description: Delay Value Channel 14
     writeable: true
     default: 0
 bitslip_channel_15:
-    addr: 0x3c[31]
+    address: 0x3c[31]
     default: 0x0
     description: Bitslip Channel 15
 pattern_match_channel_15:
-    addr: 0x3c[29]
+    address: 0x3c[29]
     description: Pattern Match Channel 15
     writeable: false
 pattern_mismatch_channel_15:
-    addr: 0x3c[28]
+    address: 0x3c[28]
     description: Pattern Mismatch Channel 15
     writeable: false
 delay_value_channel_15:
-    addr: 0x3c[0:5]
+    address: 0x3c[0:5]
     description: Delay Value Channel 15
     writeable: true
     default: 0
 bitslip_channel_16:
-    addr: 0x40[31]
+    address: 0x40[31]
     default: 0x0
     description: Bitslip Channel 16
 pattern_match_channel_16:
-    addr: 0x40[29]
+    address: 0x40[29]
     description: Pattern Match Channel 16
     writeable: false
 pattern_mismatch_channel_16:
-    addr: 0x40[28]
+    address: 0x40[28]
     description: Pattern Mismatch Channel 16
     writeable: false
 delay_value_channel_16:
-    addr: 0x40[0:5]
+    address: 0x40[0:5]
     description: Delay Value Channel 16
     writeable: true
     default: 0
 bitslip_channel_17:
-    addr: 0x44[31]
+    address: 0x44[31]
     default: 0x0
     description: Bitslip Channel 17
 pattern_match_channel_17:
-    addr: 0x44[29]
+    address: 0x44[29]
     description: Pattern Match Channel 17
     writeable: false
 pattern_mismatch_channel_17:
-    addr: 0x44[28]
+    address: 0x44[28]
     description: Pattern Mismatch Channel 17
     writeable: false
 delay_value_channel_17:
-    addr: 0x44[0:5]
+    address: 0x44[0:5]
     description: Delay Value Channel 17
     writeable: true
     default: 0
 bitslip_channel_18:
-    addr: 0x48[31]
+    address: 0x48[31]
     default: 0x0
     description: Bitslip Channel 18
 pattern_match_channel_18:
-    addr: 0x48[29]
+    address: 0x48[29]
     description: Pattern Match Channel 18
     writeable: false
 pattern_mismatch_channel_18:
-    addr: 0x48[28]
+    address: 0x48[28]
     description: Pattern Mismatch Channel 18
     writeable: false
 delay_value_channel_18:
-    addr: 0x48[0:5]
+    address: 0x48[0:5]
     description: Delay Value Channel 18
     writeable: true
     default: 0
 bitslip_channel_19:
-    addr: 0x4c[31]
+    address: 0x4c[31]
     default: 0x0
     description: Bitslip Channel 19
 pattern_match_channel_19:
-    addr: 0x4c[29]
+    address: 0x4c[29]
     description: Pattern Match Channel 19
     writeable: false
 pattern_mismatch_channel_19:
-    addr: 0x4c[28]
+    address: 0x4c[28]
     description: Pattern Mismatch Channel 19
     writeable: false
 delay_value_channel_19:
-    addr: 0x4c[0:5]
+    address: 0x4c[0:5]
     description: Delay Value Channel 19
     writeable: true
     default: 0
 bitslip_channel_20:
-    addr: 0x50[31]
+    address: 0x50[31]
     default: 0x0
     description: Bitslip Channel 20
 pattern_match_channel_20:
-    addr: 0x50[29]
+    address: 0x50[29]
     description: Pattern Match Channel 20
     writeable: false
 pattern_mismatch_channel_20:
-    addr: 0x50[28]
+    address: 0x50[28]
     description: Pattern Mismatch Channel 20
     writeable: false
 delay_value_channel_20:
-    addr: 0x50[0:5]
+    address: 0x50[0:5]
     description: Delay Value Channel 20
     writeable: true
     default: 0
 bitslip_channel_21:
-    addr: 0x54[31]
+    address: 0x54[31]
     default: 0x0
     description: Bitslip Channel 21
 pattern_match_channel_21:
-    addr: 0x54[29]
+    address: 0x54[29]
     description: Pattern Match Channel 21
     writeable: false
 pattern_mismatch_channel_21:
-    addr: 0x54[28]
+    address: 0x54[28]
     description: Pattern Mismatch Channel 21
     writeable: false
 delay_value_channel_21:
-    addr: 0x54[0:5]
+    address: 0x54[0:5]
     description: Delay Value Channel 21
     writeable: true
     default: 0
 bitslip_channel_22:
-    addr: 0x58[31]
+    address: 0x58[31]
     default: 0x0
     description: Bitslip Channel 22
 pattern_match_channel_22:
-    addr: 0x58[29]
+    address: 0x58[29]
     description: Pattern Match Channel 22
     writeable: false
 pattern_mismatch_channel_22:
-    addr: 0x58[28]
+    address: 0x58[28]
     description: Pattern Mismatch Channel 22
     writeable: false
 delay_value_channel_22:
-    addr: 0x58[0:5]
+    address: 0x58[0:5]
     description: Delay Value Channel 22
     writeable: true
     default: 0
 bitslip_channel_23:
-    addr: 0x5c[31]
+    address: 0x5c[31]
     default: 0x0
     description: Bitslip Channel 23
 pattern_match_channel_23:
-    addr: 0x5c[29]
+    address: 0x5c[29]
     description: Pattern Match Channel 23
     writeable: false
 pattern_mismatch_channel_23:
-    addr: 0x5c[28]
+    address: 0x5c[28]
     description: Pattern Mismatch Channel 23
     writeable: false
 delay_value_channel_23:
-    addr: 0x5c[0:5]
+    address: 0x5c[0:5]
     description: Delay Value Channel 23
     writeable: true
     default: 0
 bitslip_channel_24:
-    addr: 0x60[31]
+    address: 0x60[31]
     default: 0x0
     description: Bitslip Channel 24
 pattern_match_channel_24:
-    addr: 0x60[29]
+    address: 0x60[29]
     description: Pattern Match Channel 24
     writeable: false
 pattern_mismatch_channel_24:
-    addr: 0x60[28]
+    address: 0x60[28]
     description: Pattern Mismatch Channel 24
     writeable: false
 delay_value_channel_24:
-    addr: 0x60[0:5]
+    address: 0x60[0:5]
     description: Delay Value Channel 24
     writeable: true
     default: 0
 bitslip_channel_25:
-    addr: 0x64[31]
+    address: 0x64[31]
     default: 0x0
     description: Bitslip Channel 25
 pattern_match_channel_25:
-    addr: 0x64[29]
+    address: 0x64[29]
     description: Pattern Match Channel 25
     writeable: false
 pattern_mismatch_channel_25:
-    addr: 0x64[28]
+    address: 0x64[28]
     description: Pattern Mismatch Channel 25
     writeable: false
 delay_value_channel_25:
-    addr: 0x64[0:5]
+    address: 0x64[0:5]
     description: Delay Value Channel 25
     writeable: true
     default: 0
 bitslip_channel_26:
-    addr: 0x68[31]
+    address: 0x68[31]
     default: 0x0
     description: Bitslip Channel 26
 pattern_match_channel_26:
-    addr: 0x68[29]
+    address: 0x68[29]
     description: Pattern Match Channel 26
     writeable: false
 pattern_mismatch_channel_26:
-    addr: 0x68[28]
+    address: 0x68[28]
     description: Pattern Mismatch Channel 26
     writeable: false
 delay_value_channel_26:
-    addr: 0x68[0:5]
+    address: 0x68[0:5]
     description: Delay Value Channel 26
     writeable: true
     default: 0
 bitslip_channel_27:
-    addr: 0x6c[31]
+    address: 0x6c[31]
     default: 0x0
     description: Bitslip Channel 27
 pattern_match_channel_27:
-    addr: 0x6c[29]
+    address: 0x6c[29]
     description: Pattern Match Channel 27
     writeable: false
 pattern_mismatch_channel_27:
-    addr: 0x6c[28]
+    address: 0x6c[28]
     description: Pattern Mismatch Channel 27
     writeable: false
 delay_value_channel_27:
-    addr: 0x6c[0:5]
+    address: 0x6c[0:5]
     description: Delay Value Channel 27
     writeable: true
     default: 0
 bitslip_channel_28:
-    addr: 0x70[31]
+    address: 0x70[31]
     default: 0x0
     description: Bitslip Channel 28
 pattern_match_channel_28:
-    addr: 0x70[29]
+    address: 0x70[29]
     description: Pattern Match Channel 28
     writeable: false
 pattern_mismatch_channel_28:
-    addr: 0x70[28]
+    address: 0x70[28]
     description: Pattern Mismatch Channel 28
     writeable: false
 delay_value_channel_28:
-    addr: 0x70[0:5]
+    address: 0x70[0:5]
     description: Delay Value Channel 28
     writeable: true
     default: 0
 bitslip_channel_29:
-    addr: 0x74[31]
+    address: 0x74[31]
     default: 0x0
     description: Bitslip Channel 29
 pattern_match_channel_29:
-    addr: 0x74[29]
+    address: 0x74[29]
     description: Pattern Match Channel 29
     writeable: false
 pattern_mismatch_channel_29:
-    addr: 0x74[28]
+    address: 0x74[28]
     description: Pattern Mismatch Channel 29
     writeable: false
 delay_value_channel_29:
-    addr: 0x74[0:5]
+    address: 0x74[0:5]
     description: Delay Value Channel 29
     writeable: true
     default: 0
 bitslip_channel_30:
-    addr: 0x78[31]
+    address: 0x78[31]
     default: 0x0
     description: Bitslip Channel 30
 pattern_match_channel_30:
-    addr: 0x78[29]
+    address: 0x78[29]
     description: Pattern Match Channel 30
     writeable: false
 pattern_mismatch_channel_30:
-    addr: 0x78[28]
+    address: 0x78[28]
     description: Pattern Mismatch Channel 30
     writeable: false
 delay_value_channel_30:
-    addr: 0x78[0:5]
+    address: 0x78[0:5]
     description: Delay Value Channel 30
     writeable: true
     default: 0
 bitslip_channel_31:
-    addr: 0x7c[31]
+    address: 0x7c[31]
     default: 0x0
     description: Bitslip Channel 31
 pattern_match_channel_31:
-    addr: 0x7c[29]
+    address: 0x7c[29]
     description: Pattern Match Channel 31
     writeable: false
 pattern_mismatch_channel_31:
-    addr: 0x7c[28]
+    address: 0x7c[28]
     description: Pattern Mismatch Channel 31
     writeable: false
 delay_value_channel_31:
-    addr: 0x7c[0:5]
+    address: 0x7c[0:5]
     description: Delay Value Channel 31
     writeable: true
     default: 0
 
 bitslip_control_channel:
-    addr: 0x80[31]
+    address: 0x80[31]
     default: 0x0
     description: Bitslip Control Channel
 pattern_match_control_channel:
-    addr: 0x80[29]
+    address: 0x80[29]
     description: Pattern Match Control Channel
     writeable: false
 pattern_mismatch_control_channel:
-    addr: 0x80[28]
+    address: 0x80[28]
     description: Pattern Mismatch Control Channel
     writeable: false
 delay_value_control_channel:
-    addr: 0x80[0:5]
+    address: 0x80[0:5]
     description: Delay Value Control Channel
     writeable: true
     default: 0
 
 bitslip_control_channel:
-    addr: 0x80[31]
+    address: 0x80[31]
     default: 0x0
     description: Word Slip/Phase for all Channels
 delay_value_clock_channel:
-    addr: 0x80[0:5]
+    address: 0x80[0:5]
     description: Delay Value Clock Channel
     writeable: true
     default: 0

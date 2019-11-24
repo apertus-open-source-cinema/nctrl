@@ -1,305 +1,305 @@
 identifier:
-    addr: 0x0[8:32]
+    address: 0x0[8:32]
     writeable: false
     default: 0x524547
     description: Identifier "REG"
 revision:
-    addr: 0x0[4:8]
+    address: 0x0[4:8]
     writeable: false
     default: 0x0
     description: Revision 0
 split_x0100:
-    addr: 0x0[0:4]
+    address: 0x0[0:4]
     writeable: false
     default: 0x8
     description: Split x0100
 user_access:
-    addr: 0x4[0:32]
+    address: 0x4[0:32]
     writeable: false
     description: User Access
 lvds_match:
-    addr: 0x8[0:32]
+    address: 0x8[0:32]
     writeable: false
     description: LVDS Match (ch 0-31)
 lvds_mismatch:
-    addr: 0xc[0:32]
+    address: 0xc[0:32]
     writeable: false
     description: LVDS Mismatch (ch 0-31)
 current_writer_address:
-    addr: 0x10[0:32]
+    address: 0x10[0:32]
     writeable: false
     description: Current Writer Address
 write_buffer_selection:
-    addr: 0x14[30:32]
+    address: 0x14[30:32]
     writeable: false
     description: Write Buffer Selection
 writer_inactive:
-    addr: 0x14[24:28]
+    address: 0x14[24:28]
     writeable: false
     description: Writer Inactive (0-3)
 fifo_write_error:
-    addr: 0x14[21]
+    address: 0x14[21]
     writeable: false
     description: Fifo Write Error
 fifo_read_error:
-    addr: 0x14[20]
+    address: 0x14[20]
     writeable: false
     description: Fifo Read Error
 fifo_full:
-    addr: 0x14[19]
+    address: 0x14[19]
     writeable: false
     description: Fifo Full
 fifo_high:
-    addr: 0x14[18]
+    address: 0x14[18]
     writeable: false
     description: Fifo High
 fifo_low:
-    addr: 0x14[17]
+    address: 0x14[17]
     writeable: false
     description: Fifo Low
 fifo_empty:
-    addr: 0x14[16]
+    address: 0x14[16]
     writeable: false
     description: Fifo Empty
 zero_padding:
-    addr: 0x14[13:16]
+    address: 0x14[13:16]
     writeable: false
     default: 0x0
     description: Zero Padding
 button_down_state:
-    addr: 0x14[12]
+    address: 0x14[12]
     writeable: false
     description: Button Down State
 button_up_state:
-    addr: 0x14[11]
+    address: 0x14[11]
     writeable: false
     description: Button Up State
 button_right_state:
-    addr: 0x14[10]
+    address: 0x14[10]
     writeable: false
     description: Button Right State
 button_left_state:
-    addr: 0x14[9]
+    address: 0x14[9]
     writeable: false
     description: Button Left State
 button_center_state:
-    addr: 0x14[8]
+    address: 0x14[8]
     writeable: false
     description: Button Center State
 switch_state:
-    addr: 0x14[0:8]
+    address: 0x14[0:8]
     writeable: false
     description: Switch State (0-7)
 capture_sequence_drone:
-    addr: 0x18[31]
+    address: 0x18[31]
     writeable: false
     description: Capture Sequence Drone
 cseq_frame_count:
-    addr: 0x18[16:28]
+    address: 0x18[16:28]
     writeable: false
     description: CSeq Frame Count
 write_buffer_0_base:
-    addr: 0x100[0:32]
+    address: 0x100[0:32]
     writeable: true
     default: 0x18000000
     description: Write Buffer 0 Base
 write_buffer_0_end_pattern:
-    addr: 0x104[0:32]
+    address: 0x104[0:32]
     writeable: true
     default: 0x19FF0000
     description: Write Buffer 0 End Pattern
 write_buffer_1_base:
-    addr: 0x108[0:32]
+    address: 0x108[0:32]
     writeable: true
     default: 0x1A000000
     description: Write Buffer 1 Base
 write_buffer_1_end_pattern:
-    addr: 0x10C[0:32]
+    address: 0x10C[0:32]
     writeable: true
     default: 0x1BFF0000
     description: Write Buffer 1 End Pattern
 write_buffer_2_base:
-    addr: 0x110[0:32]
+    address: 0x110[0:32]
     writeable: true
     default: 0x1C000000
     description: Write Buffer 2 Base
 write_buffer_2_end_pattern:
-    addr: 0x114[0:32]
+    address: 0x114[0:32]
     writeable: true
     default: 0x1DFF0000
     description: Write Buffer 2 End Pattern
 write_buffer_3_base:
-    addr: 0x118[0:32]
+    address: 0x118[0:32]
     writeable: true
     default: 0x1E000000
     description: Write Buffer 3 Base
 write_buffer_3_end_pattern:
-    addr: 0x11C[0:32]
+    address: 0x11C[0:32]
     writeable: true
     default: 0x1FFF0000
     description: Write Buffer 3 End Pattern
 column_increment:
-    addr: 0x120[0:32]
+    address: 0x120[0:32]
     writeable: true
     default: 0x00000080
     description: Column Increment
 row_increment:
-    addr: 0x124[0:32]
+    address: 0x124[0:32]
     writeable: true
     default: 0x00000080
     description: Row Increment
 column_burst_count:
-    addr: 0x128[0:12]
+    address: 0x128[0:12]
     writeable: true
     default: 0x0000007E
     description: Column Burst Count
 write_address_strobe:
-    addr: 0x12C[24:32]
+    address: 0x12C[24:32]
     writeable: true
     default: 0xFC
     description: Write Address Strobe
 rcn_clip_overflow:
-    addr: 0x12C[21]
+    address: 0x12C[21]
     writeable: true
     default: 0x1
     description: RCN Clip Overflow
 rcn_clip_underflow:
-    addr: 0x12C[20]
+    address: 0x12C[20]
     writeable: true
     default: 0x1
     description: RCN Clip Underflow
 writer_enable:
-    addr: 0x12C[16:20]
+    address: 0x12C[16:20]
     writeable: true
     default: 0xF
     description: Writer Enable
 buffer_enable:
-    addr: 0x12C[12:16]
+    address: 0x12C[12:16]
     writeable: true
     default: 0xF
     description: Buffer Enable
 serdes_reset:
-    addr: 0x12C[8]
+    address: 0x12C[8]
     writeable: true
     default: 0x0
     description: SerDes Reset
 buffer_switch_request:
-    addr: 0x12C[7]
+    address: 0x12C[7]
     writeable: true
     default: 0x0
     description: Buffer Switch Request
 buffer_load_request:
-    addr: 0x12C[6]
+    address: 0x12C[6]
     writeable: true
     default: 0x0
     description: Buffer Load Request
 buffer_reset_request:
-    addr: 0x12C[5]
+    address: 0x12C[5]
     writeable: true
     default: 0x0
     description: Buffer Reset Request
 buffer_block_request:
-    addr: 0x12C[4]
+    address: 0x12C[4]
     writeable: true
     default: 0x0
     description: Buffer Block Request
 fifo_reset:
-    addr: 0x12C[0]
+    address: 0x12C[0]
     writeable: true
     default: 0x0
     description: Fifo Reset
 lvds_training_pattern:
-    addr: 0x130[0:12]
+    address: 0x130[0:12]
     writeable: true
     default: 0xA95
     description: LVDS Training Pattern
 active_data_mask:
-    addr: 0x134[16:19]
+    address: 0x134[16:19]
     writeable: true
     default: 0x07
     description: Active Data Mask
 capture_data_mask:
-    addr: 0x134[8:11]
+    address: 0x134[8:11]
     writeable: true
     default: 0x07
     description: Capture Data Mask
 capture_data_value:
-    addr: 0x134[0:3]
+    address: 0x134[0:3]
     writeable: true
     default: 0x07
     description: Capture Data Value
 led_override_mask:
-    addr: 0x138[16:24]
+    address: 0x138[16:24]
     writeable: true
     default: 0x00
     description: LED Override Mask (0-7)
 done_led_value:
-    addr: 0x138[8]
+    address: 0x138[8]
     writeable: true
     default: 0x0
     description: Done LED Value
 led_override_value:
-    addr: 0x138[7]
+    address: 0x138[7]
     writeable: true
     default: 0x00
     description: LED Override Value (0-7)
 button_down_override_enable:
-    addr: 0x13C[28]
+    address: 0x13C[28]
     writeable: true
     default: 0x0
     description: Button Down Override Enable
 button_up_override_enable:
-    addr: 0x13C[27]
+    address: 0x13C[27]
     writeable: true
     default: 0x0
     description: Button Up Override Enable
 button_right_override_enable:
-    addr: 0x13C[26]
+    address: 0x13C[26]
     writeable: true
     default: 0x0
     description: Button Right Override Enable
 button_left_override_enable:
-    addr: 0x13C[25]
+    address: 0x13C[25]
     writeable: true
     default: 0x0
     description: Button Left Override Enable
 button_center_override_enable:
-    addr: 0x13C[24]
+    address: 0x13C[24]
     writeable: true
     default: 0x0
     description: Button Center Override Enable
 switch_override_enable:
-    addr: 0x13C[16:24]
+    address: 0x13C[16:24]
     writeable: true
     default: 0x00
     description: Switch Override Enable (0-7)
 button_down_override:
-    addr: 0x13C[12]
+    address: 0x13C[12]
     writeable: true
     default: 0x0
     description: Button Down Override
 button_up_override:
-    addr: 0x13C[11]
+    address: 0x13C[11]
     writeable: true
     default: 0x0
     description: Button Up Override
 button_right_override:
-    addr: 0x13C[10]
+    address: 0x13C[10]
     writeable: true
     default: 0x0
     description: Button Right Override
 button_left_override:
-    addr: 0x13C[9]
+    address: 0x13C[9]
     writeable: true
     default: 0x0
     description: Button Left Override
 button_center_override:
-    addr: 0x13C[8]
+    address: 0x13C[8]
     writeable: true
     default: 0x0
     description: Button Center Override
 switch_override:
-    addr: 0x13C[7]
+    address: 0x13C[7]
     writeable: true
     default: 0x00
     description: Switch Override (0-7)

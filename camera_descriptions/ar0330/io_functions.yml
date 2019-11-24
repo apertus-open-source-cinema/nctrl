@@ -1,2 +1,2 @@
 reset:
-    addr: "reset"
+    address: "reset"

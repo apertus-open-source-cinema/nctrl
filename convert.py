@@ -207,11 +207,8 @@ def add_high_level_reg(doc, reg, name, extra_name=None):
         addr_base = name
 
     addr = "%s[%d:%d]" % (addr_base, first_bit, last_bit + 1)
-    reg["addr"] = addr
+    reg["address"] = addr
     del reg["mask"]
-
-    if "address" in reg:
-        del reg["address"]
 
     if "width" in reg:
         del reg["width"]
