@@ -6,12 +6,12 @@ devices:
             mode: "memory-map"
             base: 0x41200000
             len: 4096
-        raw: "io.yml"
-        cooked: "io_functions.yml"
-    sensor: 
+        raw: "sensor_io_raw.yml"
+        cooked: "sensor_io_cooked.yml"
+    ar0330:
         channel:
             mode: "i2c-cdev"
             bus: 0
             address: 0x10
-        raw: "raw.yml"
-        cooked: "high_manual.yml"
+        raw: "ar0330_raw.yml"
+        cooked: "ar0330_cooked.yml"
