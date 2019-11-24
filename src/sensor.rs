@@ -171,11 +171,11 @@ pub struct Device {
     channel: CommunicationChannel,
     raw: HashMap<String, RawRegister>,
     cooked: HashMap<String, CookedRegister>,
+    computed: HashMap<String, ComputedRegister>,
 }
 
 impl Device {
     pub fn read_raw(&self, name: &str) -> fuseable::Result<String> {
-        println!("reading {}", name);
         self.raw[name].read_value(&mut std::iter::empty(), &self.channel).map(|v| match v {
             Either::Right(s) => s,
             _ => panic!("got directory entries from a register"),
@@ -183,7 +183,6 @@ impl Device {
     }
 
     pub fn write_raw<T: ToString>(&self, name: &str, value: T) -> fuseable::Result<()> {
-        println!("writing to {}", name);
         self.raw[name].write_value(
             &mut std::iter::empty(),
             value.to_string().as_bytes().to_vec(),
@@ -199,11 +198,25 @@ impl Device {
     }
 
     pub fn write_cooked<T: ToString>(&self, name: &str, value: T) -> fuseable::Result<()> {
-        println!("reading {}", name);
         self.cooked[name].write_value(
             &mut std::iter::empty(),
             value.to_string().as_bytes().to_vec(),
             &self.channel,
+        )
+    }
+
+    pub fn read_computed(&self, name: &str) -> fuseable::Result<String> {
+        self.computed[name].read_value(&mut std::iter::empty(), &self).map(|v| match v {
+            Either::Right(s) => s,
+            _ => panic!("got directory entries from a register"),
+        })
+    }
+
+    pub fn write_computed<T: ToString>(&self, name: &str, value: T) -> fuseable::Result<()> {
+        self.computed[name].write_value(
+            &mut std::iter::empty(),
+            value.to_string().as_bytes().to_vec(),
+            &self,
         )
     }
 }
@@ -234,6 +247,18 @@ impl Fuseable for Device {
                         self.cooked.is_dir(&mut std::iter::once(name)).map(|_| false)
                     }
                     _ => self.cooked.is_dir(&mut path),
+                }
+            }
+            Some("computed") => {
+                let (mut peek, mut path) = path.tee();
+                let reg_name = peek.next();
+                let reg_field = peek.next();
+
+                match (reg_name, reg_field) {
+                    (Some(name), Some("value")) => {
+                        self.computed.is_dir(&mut std::iter::once(name)).map(|_| false)
+                    }
+                    _ => self.computed.is_dir(&mut path),
                 }
             }
             Some(name) => Err(FuseableError::not_found(name)),
@@ -293,11 +318,35 @@ impl Fuseable for Device {
                     _ => self.cooked.read(&mut path),
                 }
             }
+            Some("computed") => {
+                let (mut peek, mut path) = path.tee();
+                let reg_name = peek.next();
+                let reg_field = peek.next();
+
+                match (reg_name, reg_field) {
+                    (Some(_), None) => self.computed.read(&mut path).map(|value| match value {
+                        Either::Left(mut dir_entries) => {
+                            dir_entries.push("value".to_owned());
+                            Either::Left(dir_entries)
+                        }
+                        Either::Right(_) => {
+                            panic!("tought I would get directory entires, but got file content")
+                        }
+                    }),
+                    (Some(name), Some("value")) => self
+                        .computed
+                        .get(name)
+                        .ok_or_else(|| FuseableError::not_found(name))?
+                        .read_value(&mut std::iter::empty(), &self),
+                    _ => self.computed.read(&mut path),
+                }
+            }
             Some(name) => Err(FuseableError::not_found(name)),
             None => Ok(Either::Left(vec![
                 "channel".to_owned(),
                 "raw".to_owned(),
                 "cooked".to_owned(),
+                "computed".to_owned(),
             ])),
         }
     }
@@ -337,6 +386,20 @@ impl Fuseable for Device {
                     _ => self.cooked.write(&mut path, value),
                 }
             }
+            Some("computed") => {
+                let (mut peek, mut path) = path.tee();
+                let reg_name = peek.next();
+                let reg_field = peek.next();
+
+                match (reg_name, reg_field) {
+                    (Some(name), Some("value")) => self
+                        .computed
+                        .get(name)
+                        .ok_or_else(|| FuseableError::not_found(name))?
+                        .write_value(&mut std::iter::empty(), value, &self),
+                    _ => self.computed.write(&mut path, value),
+                }
+            }
             Some(name) => Err(FuseableError::not_found(name)),
             None => Err(FuseableError::unsupported("write", type_name(&self))),
         }
@@ -366,11 +429,13 @@ impl<'de> Deserialize<'de> for Device {
             raw: HashMap<String, RawRegister>,
             #[serde(deserialize_with = "by_path", default)]
             cooked: HashMap<String, CookedRegisterStringAddr>,
+            #[serde(deserialize_with = "by_path", default)]
+            computed: HashMap<String, ComputedRegister>,
         }
 
         let settings = DeviceConfig::deserialize(deserializer)?;
 
-        let DeviceConfig { channel, raw, cooked } = settings;
+        let DeviceConfig { channel, raw, cooked, computed } = settings;
 
         let cooked = cooked
             .into_iter()
@@ -392,7 +457,7 @@ impl<'de> Deserialize<'de> for Device {
             })
             .collect::<Result<HashMap<String, CookedRegister>, _>>()?;
 
-        Ok(Device { channel, raw, cooked })
+        Ok(Device { channel, raw, cooked, computed })
     }
 }
 
@@ -478,6 +543,219 @@ impl CookedRegister  {
                 println!("encoded value: {:?}", value);
 
                 comm_channel.write_value(&self.address, value)
+            }
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Fuseable, Clone)]
+#[serde(tag = "type")]
+enum ComputedRegisterType {
+    #[serde(rename = "float")]
+    Float(
+        #[serde(skip)]
+        #[fuseable(skip)]
+        u64
+    ),
+    #[serde(rename = "int")]
+    Int(
+        #[serde(skip)]
+        #[fuseable(skip)]
+        u64
+    ),
+    #[serde(rename = "string")]
+    String(
+        #[serde(skip)]
+        #[fuseable(skip)]
+        u64
+    ),
+
+}
+
+#[derive(Debug, Deserialize, Fuseable)]
+pub struct ComputedRegister {
+    #[fuseable(ro)]
+    description: Description,
+    get: Option<String>,
+    set: Option<String>,
+    #[fuseable(ro)]
+    #[serde(flatten)]
+    range: Option<Range>,
+    #[fuseable(ro)]
+    #[serde(flatten)]
+    ty: ComputedRegisterType,
+    #[fuseable(ro)]
+    map: Option<ValueMap>
+}
+
+impl ComputedRegister {
+    fn read_value(
+        &self,
+        path: &mut dyn Iterator<Item = &str>,
+        device: &Device,
+    ) -> fuseable::Result<Either<Vec<String>, String>> {
+        match path.next() {
+            Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
+            None => {
+                use rlua::{Error, Lua};
+
+                let (tx, rx) = std::sync::mpsc::channel();
+
+                Lua::new().context(|lua_ctx| {
+                    lua_ctx.scope(|lua| {
+                        let read_raw = lua.create_function(|_, (name): (String)| {
+                            device.read_raw(&name).map_err(|e| Error::StackError)
+                        }).unwrap();
+
+                        let read_cooked = lua.create_function(|_, (name): (String)| {
+                            device.read_cooked(&name).map_err(|e| Error::UserDataTypeMismatch)
+                        }).unwrap();
+
+                        let read_computed = lua.create_function(|_, (name): (String)| {
+                            device.read_computed(&name).map_err(|e| Error::UserDataTypeMismatch)
+                        }).unwrap();
+
+                        lua_ctx.globals().set("read_raw", read_raw);
+                        lua_ctx.globals().set("read_cooked", read_cooked);
+                        lua_ctx.globals().set("read_computed", read_computed);
+
+                        lua_ctx.load(r#"
+                          cooked = {}
+                          _cooked_mt = {
+                            __index = function (table, key)
+                              return read_cooked(key)
+                            end
+                          }
+
+                          raw = {}
+                          _raw_mt = {
+                            __index = function (table, key)
+                              return read_raw(key)
+                            end
+                          }
+
+                          computed = {}
+                          _computed_mt = {
+                            __index = function (table, key)
+                              return read_computed(key)
+                            end
+                          }
+
+                          setmetatable(cooked, _cooked_mt)
+                          setmetatable(raw, _raw_mt)
+                          setmetatable(computed, _computed_mt)"#).exec().unwrap();
+
+                        tx.send(lua_ctx.load(self.get.as_ref().unwrap()).eval::<String>().unwrap())
+                    });
+                });
+
+                Ok(Either::Right(rx.recv().unwrap()))
+            }
+        }
+    }
+
+    fn write_value(
+        &self,
+        path: &mut dyn Iterator<Item = &str>,
+        value: Vec<u8>,
+        device: &Device,
+    ) -> fuseable::Result<()> {
+        match path.next() {
+            Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
+            None => {
+                use rlua::{Error, Lua};
+
+                let (tx, rx) = std::sync::mpsc::channel();
+
+                Lua::new().context(|lua_ctx| {
+                    lua_ctx.scope(|lua| {
+                        let read_raw = lua.create_function(|_, (name): (String)| {
+                            device.read_raw(&name).map_err(|e| Error::StackError)
+                        }).unwrap();
+
+                        let read_cooked = lua.create_function(|_, (name): (String)| {
+                            device.read_cooked(&name).map_err(|e| Error::UserDataTypeMismatch)
+                        }).unwrap();
+
+                        let read_computed = lua.create_function(|_, (name): (String)| {
+                            device.read_computed(&name).map_err(|e| Error::UserDataTypeMismatch)
+                        }).unwrap();
+
+                        let write_raw = lua.create_function(|_, (name, value): (String, String)| {
+                            device.write_raw(&name, value).map_err(|e| Error::StackError)
+                        }).unwrap();
+
+                        let write_cooked = lua.create_function(|_, (name, value): (String, String)| {
+                            device.write_cooked(&name, value).map_err(|e| Error::UserDataTypeMismatch)
+                        }).unwrap();
+
+                        let write_computed = lua.create_function(|_, (name, value): (String, String)| {
+                            device.write_computed(&name, value).map_err(|e| Error::UserDataTypeMismatch)
+                        }).unwrap();
+
+                        lua_ctx.globals().set("read_raw", read_raw);
+                        lua_ctx.globals().set("read_cooked", read_cooked);
+                        lua_ctx.globals().set("read_computed", read_computed);
+
+                        lua_ctx.globals().set("write_raw", write_raw);
+                        lua_ctx.globals().set("write_cooked", write_cooked);
+                        lua_ctx.globals().set("write_computed", write_computed);
+
+                        match self.ty {
+                            ComputedRegisterType::Float(_) => {
+                                lua_ctx.globals().set("value", String::from_utf8(value).unwrap().parse::<f64>().unwrap());
+                            },
+                            ComputedRegisterType::Int(_) => {
+                                lua_ctx.globals().set("value", String::from_utf8(value).unwrap().parse::<i64>().unwrap());
+                            },
+                            ComputedRegisterType::String(_) => {
+                                lua_ctx.globals().set("value", String::from_utf8(value).unwrap());
+                            },
+                        }
+
+                        lua_ctx.load(r#"
+                          cooked = {}
+                          _cooked_mt = {
+                            __index = function (table, key)
+                              return read_cooked(key)
+                            end,
+
+                            __newindex = function (table, key, value)
+                              return write_cooked(key, value)
+                            end
+                          }
+
+                          raw = {}
+                          _raw_mt = {
+                            __index = function (table, key)
+                              return read_raw(key)
+                            end,
+
+                            __newindex = function (table, key, value)
+                              return write_raw(key, value)
+                            end
+                          }
+
+                          computed = {}
+                          _computed_mt = {
+                            __index = function (table, key)
+                              return read_computed(key)
+                            end,
+
+                            __newindex = function (table, key, value)
+                              return write_computed(key, value)
+                            end
+                          }
+
+                          setmetatable(cooked, _cooked_mt)
+                          setmetatable(raw, _raw_mt)
+                          setmetatable(computed, _computed_mt)"#).exec().unwrap();
+
+                        tx.send(lua_ctx.load(self.set.as_ref().unwrap()).exec().unwrap())
+                    });
+                });
+
+                Ok(rx.recv().unwrap())
             }
         }
     }

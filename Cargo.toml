@@ -37,6 +37,8 @@ paste = "*"
 libc = "*"
 structopt = "*"
 
+rlua = "*"
+
 [profile.release]
 lto = true
 opt-level = 3

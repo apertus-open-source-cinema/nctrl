@@ -1,0 +1,22 @@
+test:
+  description: "test"
+  type: float
+  min: 0.0
+  max: 10
+#  get: return cooked.coarse_gain
+  get: cooked.coarse_gain * cooked.fine_gain + computed.test2
+  set: >
+    local coarse = math.floor(value)
+    local fine = value / coarse
+    cooked.coarse_gain = coarse
+    cooked.fine_gain = fine
+
+
+test2:
+  description: "test2"
+  type: float
+  min: 0.0
+  max: 10
+#  get: return cooked.coarse_gain
+  get: 2
+  set: cooked.coarse_gain = value
