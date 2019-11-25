@@ -1,5 +1,4 @@
 use ::log::trace;
-use byteorder::{BigEndian, ReadBytesExt};
 use failure::format_err;
 use fuseable::{Either, Result};
 use fuseable_derive::Fuseable;
@@ -7,7 +6,7 @@ use isomorphism::BiMap;
 use parse_num::{parse_num, parse_num_padded, ParseError};
 use serde::*;
 use serde_derive::*;
-use std::{cmp::Ordering, collections::HashMap, io::Cursor, str::FromStr};
+use std::{cmp::Ordering, collections::HashMap, str::FromStr};
 
 #[derive(Debug, Serialize, Deserialize, Hash, Eq, PartialEq, Clone)]
 pub enum Value {

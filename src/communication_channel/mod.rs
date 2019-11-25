@@ -1,4 +1,4 @@
-use crate::address::{Address, Slice};
+use crate::address::Address;
 use core::fmt::Debug;
 use derivative::*;
 use failure::format_err;

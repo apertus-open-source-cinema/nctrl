@@ -176,14 +176,18 @@ pub struct Device {
 
 impl Device {
     pub fn read_raw(&self, name: &str) -> fuseable::Result<String> {
-        self.raw[name].read_value(&mut std::iter::empty(), &self.channel).map(|v| match v {
+        self.raw.get(name)
+            .ok_or_else(|| format_err!("tried to read non existant raw register {}", name))?
+            .read_value(&mut std::iter::empty(), &self.channel).map(|v| match v {
             Either::Right(s) => s,
             _ => panic!("got directory entries from a register"),
         })
     }
 
     pub fn write_raw<T: ToString>(&self, name: &str, value: T) -> fuseable::Result<()> {
-        self.raw[name].write_value(
+        self.raw.get(name)
+            .ok_or_else(|| format_err!("tried to write to non existant raw register {}", name))?
+            .write_value(
             &mut std::iter::empty(),
             value.to_string().as_bytes().to_vec(),
             &self.channel,
@@ -191,14 +195,18 @@ impl Device {
     }
 
     pub fn read_cooked(&self, name: &str) -> fuseable::Result<String> {
-        self.cooked[name].read_value(&mut std::iter::empty(), &self.channel).map(|v| match v {
+        self.cooked.get(name)
+            .ok_or_else(|| format_err!("tried to read non existant cooked register {}", name))?
+            .read_value(&mut std::iter::empty(), &self.channel).map(|v| match v {
             Either::Right(s) => s,
             _ => panic!("got directory entries from a register"),
         })
     }
 
     pub fn write_cooked<T: ToString>(&self, name: &str, value: T) -> fuseable::Result<()> {
-        self.cooked[name].write_value(
+        self.cooked.get(name)
+            .ok_or_else(|| format_err!("tried to write to non existant cooked register {}", name))?
+            .write_value(
             &mut std::iter::empty(),
             value.to_string().as_bytes().to_vec(),
             &self.channel,
@@ -206,14 +214,18 @@ impl Device {
     }
 
     pub fn read_computed(&self, name: &str) -> fuseable::Result<String> {
-        self.computed[name].read_value(&mut std::iter::empty(), &self).map(|v| match v {
+        self.computed.get(name)
+            .ok_or_else(|| format_err!("tried to read non existant computed register {}", name))?
+            .read_value(&mut std::iter::empty(), &self).map(|v| match v {
             Either::Right(s) => s,
             _ => panic!("got directory entries from a register"),
         })
     }
 
     pub fn write_computed<T: ToString>(&self, name: &str, value: T) -> fuseable::Result<()> {
-        self.computed[name].write_value(
+        self.computed.get(name)
+            .ok_or_else(|| format_err!("tried to write to non existant computed register {}", name))?
+            .write_value(
             &mut std::iter::empty(),
             value.to_string().as_bytes().to_vec(),
             &self,
@@ -588,6 +600,32 @@ pub struct ComputedRegister {
     map: Option<ValueMap>
 }
 
+
+use rlua::{Error as LuaError, Lua};
+
+use core::fmt::{self, Display};
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
+pub struct FailureCompat<E>(E);
+
+impl FailureCompat<failure::Error> {
+    fn failure_to_lua(e: failure::Error) -> LuaError {
+        LuaError::ExternalError(Arc::new(FailureCompat(e)))
+    }
+}
+
+impl<E: Display> Display for FailureCompat<E> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Display::fmt(&self.0, f)
+    }
+}
+
+impl<E: Display + Debug> std::error::Error for FailureCompat<E> {
+    fn description(&self) -> &'static str {
+        "An error has occurred."
+    }
+}
+
 impl ComputedRegister {
     fn read_value(
         &self,
@@ -597,27 +635,24 @@ impl ComputedRegister {
         match path.next() {
             Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
             None => {
-                use rlua::{Error, Lua};
-
-                let (tx, rx) = std::sync::mpsc::channel();
 
                 Lua::new().context(|lua_ctx| {
                     lua_ctx.scope(|lua| {
-                        let read_raw = lua.create_function(|_, (name): (String)| {
-                            device.read_raw(&name).map_err(|e| Error::StackError)
-                        }).unwrap();
+                        let read_raw = lua.create_function(|_, name: String| {
+                            device.read_raw(&name).map_err(FailureCompat::failure_to_lua)
+                        })?;
 
-                        let read_cooked = lua.create_function(|_, (name): (String)| {
-                            device.read_cooked(&name).map_err(|e| Error::UserDataTypeMismatch)
-                        }).unwrap();
+                        let read_cooked = lua.create_function(|_, name: String| {
+                            device.read_cooked(&name).map_err(FailureCompat::failure_to_lua)
+                        })?;
 
-                        let read_computed = lua.create_function(|_, (name): (String)| {
-                            device.read_computed(&name).map_err(|e| Error::UserDataTypeMismatch)
-                        }).unwrap();
+                        let read_computed = lua.create_function(|_, name: String| {
+                            device.read_computed(&name).map_err(FailureCompat::failure_to_lua)
+                        })?;
 
-                        lua_ctx.globals().set("read_raw", read_raw);
-                        lua_ctx.globals().set("read_cooked", read_cooked);
-                        lua_ctx.globals().set("read_computed", read_computed);
+                        lua_ctx.globals().set("read_raw", read_raw)?;
+                        lua_ctx.globals().set("read_cooked", read_cooked)?;
+                        lua_ctx.globals().set("read_computed", read_computed)?;
 
                         lua_ctx.load(r#"
                           cooked = {}
@@ -643,13 +678,16 @@ impl ComputedRegister {
 
                           setmetatable(cooked, _cooked_mt)
                           setmetatable(raw, _raw_mt)
-                          setmetatable(computed, _computed_mt)"#).exec().unwrap();
+                          setmetatable(computed, _computed_mt)"#).exec()?;
 
-                        tx.send(lua_ctx.load(self.get.as_ref().unwrap()).eval::<String>().unwrap())
-                    });
-                });
+                        let script = match self.get.as_ref().ok_or_else(|| format_err!("cannot not read computed value {:#?} with no get script", self)) {
+                            Ok(script) => Ok(script),
+                            Err(e) => Err(e)
+                        }.unwrap();
 
-                Ok(Either::Right(rx.recv().unwrap()))
+                        lua_ctx.load(script).eval::<String>().map_err(|e| e.into())
+                    })
+                }).map(Either::Right)
             }
         }
     }
@@ -663,53 +701,49 @@ impl ComputedRegister {
         match path.next() {
             Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
             None => {
-                use rlua::{Error, Lua};
-
-                let (tx, rx) = std::sync::mpsc::channel();
-
                 Lua::new().context(|lua_ctx| {
                     lua_ctx.scope(|lua| {
-                        let read_raw = lua.create_function(|_, (name): (String)| {
-                            device.read_raw(&name).map_err(|e| Error::StackError)
+                        let read_raw = lua.create_function(|_, name: String| {
+                            device.read_raw(&name).map_err(FailureCompat::failure_to_lua)
                         }).unwrap();
 
-                        let read_cooked = lua.create_function(|_, (name): (String)| {
-                            device.read_cooked(&name).map_err(|e| Error::UserDataTypeMismatch)
+                        let read_cooked = lua.create_function(|_, name: String| {
+                            device.read_cooked(&name).map_err(FailureCompat::failure_to_lua)
                         }).unwrap();
 
-                        let read_computed = lua.create_function(|_, (name): (String)| {
-                            device.read_computed(&name).map_err(|e| Error::UserDataTypeMismatch)
+                        let read_computed = lua.create_function(|_, name: String| {
+                            device.read_computed(&name).map_err(FailureCompat::failure_to_lua)
                         }).unwrap();
 
                         let write_raw = lua.create_function(|_, (name, value): (String, String)| {
-                            device.write_raw(&name, value).map_err(|e| Error::StackError)
+                            device.write_raw(&name, value).map_err(FailureCompat::failure_to_lua)
                         }).unwrap();
 
                         let write_cooked = lua.create_function(|_, (name, value): (String, String)| {
-                            device.write_cooked(&name, value).map_err(|e| Error::UserDataTypeMismatch)
+                            device.write_cooked(&name, value).map_err(FailureCompat::failure_to_lua)
                         }).unwrap();
 
                         let write_computed = lua.create_function(|_, (name, value): (String, String)| {
-                            device.write_computed(&name, value).map_err(|e| Error::UserDataTypeMismatch)
+                            device.write_computed(&name, value).map_err(FailureCompat::failure_to_lua)
                         }).unwrap();
 
-                        lua_ctx.globals().set("read_raw", read_raw);
-                        lua_ctx.globals().set("read_cooked", read_cooked);
-                        lua_ctx.globals().set("read_computed", read_computed);
+                        lua_ctx.globals().set("read_raw", read_raw)?;
+                        lua_ctx.globals().set("read_cooked", read_cooked)?;
+                        lua_ctx.globals().set("read_computed", read_computed)?;
 
-                        lua_ctx.globals().set("write_raw", write_raw);
-                        lua_ctx.globals().set("write_cooked", write_cooked);
-                        lua_ctx.globals().set("write_computed", write_computed);
+                        lua_ctx.globals().set("write_raw", write_raw)?;
+                        lua_ctx.globals().set("write_cooked", write_cooked)?;
+                        lua_ctx.globals().set("write_computed", write_computed)?;
 
                         match self.ty {
                             ComputedRegisterType::Float(_) => {
-                                lua_ctx.globals().set("value", String::from_utf8(value).unwrap().parse::<f64>().unwrap());
+                                lua_ctx.globals().set("value", String::from_utf8(value)?.parse::<f64>()?)?;
                             },
                             ComputedRegisterType::Int(_) => {
-                                lua_ctx.globals().set("value", String::from_utf8(value).unwrap().parse::<i64>().unwrap());
+                                lua_ctx.globals().set("value", String::from_utf8(value)?.parse::<i64>()?)?;
                             },
                             ComputedRegisterType::String(_) => {
-                                lua_ctx.globals().set("value", String::from_utf8(value).unwrap());
+                                lua_ctx.globals().set("value", String::from_utf8(value)?)?
                             },
                         }
 
@@ -749,13 +783,16 @@ impl ComputedRegister {
 
                           setmetatable(cooked, _cooked_mt)
                           setmetatable(raw, _raw_mt)
-                          setmetatable(computed, _computed_mt)"#).exec().unwrap();
+                          setmetatable(computed, _computed_mt)"#).exec()?;
 
-                        tx.send(lua_ctx.load(self.set.as_ref().unwrap()).exec().unwrap())
-                    });
-                });
+                        let script = match self.set.as_ref().ok_or_else(|| format_err!("cannot write read computed value {:#?} with no set script", self)) {
+                            Ok(script) => Ok(script),
+                            Err(e) => Err(e)
+                        }.unwrap();
 
-                Ok(rx.recv().unwrap())
+                        lua_ctx.load(script).exec().map_err(|e| e.into())
+                    })
+                })
             }
         }
     }
@@ -855,6 +892,7 @@ macro_rules! script_set {
 
         impl $set_name {
             fn get_scripts() -> HashMap<String, Box<dyn Script>> {
+                #[allow(unused_mut)]
                 let mut map = HashMap::new();
 
                 $(map.insert($name.to_owned(), Box::new($script::default()) as Box<dyn Script>);)*

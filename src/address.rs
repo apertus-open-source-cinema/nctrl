@@ -1,5 +1,5 @@
 use crate::sensor::RawRegister;
-use failure::{Error, format_err};
+use failure::Error;
 use fuseable::Either;
 use fuseable_derive::Fuseable;
 use lazy_static::lazy_static;

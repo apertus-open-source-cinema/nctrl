@@ -28,7 +28,6 @@ isomorphism = { version = "*", features = ["serde"] }
 memmap = "*"
 i2cdev = "*"
 
-byteorder = "*"
 regex = "*"
 failure = "*"
 lazy_static ="*"
