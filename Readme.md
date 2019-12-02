@@ -81,7 +81,7 @@ The control daemon parses a `YAML` file that describes the camera setup and the 
    analog_gain:
      description: "Sets the analog gain"
      type: float
-     get: cooked.coarse_gain * cooked.fine_gain
+     get: return cooked.coarse_gain * cooked.fine_gain
      set: >
        local coarse = math.floor(value)
        local fine = value / coarse

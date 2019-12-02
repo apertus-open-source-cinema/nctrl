@@ -28,7 +28,7 @@ fn impl_fuseable(ast: &syn::DeriveInput) -> TokenStream {
     let ret = quote! {
         #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
         const #dummy_const: () = {
-            use fuseable::{Result, Fuseable, FuseableError, type_name};
+            use fuseable::{Result, Fuseable, FuseableError, type_name, Either};
 
             #[allow(unused_variables)]
             impl Fuseable for #name {

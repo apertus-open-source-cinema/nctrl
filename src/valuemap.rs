@@ -1,6 +1,6 @@
 use ::log::trace;
 use failure::format_err;
-use fuseable::{Either, Result};
+use fuseable::Result;
 use fuseable_derive::Fuseable;
 use isomorphism::BiMap;
 use parse_num::{parse_num, parse_num_padded, ParseError};

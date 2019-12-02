@@ -1,4 +1,8 @@
-use nctrl::{fuseable_fs::FuseableFS, sensor::Camera, serde_util::FILE_OPENER};
+use nctrl::{
+    camera::{camera, set_camera, Camera, SharedCamera},
+    fuseable_fs::FuseableFS,
+    serde_util::FILE_OPENER,
+};
 use std::{ffi::OsStr, io::Read, path::PathBuf};
 use structopt::StructOpt;
 
@@ -33,10 +37,13 @@ fn main() {
     let mut sensor: Camera = serde_yaml::from_str(&contents).unwrap();
     sensor.mocked(opt.mock);
 
+    set_camera(sensor);
+
     let options = ["-o", "allow_other", "-o", "rw", "-o", "fsname=propfs", "-o", "auto_unmount"]
         .iter()
         .map(|o| o.as_ref())
         .collect::<Vec<&OsStr>>();
 
-    fuse::mount(FuseableFS::new(sensor), opt.mountpoint, &options).unwrap();
+    fuse::mount(FuseableFS::new(&mut SharedCamera { camera: camera() }), opt.mountpoint, &options)
+        .unwrap();
 }

@@ -81,7 +81,10 @@ impl<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> Iterator for BTreeDFIter<V
             None
         } else {
             match self.state {
-                // go as far left as possible
+                // go as far left as possible, if we went to right previously (and go left
+                // initially) if we already went to the left, we need to go up,
+                // until we can go to the right again (the order is left -> parent
+                // -> right)
                 BTreeDFIterState::GoingLeft => {
                     self.state = BTreeDFIterState::GoingRightOrUp;
 
@@ -100,8 +103,11 @@ impl<V: PartialOrd, I: BTreeIdx, P: BTreeProxy<V, I>> Iterator for BTreeDFIter<V
                         self.next()
                     }
                 }
-                // first go right, if we can't go up until we are at the parent of the last node we
-                // did
+                // after going as far left as possible, the next node has to be either
+                // - the node to the right of us (after that we need to go as far left as possible
+                //   again)
+                // - if there is no node to the right, we need to go up, until we go from a left
+                //   child to its parent
                 BTreeDFIterState::GoingRightOrUp => {
                     self.state = BTreeDFIterState::GoingLeft;
 

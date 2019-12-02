@@ -129,8 +129,7 @@ mod tests {
 
     #[test]
     fn dummy_test2() {
-        let address =
-            Address { base: vec![], slice: Some(Slice { start: 3, end: 4 }) };
+        let address = Address { base: vec![], slice: Some(Slice { start: 3, end: 4 }) };
 
         let mut dest = vec![0x03, 0x00];
 

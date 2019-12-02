@@ -1,6 +1,5 @@
-use crate::sensor::RawRegister;
+use crate::registers::RawRegister;
 use failure::Error;
-use fuseable::Either;
 use fuseable_derive::Fuseable;
 use lazy_static::lazy_static;
 use parse_num::{parse_num, parse_num_padded};
@@ -13,6 +12,10 @@ pub struct Slice {
     pub start: u8,
     pub end: u8,
 }
+
+// TODO(robin): consider either
+//              making address dependent on the communication channel
+//              or making it a enum of u64 and Vec<u8> (or maybe String?)
 
 // base contains the base address (in big endian bytes)
 // if slice is Some it specifies the start and stop bit of this Address
@@ -41,17 +44,21 @@ impl Address {
                 // capture 0 is the whole string
                 // capture 1 is the base
                 let (base, base_reg) = match captures.get(1) {
-                    Some(m) => {
-                        let m_str = m.as_str();
-                        match parse_num_padded(m_str) {
+                    Some(base) => {
+                        let base_str = base.as_str();
+                        match parse_num_padded(base_str) {
+                            // if the base is a number, use that number as address
                             Ok(v) => (v, None),
                             Err(_) => {
-                                let base = m_str.bytes().collect::<Vec<u8>>();
-                                let base_reg = register_set.and_then(|set| set.get(m_str));
+                                // try to lookup the address in the register_set (for named
+                                // addresses / computed registers)
+                                let base_reg = register_set.and_then(|set| set.get(base_str));
 
                                 let base = match base_reg {
                                     Some(reg) => reg.address.base.clone(),
-                                    None => base,
+                                    // if we can't find the address in the register set and it is
+                                    // not a number, use the bytes directly
+                                    None => base_str.bytes().collect::<Vec<u8>>(),
                                 };
 
                                 (base, base_reg)
@@ -74,10 +81,9 @@ impl Address {
                 }
 
                 // capture 5 is the potential single bit slice
-                //
                 let (slice_start, slice_end) = match captures.get(5) {
-                    Some(m) => {
-                        let bit = parse_num(m.as_str()).map(parse_slice_num)?;
+                    Some(single_bit_slice) => {
+                        let bit = parse_num(single_bit_slice.as_str()).map(parse_slice_num)?;
                         (Some(bit), Some(bit + 1))
                     }
                     // if there is not single bit slice, we either have no slice, or a slice with
@@ -140,20 +146,16 @@ impl Address {
         }
     }
 
-    pub fn parse_named(address: &str, regs: &HashMap<String, RawRegister>) -> Result<Address, Error> {
+    pub fn parse_named(
+        address: &str,
+        regs: &HashMap<String, RawRegister>,
+    ) -> Result<Address, Error> {
         Address::parse_internal(address, Some(regs), None)
     }
 
     pub fn parse(address: &str, amount: Option<usize>) -> Result<Address, Error> {
         Address::parse_internal(address, None, amount.map(|v| v as u8))
     }
-
-    /*
-    fn slice_value(&self, value: Vec<u8>) -> Vec<u8> {
-
-    }
-
-    */
 
     pub fn set_base_from_u64(&mut self, mut new_base: u64) {
         let mut base = [0u8; 8];

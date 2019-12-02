@@ -2,7 +2,7 @@ use crate::address::Address;
 use core::fmt::Debug;
 use derivative::*;
 use failure::format_err;
-use fuseable::{Either, Fuseable, Result};
+use fuseable::{Fuseable, Result};
 use fuseable_derive::*;
 use i2cdev::{core::I2CDevice, linux::LinuxI2CDevice};
 use memmap::{MmapMut, MmapOptions};
@@ -54,11 +54,13 @@ pub trait CommChannel: Debug + Fuseable {
             slice_write(&mut old_value, value, address);
 
             old_value
-        } /* else if !address.unbounded() { TODO(robin): we could optimize the case where the slice starts and end at a byte boundary, as we just need to adjust the address base, but that carries the assumption, that addreses are always byte granularity, so maybe we actually cant do that? (for example the CMVSPIBridge has addresses that are 4 bytes per unit increment)
+        }
+        /* else if !address.unbounded() { TODO(robin): we could optimize the case where the slice starts and end at a byte boundary, as we just need to adjust the address base, but that carries the assumption, that addreses are always byte granularity, so maybe we actually cant do that? (for example the CMVSPIBridge has addresses that are 4 bytes per unit increment)
             // the slice starts and ends at a byte boundary and is not unbounded
             let Slice { start, end } = address.slice.as_ref().unwrap();
             value[(start >> 3) as usize..(end >> 3) as usize].to_vec()
-        }*/ else {
+        }*/
+        else {
             value
         };
 
@@ -104,7 +106,7 @@ struct CMVSPIBridge {
     base: u64,
     len: u64,
     #[derivative(Debug = "ignore", PartialEq = "ignore")]
-    channel: MemoryMap
+    channel: MemoryMap,
 }
 
 impl<'de> Deserialize<'de> for CMVSPIBridge {
@@ -118,8 +120,7 @@ impl<'de> Deserialize<'de> for CMVSPIBridge {
             len: u64,
         }
 
-        let CMVSPIBridgeConfig { base, len } =
-            CMVSPIBridgeConfig::deserialize(deserializer)?;
+        let CMVSPIBridgeConfig { base, len } = CMVSPIBridgeConfig::deserialize(deserializer)?;
 
         let channel = MemoryMap { base, len, dev: RwLock::new(None), mock: false };
 
@@ -191,18 +192,21 @@ impl CommChannel for MemoryMap {
                     .bytes()
                     .ok_or_else(|| format_err!("MemoryMap doesn't support unbounded read"))?;
 
-                mmap_dev.get(offset..(offset + bytes)).map(|v| {
-                    let mut v = v.to_vec();
-                    v.reverse();
-                    v
-                }).ok_or_else(|| {
-                    format_err!(
-                        "could not read region {} to {} at {} of /dev/mem",
-                        offset,
-                        offset + bytes,
-                        self.base
-                    )
-                })
+                mmap_dev
+                    .get(offset..(offset + bytes))
+                    .map(|v| {
+                        let mut v = v.to_vec();
+                        v.reverse();
+                        v
+                    })
+                    .ok_or_else(|| {
+                        format_err!(
+                            "could not read region {} to {} at {} of /dev/mem",
+                            offset,
+                            offset + bytes,
+                            self.base
+                        )
+                    })
             },
             || self.init(),
         )
@@ -251,7 +255,7 @@ where
     }
 }
 
-impl CMVSPIBridge  {
+impl CMVSPIBridge {
     fn addr_to_mmap_addr(address: &Address) -> Address {
         let spi_reg = address.as_u64();
         let base = 4 * spi_reg;

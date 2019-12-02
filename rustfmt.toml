@@ -12,5 +12,6 @@ condense_wildcard_suffixes = true
 overflow_delimited_expr = true
 remove_nested_parens = true
 reorder_impl_items = true
+reorder_imports = true
 use_field_init_shorthand = true
 trailing_semicolon = false

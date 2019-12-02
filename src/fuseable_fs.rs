@@ -1,8 +1,8 @@
 use ::log::error;
 use ftable::{DirOrFile, Entry, FTable, Inode};
 use fuse::{
-    FileAttr, FileType, Filesystem, ReplyAttr, ReplyData, ReplyDirectory, ReplyEntry, ReplyWrite,
-    Request,
+    FileAttr, FileType, Filesystem, ReplyAttr, ReplyData, ReplyDirectory, ReplyEntry, ReplyOpen,
+    ReplyWrite, Request,
 };
 use fuseable::{Either, Fuseable};
 use libc::{EINVAL, ENOENT};
@@ -15,12 +15,12 @@ use std::{
 const TTL: Duration = Duration::from_secs(3600); // 1 hour
 
 pub struct FuseableFS<'a, T> {
-    fuseable: T,
+    fuseable: &'a mut T,
     ftable: FTable<'a>,
 }
 
 impl<'a, T: Fuseable> FuseableFS<'a, T> {
-    pub fn new(fuseable: T) -> Self {
+    pub fn new(fuseable: &'a mut T) -> Self {
         let mut ftable = FTable::new();
 
         if let Either::Left(files) = fuseable.read(&mut std::iter::empty()).unwrap() {
@@ -138,6 +138,12 @@ impl<'a, T: Fuseable> Filesystem for FuseableFS<'a, T> {
         }
     }
 
+    fn open(&mut self, _req: &Request<'_>, _ino: u64, flags: u32, reply: ReplyOpen) {
+        // set direct io, as we don't know the filesize befor a read
+        let flags = flags | (fuse::consts::FOPEN_DIRECT_IO as u32);
+        reply.opened(0, flags);
+    }
+
     fn read(
         &mut self,
         _req: &Request,
@@ -147,33 +153,37 @@ impl<'a, T: Fuseable> Filesystem for FuseableFS<'a, T> {
         _size: u32,
         reply: ReplyData,
     ) {
+        // TODO(robin): we are using direct io, which means a first
+        // read without offset will return the whole file (is this
+        // actually true? what about huge files?) and any read with
+        // offset should return EOF, there are many ways to encode EOF
+        // as far as i can tell (see for example
+        // http://fuse.996288.n3.nabble.com/What-to-return-on-EOF-td4516.html)
         if offset != 0 {
-            error!(
-                "can't handle offset != 0 in read, it is {}, silently dropping this read",
-                offset
-            )
-        }
-
-        match &self.ftable.get(Inode(ino)) {
-            Some(_entry) => {
-                match self
-                    .fuseable
-                    .read(&mut self.ftable.iter_path(Inode(ino)).map(|e| e.name.to_str().unwrap()))
-                {
-                    Ok(Either::Left(_)) => {
-                        panic!("we got a mismatch");
-                    }
-                    Ok(Either::Right(data)) => reply.data(data.as_bytes()),
-                    Err(e) => {
-                        error!("{}", e);
-                        reply.error(EINVAL)
+            reply.error(0); // ESUCCESS ⇔ success
+        } else {
+            match &self.ftable.get(Inode(ino)) {
+                Some(_entry) => {
+                    match self.fuseable.read(
+                        &mut self.ftable.iter_path(Inode(ino)).map(|e| e.name.to_str().unwrap()),
+                    ) {
+                        Ok(Either::Left(_)) => {
+                            panic!("we got a mismatch");
+                        }
+                        Ok(Either::Right(data)) => reply.data(data.as_bytes()),
+                        Err(e) => {
+                            error!("{}", e);
+                            reply.error(EINVAL)
+                        }
                     }
                 }
+                None => reply.error(ENOENT),
             }
-            None => reply.error(ENOENT),
         }
     }
 
+    // could be optimized using the open filehandle and storing the
+    // partially used iterator in some kind of cache
     fn readdir(
         &mut self,
         _req: &Request,

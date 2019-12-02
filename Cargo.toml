@@ -41,3 +41,4 @@ rlua = "*"
 [profile.release]
 lto = true
 opt-level = 3
+debug = true

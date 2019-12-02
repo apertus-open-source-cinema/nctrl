@@ -1,7 +1,7 @@
 analog_gain:
   description: "Sets the analog gain"
   type: float
-  get: cooked.coarse_gain * cooked.fine_gain
+  get: return cooked.coarse_gain * cooked.fine_gain
   set: >
     local coarse = math.floor(value)
     local fine = value / coarse
