@@ -41,4 +41,4 @@ rlua = "*"
 [profile.release]
 lto = true
 opt-level = 3
-debug = true
+# debug = true    # use for cargo flamegraph only, bloats the binary a lot (~4Mb -> 28Mb)
