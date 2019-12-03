@@ -73,7 +73,7 @@ impl RawRegister {
     ) -> fuseable::Result<Either<Vec<String>, String>> {
         match path.next() {
             Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
-            None => comm_channel.read_value(&self.address).map(|v| Either::Right(to_hex(v))),
+            None => comm_channel.read_value(&self.address).map(|v| Either::Right(to_hex(&v))),
         }
     }
 
@@ -94,9 +94,7 @@ impl RawRegister {
                     }
 
                     while value.len() < width as usize {
-                        value.insert(0, 0); // TODO(robin): which way around?,
-                                            // really efficient the other way
-                                            // (value.push(0))
+                        value.insert(0, 0);
                     }
 
                     let value = match mask {
@@ -107,20 +105,8 @@ impl RawRegister {
                             // it is unclear if this is the wanted / intuitive behaviour, or if the
                             // opposite is the case (note this applies only if a mask is specified,
                             // maybe we only want to allow masks, when their width matches the
-                            // expected width
-
-                            // TODO(robin): this also needs to account for little endian vs big
-                            // endian for value 0x12345678 at 0x0,
-                            // little endian has 0x78 is stored at 0x0, 0x56 is stored at 0x1 and so
-                            // on big endian has 0x12 stored at 0x0,
-                            // 0x34 stored at 0x1 and so on
-                            // need to define internal byte order =>
-                            // little endian -- not so intuitive
-                            // big endian -- would be more efficient and more intuitive
                             while mask.len() < width as usize {
-                                mask.insert(0, 0); // TODO(robin): which way
-                                                   // around?, really efficient
-                                                   // this way around
+                                mask.insert(0, 0);
                             }
 
                             let current_value = comm_channel.read_value(&self.address)?;

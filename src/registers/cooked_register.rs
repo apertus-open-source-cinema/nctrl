@@ -10,6 +10,7 @@ use fuseable::{type_name, Either, FuseableError};
 use fuseable_derive::Fuseable;
 use itertools::izip;
 use parse_num::parse_num_mask;
+use log::info;
 
 use serde_derive::*;
 use std::fmt::Debug;
@@ -43,7 +44,7 @@ impl CookedRegister {
 
                 match &self.map {
                     Some(map) => map.lookup(value).map(Either::Right),
-                    None => Ok(Either::Right(to_hex(value))),
+                    None => Ok(Either::Right(to_hex(&value))),
                 }
             }
         }
@@ -58,8 +59,8 @@ impl CookedRegister {
         match path.next() {
             Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
             None => {
-                let value = match &self.map {
-                    Some(map) => map.encode(String::from_utf8(value)?)?,
+                let encoded_value = match &self.map {
+                    Some(map) => map.encode(String::from_utf8(value.clone())?)?,
                     None => {
                         if let Some(width) = self.address.bytes() {
                             let (mask, mut value) =
@@ -69,12 +70,14 @@ impl CookedRegister {
                                 return Err(format_err!("value {:?} to write was longer ({}) than cooked register {:?} with width of {}", value, value.len(), self, width));
                             }
 
+                            // pad value to the length of the register
                             while value.len() < width as usize {
                                 value.insert(0, 0);
                             }
 
                             match mask {
                                 Some(mut mask) => {
+                                    // pad mask to the length of the register
                                     while mask.len() < width as usize {
                                         mask.insert(0, 0);
                                     }
@@ -93,9 +96,9 @@ impl CookedRegister {
                     }
                 };
 
-                println!("encoded value: {:?}", value);
+                info!("{:?} encoded to {:?}", value, encoded_value);
 
-                comm_channel.write_value(&self.address, value)
+                comm_channel.write_value(&self.address, encoded_value)
             }
         }
     }

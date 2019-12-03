@@ -8,6 +8,8 @@ use serde::*;
 use serde_derive::*;
 use std::{cmp::Ordering, collections::HashMap, str::FromStr};
 
+use crate::common::to_hex;
+
 #[derive(Debug, Serialize, Deserialize, Hash, Eq, PartialEq, Clone)]
 pub enum Value {
     Value(Vec<u8>),
@@ -17,12 +19,7 @@ pub enum Value {
 impl core::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Value::Value(v) => write!(
-                f,
-                "{}",
-                "0x".to_string()
-                    + &v.iter().map(|v| format!("{:02X}", v).to_string()).collect::<String>()
-            ),
+            Value::Value(v) => write!(f, "{}", to_hex(v)),
             Value::Any => write!(f, "Any"),
         }
     }
