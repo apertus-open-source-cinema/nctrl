@@ -48,8 +48,7 @@ fn impl_fuseable(ast: &syn::DeriveInput) -> TokenStream {
         };
     };
 
-
-    // println!("{}", ret);
+//    println!("{}", ret);
 
     ret
 }
@@ -317,14 +316,17 @@ fn impl_enum_variant_unit(name: &syn::Ident) -> (TokenStream, TokenStream, Token
         => {
             match path.next() {
                 Some(s) => Err(FuseableError::not_a_directory(stringify!($t), s)),
-                None => Ok(stringify!(#name).to_owned())
+                None => Ok(Either::Right(stringify!(#name).to_owned()))
             }
         }
     };
 
     let write = quote! {
         => {
-            None => Err(FuseableError::unsupported("write", type_name(&self))),
+            match path.next() {
+                Some(s) => Err(FuseableError::not_a_directory(stringify!($t), s)),
+                None => Err(FuseableError::unsupported("write", type_name(&self))),
+            }
         }
     };
 

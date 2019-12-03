@@ -11,7 +11,7 @@ use std::{fmt::Debug, sync::Arc};
 
 use failure::format_err;
 
-use rlua::Error as LuaError;
+use rlua::{Error as LuaError, ToLua, RegistryKey, Table, Function};
 
 use serde_derive::*;
 
@@ -19,30 +19,20 @@ use serde_derive::*;
 #[serde(tag = "type")]
 enum ComputedRegisterType {
     #[serde(rename = "float")]
-    Float(
-        #[serde(skip)]
-        #[fuseable(skip)]
-        u64,
-    ),
+    Float,
     #[serde(rename = "int")]
-    Int(
-        #[serde(skip)]
-        #[fuseable(skip)]
-        u64,
-    ),
+    Int,
     #[serde(rename = "string")]
-    String(
-        #[serde(skip)]
-        #[fuseable(skip)]
-        u64,
-    ),
+    String
 }
 
 #[derive(Debug, Deserialize, Fuseable)]
 pub struct ComputedRegister {
     #[fuseable(ro)]
     description: Description,
+    #[fuseable(ro)]
     get: Option<String>,
+    #[fuseable(ro)]
     set: Option<String>,
     #[fuseable(ro)]
     #[serde(flatten)]
@@ -50,12 +40,13 @@ pub struct ComputedRegister {
     #[fuseable(ro)]
     #[serde(flatten)]
     ty: ComputedRegisterType,
+
     #[fuseable(skip)]
     #[serde(skip)]
-    read_function: std::cell::RefCell<Option<rlua::RegistryKey>>,
+    read_function: std::cell::RefCell<Option<RegistryKey>>,
     #[fuseable(skip)]
     #[serde(skip)]
-    write_function: std::cell::RefCell<Option<rlua::RegistryKey>>,
+    write_function: std::cell::RefCell<Option<RegistryKey>>,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
@@ -75,10 +66,11 @@ impl<E: Display + Debug> std::error::Error for FailureCompat<E> {
     fn description(&self) -> &'static str { "An error has occurred." }
 }
 
+// i can't figure out the lifetimes for a function that would do this, so do a macro
 macro_rules! make_table {
     (@gen_read $scope:ident, $table:ident, $read_name:ident, $read:tt) => {
         let read =
-            $scope.create_function(move |_, (_table, $read_name): (rlua::Table, String)| {
+            $scope.create_function(move |_, (_table, $read_name): (Table, String)| {
                 $read
             })?;
 
@@ -86,7 +78,7 @@ macro_rules! make_table {
     };
     (@gen_write $scope:ident, $table:ident, $write_name:ident, $write_val:ident, $write:tt) => {
         let write =
-            $scope.create_function(move |_, (_table, $write_name, $write_val): (rlua::Table, String, String)| {
+            $scope.create_function(move |_, (_table, $write_name, $write_val): (Table, String, String)| {
                 $write
             })?;
 
@@ -103,7 +95,7 @@ macro_rules! make_table {
                 v
             });
 
-            let table: fuseable::Result<rlua::Table> = table.map_err(|e| e.into());
+            let table: fuseable::Result<Table> = table.map_err(|e| e.into());
             table
         }
     };
@@ -119,7 +111,7 @@ macro_rules! make_table {
                 v
             });
 
-            let table: fuseable::Result<rlua::Table> = table.map_err(|e| e.into());
+            let table: fuseable::Result<Table> = table.map_err(|e| e.into());
             table
         }
 
@@ -149,10 +141,6 @@ impl ComputedRegister {
                                 device.read_computed(&name).map_err(FailureCompat::failure_to_lua)
                             })?;
 
-                            // TODO(robin): add the return
-                            // function(raw, cooked, computed) [...] end
-                            // padding automatically
-
                             if self.read_function.borrow().is_none() {
                                 let script = self.get.as_ref().ok_or_else(|| {
                                     format_err!(
@@ -166,12 +154,12 @@ impl ComputedRegister {
 
                                 *self.read_function.borrow_mut() =
                                     Some(lua_ctx.create_registry_value(
-                                        lua_ctx.load(&script).eval::<rlua::Function>()?,
+                                        lua_ctx.load(&script).eval::<Function>()?,
                                     )?);
                             }
 
                             lua_ctx
-                                .registry_value::<rlua::Function>(
+                                .registry_value::<Function>(
                                     self.read_function.borrow().as_ref().unwrap(),
                                 )?
                                 .call::<_, String>((raw_table, cooked_table, computed_table))
@@ -224,18 +212,14 @@ impl ComputedRegister {
                         }
                     )?;
 
-
-                    use rlua::ToLua;
-
-
                     let value = match self.ty {
-                        ComputedRegisterType::Float(_) => {
+                        ComputedRegisterType::Float => {
                             String::from_utf8(value)?.parse::<f64>()?.to_lua(lua_ctx)?
                         }
-                        ComputedRegisterType::Int(_) => {
+                        ComputedRegisterType::Int => {
                             String::from_utf8(value)?.parse::<i64>()?.to_lua(lua_ctx)?
                         }
-                        ComputedRegisterType::String(_) => {
+                        ComputedRegisterType::String => {
                             String::from_utf8(value)?.to_lua(lua_ctx)?
                         }
                     };
@@ -253,12 +237,12 @@ impl ComputedRegister {
                             format!("function (value, raw, cooked, computed) {} end", script);
 
                         *self.write_function.borrow_mut() = Some(lua_ctx.create_registry_value(
-                            lua_ctx.load(&script).eval::<rlua::Function>()?,
+                            lua_ctx.load(&script).eval::<Function>()?,
                         )?);
                     }
 
                     lua_ctx
-                        .registry_value::<rlua::Function>(
+                        .registry_value::<Function>(
                             self.write_function.borrow().as_ref().unwrap(),
                         )?
                         .call((value, raw_table, cooked_table, computed_table))
