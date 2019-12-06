@@ -45,71 +45,123 @@ pub struct Device {
 // as we want computed registers to be fast, i see no way currently to
 // just use one global lua vm
 
+macro_rules! with_register_from_set {
+    ($self:ident.$reg_set:ident, $reg_name:ident, $op:tt) => {
+        {
+            $self.$reg_set
+                .get($reg_name)
+                .ok_or_else(|| format_err!(concat!("tried to ,", $op, " non existant ", stringify!($reg_set), " register {}"), $reg_name))?
+        }
+    };
+}
+
+macro_rules! read_reg_from_set {
+    ($self:ident.$reg_set:ident, $reg_name:ident, $extra:expr) => {
+        with_register_from_set!($self.$reg_set, $reg_name, "read")
+            .read_value(&mut std::iter::empty(), $extra)
+            .map(|v| match v {
+                Either::Right(s) => s,
+                _ => panic!("got directory entries from a register"),
+            })
+    }
+}
+
+macro_rules! write_reg_from_set {
+    ($self:ident.$reg_set:ident, $reg_name:ident, $extra:expr, $value:ident) => {
+        with_register_from_set!($self.$reg_set, $reg_name, "read to")
+            .write_value(&mut std::iter::empty(), $value.to_string().as_bytes().to_vec(), $extra)
+    }
+}
 
 impl Device {
     pub fn read_raw(&self, name: &str) -> fuseable::Result<String> {
-        self.raw
-            .get(name)
-            .ok_or_else(|| format_err!("tried to read non existant raw register {}", name))?
-            .read_value(&mut std::iter::empty(), &self.channel)
-            .map(|v| match v {
-                Either::Right(s) => s,
-                _ => panic!("got directory entries from a register"),
-            })
+        read_reg_from_set!(self.raw, name, &self.channel)
     }
 
     pub fn write_raw<T: ToString>(&self, name: &str, value: T) -> fuseable::Result<()> {
-        self.raw
-            .get(name)
-            .ok_or_else(|| format_err!("tried to write to non existant raw register {}", name))?
-            .write_value(
-                &mut std::iter::empty(),
-                value.to_string().as_bytes().to_vec(),
-                &self.channel,
-            )
+        write_reg_from_set!(self.raw, name, &self.channel, value)
     }
 
     pub fn read_cooked(&self, name: &str) -> fuseable::Result<String> {
-        self.cooked
-            .get(name)
-            .ok_or_else(|| format_err!("tried to read non existant cooked register {}", name))?
-            .read_value(&mut std::iter::empty(), &self.channel)
-            .map(|v| match v {
-                Either::Right(s) => s,
-                _ => panic!("got directory entries from a register"),
-            })
+        read_reg_from_set!(self.cooked, name, &self.channel)
     }
 
     pub fn write_cooked<T: ToString>(&self, name: &str, value: T) -> fuseable::Result<()> {
-        self.cooked
-            .get(name)
-            .ok_or_else(|| format_err!("tried to write to non existant cooked register {}", name))?
-            .write_value(
-                &mut std::iter::empty(),
-                value.to_string().as_bytes().to_vec(),
-                &self.channel,
-            )
+        write_reg_from_set!(self.cooked, name, &self.channel, value)
     }
 
     pub fn read_computed(&self, name: &str) -> fuseable::Result<String> {
-        self.computed
-            .get(name)
-            .ok_or_else(|| format_err!("tried to read non existant computed register {}", name))?
-            .read_value(&mut std::iter::empty(), &self)
-            .map(|v| match v {
-                Either::Right(s) => s,
-                _ => panic!("got directory entries from a register"),
-            })
+        read_reg_from_set!(self.computed, name, &self)
     }
 
     pub fn write_computed<T: ToString>(&self, name: &str, value: T) -> fuseable::Result<()> {
-        self.computed
-            .get(name)
-            .ok_or_else(|| {
-                format_err!("tried to write to non existant computed register {}", name)
-            })?
-            .write_value(&mut std::iter::empty(), value.to_string().as_bytes().to_vec(), &self)
+        write_reg_from_set!(self.computed, name, &self, value)
     }
+}
+
+macro_rules! inject {
+    ($path_iter:ident, $new_path_iter:ident, $($rules:pat => $code:expr),*) => {
+        {
+            let (mut peek, mut $new_path_iter) = $path_iter.tee();
+            let reg_name = peek.next();
+            let reg_field = peek.next();
+
+            match (reg_name, reg_field) {
+                $($rules => $code),*
+            }
+        }
+    };
+}
+
+macro_rules! inject_read {
+    ($path:expr, $path_iter:ident, $injected_property:ident <-> $extra:expr) => {
+        {
+            inject!($path_iter, path,
+                (Some(_), None) => $path.read(&mut path).map(|value| match value {
+                    Either::Left(mut dir_entries) => {
+                        dir_entries.push("value".to_owned());
+                        Either::Left(dir_entries)
+                    }
+                    Either::Right(_) => {
+                        panic!("tought I would get directory entires, but got file content")
+                    }
+                }),
+                (Some(name), Some("value")) => $path
+                    .get(name)
+                    .ok_or_else(|| FuseableError::not_found(name))?
+                    .read_value(&mut std::iter::empty(), $extra),
+                _ => $path.read(&mut path)
+            )
+        }
+    };
+}
+
+macro_rules! inject_write {
+    ($path:expr, $path_iter:ident, $injected_property:ident <-> $extra:expr, $value:ident) => {
+        {
+            inject!($path_iter, path,
+                    (Some(name), Some("value")) => $path
+                        .get(name)
+                        .ok_or_else(|| FuseableError::not_found(name))?
+                        .write_value(&mut std::iter::empty(), $value, $extra),
+                    _ => $path.write(&mut path, $value)
+            )
+        }
+    };
+}
+
+
+macro_rules! inject_is_dir {
+    ($path:expr, $path_iter:ident, $injected_property:ident) => {
+        {
+            inject!($path_iter, path,
+                (Some(name), Some(stringify!($injected_property))) => {
+                    $path.is_dir(&mut std::iter::once(name)).map(|_| false)
+                },
+                _ => $path.is_dir(&mut path)
+            )
+        }
+    };
 }
 
 impl Fuseable for Device {
@@ -117,40 +169,13 @@ impl Fuseable for Device {
         match path.next() {
             Some("channel") => self.channel.is_dir(path),
             Some("raw") => {
-                let (mut peek, mut path) = path.tee();
-                let reg_name = peek.next();
-                let reg_field = peek.next();
-
-                match (reg_name, reg_field) {
-                    (Some(name), Some("value")) => {
-                        self.raw.is_dir(&mut std::iter::once(name)).map(|_| false)
-                    }
-                    _ => self.raw.is_dir(&mut path),
-                }
+                inject_is_dir!(self.raw, path, value)
             }
             Some("cooked") => {
-                let (mut peek, mut path) = path.tee();
-                let reg_name = peek.next();
-                let reg_field = peek.next();
-
-                match (reg_name, reg_field) {
-                    (Some(name), Some("value")) => {
-                        self.cooked.is_dir(&mut std::iter::once(name)).map(|_| false)
-                    }
-                    _ => self.cooked.is_dir(&mut path),
-                }
+                inject_is_dir!(self.cooked, path, value)
             }
             Some("computed") => {
-                let (mut peek, mut path) = path.tee();
-                let reg_name = peek.next();
-                let reg_field = peek.next();
-
-                match (reg_name, reg_field) {
-                    (Some(name), Some("value")) => {
-                        self.computed.is_dir(&mut std::iter::once(name)).map(|_| false)
-                    }
-                    _ => self.computed.is_dir(&mut path),
-                }
+                inject_is_dir!(self.computed, path, value)
             }
             Some(name) => Err(FuseableError::not_found(name)),
             None => Ok(true),
@@ -164,73 +189,13 @@ impl Fuseable for Device {
         match path.next() {
             Some("channel") => self.channel.read(path),
             Some("raw") => {
-                let (mut peek, mut path) = path.tee();
-                let reg_name = peek.next();
-                let reg_field = peek.next();
-
-                match (reg_name, reg_field) {
-                    (Some(_), None) => self.raw.read(&mut path).map(|value| match value {
-                        Either::Left(mut dir_entries) => {
-                            dir_entries.push("value".to_owned());
-                            Either::Left(dir_entries)
-                        }
-                        Either::Right(_) => {
-                            panic!("tought I would get directory entires, but got file content")
-                        }
-                    }),
-                    (Some(name), Some("value")) => self
-                        .raw
-                        .get(name)
-                        .ok_or_else(|| FuseableError::not_found(name))?
-                        .read_value(&mut std::iter::empty(), &self.channel),
-                    _ => self.raw.read(&mut path),
-                }
+                inject_read!(self.raw, path, value <-> &self.channel)
             }
             Some("cooked") => {
-                let (mut peek, mut path) = path.tee();
-                let reg_name = peek.next();
-                let reg_field = peek.next();
-
-                match (reg_name, reg_field) {
-                    (Some(_), None) => self.cooked.read(&mut path).map(|value| match value {
-                        Either::Left(mut dir_entries) => {
-                            dir_entries.push("value".to_owned());
-                            Either::Left(dir_entries)
-                        }
-                        Either::Right(_) => {
-                            panic!("tought I would get directory entires, but got file content")
-                        }
-                    }),
-                    (Some(name), Some("value")) => self
-                        .cooked
-                        .get(name)
-                        .ok_or_else(|| FuseableError::not_found(name))?
-                        .read_value(&mut std::iter::empty(), &self.channel),
-                    _ => self.cooked.read(&mut path),
-                }
+                inject_read!(self.cooked, path, value <-> &self.channel)
             }
             Some("computed") => {
-                let (mut peek, mut path) = path.tee();
-                let reg_name = peek.next();
-                let reg_field = peek.next();
-
-                match (reg_name, reg_field) {
-                    (Some(_), None) => self.computed.read(&mut path).map(|value| match value {
-                        Either::Left(mut dir_entries) => {
-                            dir_entries.push("value".to_owned());
-                            Either::Left(dir_entries)
-                        }
-                        Either::Right(_) => {
-                            panic!("tought I would get directory entires, but got file content")
-                        }
-                    }),
-                    (Some(name), Some("value")) => self
-                        .computed
-                        .get(name)
-                        .ok_or_else(|| FuseableError::not_found(name))?
-                        .read_value(&mut std::iter::empty(), &self),
-                    _ => self.computed.read(&mut path),
-                }
+                inject_read!(self.computed, path, value <-> &self)
             }
             Some(name) => Err(FuseableError::not_found(name)),
             None => Ok(Either::Left(vec![
@@ -250,46 +215,13 @@ impl Fuseable for Device {
         match path.next() {
             Some("channel") => Err(FuseableError::unsupported("write", type_name(&self.channel))),
             Some("raw") => {
-                let (mut peek, mut path) = path.tee();
-                let reg_name = peek.next();
-                let reg_field = peek.next();
-
-                match (reg_name, reg_field) {
-                    (Some(name), Some("value")) => self
-                        .raw
-                        .get(name)
-                        .ok_or_else(|| FuseableError::not_found(name))?
-                        .write_value(&mut std::iter::empty(), value, &self.channel),
-                    _ => self.raw.write(&mut path, value),
-                }
+                inject_write!(self.raw, path, value <-> &self.channel, value)
             }
             Some("cooked") => {
-                let (mut peek, mut path) = path.tee();
-                let reg_name = peek.next();
-                let reg_field = peek.next();
-
-                match (reg_name, reg_field) {
-                    (Some(name), Some("value")) => self
-                        .cooked
-                        .get(name)
-                        .ok_or_else(|| FuseableError::not_found(name))?
-                        .write_value(&mut std::iter::empty(), value, &self.channel),
-                    _ => self.cooked.write(&mut path, value),
-                }
+                inject_write!(self.cooked, path, value <-> &self.channel, value)
             }
             Some("computed") => {
-                let (mut peek, mut path) = path.tee();
-                let reg_name = peek.next();
-                let reg_field = peek.next();
-
-                match (reg_name, reg_field) {
-                    (Some(name), Some("value")) => self
-                        .computed
-                        .get(name)
-                        .ok_or_else(|| FuseableError::not_found(name))?
-                        .write_value(&mut std::iter::empty(), value, &self),
-                    _ => self.computed.write(&mut path, value),
-                }
+                inject_write!(self.computed, path, value <-> &self, value)
             }
             Some(name) => Err(FuseableError::not_found(name)),
             None => Err(FuseableError::unsupported("write", type_name(&self))),
