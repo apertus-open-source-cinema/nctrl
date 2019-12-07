@@ -12,6 +12,7 @@ use crate::{
     scripts::{scripts_from_model, Script},
 };
 use fuseable::{type_name, Either, Fuseable, FuseableError};
+use fuseable_derive::Fuseable;
 
 static mut CAMERA: Option<Arc<RwLock<Camera>>> = None;
 
@@ -26,7 +27,7 @@ pub fn camera() -> Arc<RwLock<Camera>> {
 
 pub fn set_camera(cam: Camera) { unsafe { CAMERA = Some(Arc::new(RwLock::new(cam))) } }
 
-#[derive(Debug)]
+#[derive(Debug, Fuseable)]
 pub struct Camera {
     camera_model: String,
     pub devices: HashMap<String, Mutex<Device>>,
@@ -44,12 +45,12 @@ impl SharedCamera {
 impl Fuseable for SharedCamera {
     fn is_dir(&self, path: &mut dyn Iterator<Item = &str>) -> fuseable::Result<bool> {
         let cam = self.camera();
+        let (mut peek, mut path) = path.tee();
+        let field = peek.next();
 
-        match path.next() {
-            Some("camera_model") => cam.camera_model.is_dir(path),
-            Some("devices") => cam.devices.is_dir(path),
+        match field {
             Some("scripts") => {
-                let (mut peek, mut path) = path.tee();
+                path.next();
                 let script_name = peek.next();
                 let script_field = peek.next();
 
@@ -60,8 +61,7 @@ impl Fuseable for SharedCamera {
                     _ => cam.scripts.is_dir(&mut path),
                 }
             }
-            Some(name) => Err(FuseableError::not_found(name)),
-            None => Ok(true),
+            _ => cam.is_dir(&mut path)
         }
     }
 
@@ -70,12 +70,12 @@ impl Fuseable for SharedCamera {
         path: &mut dyn Iterator<Item = &str>,
     ) -> fuseable::Result<Either<Vec<String>, String>> {
         let cam = self.camera();
+        let (mut peek, mut path) = path.tee();
+        let field = peek.next();
 
-        match path.next() {
-            Some("camera_model") => cam.camera_model.read(path),
-            Some("devices") => cam.devices.read(path),
+        match field {
             Some("scripts") => {
-                let (mut peek, mut path) = path.tee();
+                path.next();
                 let script_name = peek.next();
                 let script_field = peek.next();
 
@@ -100,12 +100,7 @@ impl Fuseable for SharedCamera {
                     _ => cam.scripts.read(&mut path),
                 }
             }
-            Some(name) => Err(FuseableError::not_found(name)),
-            None => Ok(Either::Left(vec![
-                "camera_model".to_owned(),
-                "devices".to_owned(),
-                "scripts".to_owned(),
-            ])),
+            _ => cam.read(&mut path)
         }
     }
 
