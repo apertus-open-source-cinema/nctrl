@@ -547,6 +547,30 @@ output_mode:
       Bit [5]
       0: Two side readout
       1: One side readout (bottom channels only)
+fot_timing:
+    address: 82
+    width: 2
+    default: 5682
+    description: >
+        After the high state of the FRAME_REQ pulse is detected, the exposure time will start immediately.
+        When the exposure time ends (as programmed in the registers), the pixels are being sampled and
+        prepared for read-out. This sequence is called the frame overhead time (FOT).
+sample_timing:
+    address: 83
+    width: 2
+    default: 5893
+adc_timing:
+    address: 84
+    width: 2
+    default: 130
+slot_timing:
+    address: 85
+    width: 2
+    default: 130
+sub_slot_timing:
+    address: 86
+    width: 2
+    default: 130
 offset_bot:
     address: 87
     width: 2
@@ -670,11 +694,11 @@ adc_range:
     default: 383
     description: >
       bits [7:0]:
-      Change the slope and the input range of the ramp used
-      by the ADC
-      205: 8b
-      165: 10b
-      230: 12b
+        Change the slope and the input range of the ramp used
+        by the ADC
+        205: 8b
+        165: 10b
+        230: 12b
       bits [9:8]:
         Change multiplier of the slope and the input range of the ramp used by the ADC
         0: 8b (x1)

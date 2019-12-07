@@ -1,0 +1,57 @@
+analog_gain:
+  description: The analog gain of the image Sensor. Can be < 1 due to the sensors ability to divitde the signal
+  type: float
+  get: return cooked.pga_gain / cooked.pga_div
+  set: |
+    -- brute force all possible combinations, to get the closest
+    local final_gain = -1
+    local best_delta = 100 -- some large value
+    local final_div = -1
+
+    for gain=1,4 do
+      for _, div in ipairs({1, 3}) do
+        delta = math.abs((gain/div) - value)
+        if delta < best_delta then
+          final_gain = gain
+          final_div = div
+          best_delta = delta
+        end
+      end
+    end
+
+    cooked.pga_gain = final_gain
+    cooked.pga_div = final_div
+
+exposure_time:
+  description: > 
+    The exposure time in seconds.
+    If the sensor is in interleaved HDR mode this applies to the even rows.
+  type: float
+  get: |
+    val = raw.exp_time_low | (raw.exp_time_high << 16)
+    lvds = 250e6
+    bits = 12
+    -- formula from the datasheet p38
+    -- return raw.exp_time_low
+    return ((val - 1) * (raw.slot_timing + 1) + (34 * raw.fot_timing & 0xFF) + 1) * (1 / lvds) * bits
+  set: |
+    etime_ns = value*10e-9
+
+    -- stolen code from https://github.com/apertus-open-source-cinema/axiom-beta-firmware/blob/master/software/sensor_tools/snap/snap.c#L415
+    lvds = 250e6
+    bits = 12
+    fot_overlap = 34 * (raw.fot_timing & 0xFF) + 1
+    d = etime_ns * (lvds/bits) * 1e-9
+    val = 1
+    if fot_overlap < d then
+      val = (d - raw.fot_timing)/(fot_overlap + 1) + 1;
+    end
+
+    raw.exp_time_low = val & 0xFFFF
+    raw.exp_time_high = val >> 16
+
+test:
+  description: a simple test
+  type: float
+  get: return raw.exp_time_low
+  set: raw.exp_time_low = 1

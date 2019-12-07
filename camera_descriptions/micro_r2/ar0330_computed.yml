@@ -1,5 +1,5 @@
 analog_gain:
-  description: "Sets the analog gain"
+  description: "The analog gain of the image sensor"
   type: float
   get: return cooked.coarse_gain * cooked.fine_gain
   set: >

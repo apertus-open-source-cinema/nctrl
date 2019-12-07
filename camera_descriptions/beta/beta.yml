@@ -8,6 +8,7 @@ devices:
             len: 0x00020000
         raw: "cmv12000_raw.yml"
         cooked: "cmv12000_cooked.yml"
+        computed: "cmv12000_computed.yml"
     capture_control_address_generator:
         channel:
             mode: "memory-map"
