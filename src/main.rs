@@ -5,7 +5,7 @@ use nctrl::{
 };
 use std::{ffi::OsStr, io::Read, path::PathBuf};
 use structopt::StructOpt;
-
+use log::info;
 
 /// Basic daemon for controlling the various components of a camera
 #[derive(StructOpt, Debug)]
@@ -43,6 +43,8 @@ fn main() {
         .iter()
         .map(|o| o.as_ref())
         .collect::<Vec<&OsStr>>();
+
+    info!("ncrtl was successfully initialized");
 
     fuse::mount(FuseableFS::new(&mut SharedCamera { camera: camera() }), opt.mountpoint, &options)
         .unwrap();
