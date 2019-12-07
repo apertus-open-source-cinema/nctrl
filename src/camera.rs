@@ -1,3 +1,4 @@
+use failure::format_err;
 use itertools::Itertools;
 use serde::{Deserialize, Deserializer};
 use serde_derive::*;
@@ -10,6 +11,7 @@ use std::{
 use crate::{
     device::Device,
     scripts::{scripts_from_model, Script},
+    serde_util::empty_map,
 };
 use fuseable::{type_name, Either, Fuseable, FuseableError};
 use fuseable_derive::Fuseable;
@@ -25,6 +27,17 @@ pub fn camera() -> Arc<RwLock<Camera>> {
     }
 }
 
+pub fn property<T: std::str::FromStr>(name: &str) -> fuseable::Result<T>
+where
+    <T as std::str::FromStr>::Err: std::error::Error + Sync + Send + 'static,
+{
+    return (*camera().read().unwrap())
+        .properties
+        .get(name)
+        .ok_or_else(|| format_err!("tried to get non existant property {}", name))
+        .and_then(|v| v.parse().map_err(|e: <T as std::str::FromStr>::Err| e.into()))
+}
+
 pub fn set_camera(cam: Camera) { unsafe { CAMERA = Some(Arc::new(RwLock::new(cam))) } }
 
 #[derive(Debug, Fuseable)]
@@ -32,6 +45,7 @@ pub struct Camera {
     camera_model: String,
     pub devices: HashMap<String, Mutex<Device>>,
     scripts: HashMap<String, Mutex<Box<dyn Script>>>,
+    properties: HashMap<String, String>,
 }
 
 pub struct SharedCamera {
@@ -61,7 +75,7 @@ impl Fuseable for SharedCamera {
                     _ => cam.scripts.is_dir(&mut path),
                 }
             }
-            _ => cam.is_dir(&mut path)
+            _ => cam.is_dir(&mut path),
         }
     }
 
@@ -100,7 +114,7 @@ impl Fuseable for SharedCamera {
                     _ => cam.scripts.read(&mut path),
                 }
             }
-            _ => cam.read(&mut path)
+            _ => cam.read(&mut path),
         }
     }
 
@@ -157,9 +171,11 @@ impl<'de> Deserialize<'de> for Camera {
         pub struct CameraWithoutScripts {
             camera_model: String,
             devices: HashMap<String, Mutex<Device>>,
+            #[serde(default = "empty_map")]
+            properties: HashMap<String, String>,
         }
 
-        let CameraWithoutScripts { camera_model, devices } =
+        let CameraWithoutScripts { camera_model, devices, properties } =
             CameraWithoutScripts::deserialize(deserializer)?;
 
         let scripts = scripts_from_model(&camera_model)
@@ -167,7 +183,7 @@ impl<'de> Deserialize<'de> for Camera {
             .map(|(k, v)| (k, Mutex::new(v)))
             .collect();
 
-        Ok(Camera { scripts, camera_model, devices })
+        Ok(Camera { scripts, camera_model, devices, properties })
     }
 }
 

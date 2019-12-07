@@ -16,3 +16,7 @@ devices:
         raw: "ar0330_raw.yml"
         cooked: "ar0330_cooked.yml"
         computed: "ar0330_computed.yml"
+
+properties:
+  extclock: 24000000
+  default_bitstream: no_patch.bit.bin

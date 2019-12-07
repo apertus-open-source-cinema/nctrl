@@ -1,3 +1,5 @@
+use env_logger::{Builder, Env};
+use log::info;
 use nctrl::{
     camera::{camera, set_camera, Camera, SharedCamera},
     fuseable_fs::FuseableFS,
@@ -5,8 +7,6 @@ use nctrl::{
 };
 use std::{ffi::OsStr, io::Read, path::PathBuf};
 use structopt::StructOpt;
-use log::{info};
-use env_logger::{Builder, Env};
 
 /// Basic daemon for controlling the various components of a camera
 #[derive(StructOpt, Debug)]

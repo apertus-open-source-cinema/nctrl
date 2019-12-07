@@ -5,12 +5,12 @@ use failure::format_err;
 use fuseable::{Fuseable, Result};
 use fuseable_derive::*;
 use i2cdev::{core::I2CDevice, linux::LinuxI2CDevice};
+use log::debug;
 use memmap::{MmapMut, MmapOptions};
 use paste;
 use serde::*;
 use serde_derive::{Deserialize, Serialize};
 use std::{fs::OpenOptions, sync::RwLock};
-use log::{debug};
 
 use crate::bit_slice::{slice, slice_write};
 

@@ -5,6 +5,7 @@ mod common;
 mod communication_channel;
 mod device;
 pub mod fuseable_fs;
+mod lua_util;
 mod registers;
 mod scripts;
 pub mod serde_util;

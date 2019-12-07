@@ -1,17 +1,15 @@
 use crate::{
     common::{Description, Range},
     device::Device,
+    lua_util::FailureCompat,
 };
 
 use fuseable::{type_name, Either, FuseableError};
 use fuseable_derive::Fuseable;
 
-use core::fmt::{self, Display};
-use std::{fmt::Debug, sync::Arc};
-
 use failure::format_err;
 
-use rlua::{Error as LuaError, ToLua, RegistryKey, Table, Function};
+use rlua::{Function, RegistryKey, Table, ToLua};
 
 use serde_derive::*;
 
@@ -23,7 +21,7 @@ enum ComputedRegisterType {
     #[serde(rename = "int")]
     Int,
     #[serde(rename = "string")]
-    String
+    String,
 }
 
 #[derive(Debug, Deserialize, Fuseable)]
@@ -49,27 +47,8 @@ pub struct ComputedRegister {
     write_function: std::cell::RefCell<Option<RegistryKey>>,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
-pub struct FailureCompat<E>(E);
-
-impl FailureCompat<failure::Error> {
-    fn failure_to_lua(e: failure::Error) -> LuaError {
-        LuaError::ExternalError(Arc::new(FailureCompat(e)))
-    }
-}
-
-impl<E: Display> Display for FailureCompat<E> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Lua error: ")?;
-        Display::fmt(&self.0, f)
-    }
-}
-
-impl<E: Display + Debug> std::error::Error for FailureCompat<E> {
-    fn description(&self) -> &'static str { "An error has occurred." }
-}
-
-// i can't figure out the lifetimes for a function that would do this, so do a macro
+// i can't figure out the lifetimes for a function that would do this, so do a
+// macro
 macro_rules! make_table {
     (@gen_read $scope:ident, $table:ident, $read_name:ident, $read:tt) => {
         let read =
@@ -129,48 +108,45 @@ impl ComputedRegister {
     ) -> fuseable::Result<Either<Vec<String>, String>> {
         match path.next() {
             Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
-            None => {
-                device
-                    .lua_vm
-                    .context(|lua_ctx| {
-                        lua_ctx.scope(|lua| {
-                            let raw_table = make_table!(lua_ctx, lua, |name| {
-                                device.read_raw(&name).map_err(FailureCompat::failure_to_lua)
+            None => device
+                .lua_vm
+                .context(|lua_ctx| {
+                    lua_ctx.scope(|lua| {
+                        let raw_table = make_table!(lua_ctx, lua, |name| {
+                            device.read_raw(&name).map_err(FailureCompat::failure_to_lua)
+                        })?;
+                        let cooked_table = make_table!(lua_ctx, lua, |name| {
+                            device.read_cooked(&name).map_err(FailureCompat::failure_to_lua)
+                        })?;
+                        let computed_table = make_table!(lua_ctx, lua, |name| {
+                            device.read_computed(&name).map_err(FailureCompat::failure_to_lua)
+                        })?;
+
+                        if self.read_function.borrow().is_none() {
+                            let script = self.get.as_ref().ok_or_else(|| {
+                                format_err!(
+                                    "cannot not read computed value {:#?} with no get script",
+                                    self
+                                )
                             })?;
-                            let cooked_table = make_table!(lua_ctx, lua, |name| {
-                                device.read_cooked(&name).map_err(FailureCompat::failure_to_lua)
-                            })?;
-                            let computed_table = make_table!(lua_ctx, lua, |name| {
-                                device.read_computed(&name).map_err(FailureCompat::failure_to_lua)
-                            })?;
 
-                            if self.read_function.borrow().is_none() {
-                                let script = self.get.as_ref().ok_or_else(|| {
-                                    format_err!(
-                                        "cannot not read computed value {:#?} with no get script",
-                                        self
-                                    )
-                                })?;
+                            let script = format!("function (raw, cooked, computed) {} end", script);
 
-                                let script =
-                                    format!("function (raw, cooked, computed) {} end", script);
+                            *self.read_function.borrow_mut() =
+                                Some(lua_ctx.create_registry_value(
+                                    lua_ctx.load(&script).eval::<Function>()?,
+                                )?);
+                        }
 
-                                *self.read_function.borrow_mut() =
-                                    Some(lua_ctx.create_registry_value(
-                                        lua_ctx.load(&script).eval::<Function>()?,
-                                    )?);
-                            }
-
-                            lua_ctx
-                                .registry_value::<Function>(
-                                    self.read_function.borrow().as_ref().unwrap(),
-                                )?
-                                .call::<_, String>((raw_table, cooked_table, computed_table))
-                                .map_err(|e| e.into())
-                        })
+                        lua_ctx
+                            .registry_value::<Function>(
+                                self.read_function.borrow().as_ref().unwrap(),
+                            )?
+                            .call::<_, String>((raw_table, cooked_table, computed_table))
+                            .map_err(|e| e.into())
                     })
-                    .map(Either::Right)
-            }
+                })
+                .map(Either::Right),
         }
     }
 
@@ -239,15 +215,14 @@ impl ComputedRegister {
                         let script =
                             format!("function (value, raw, cooked, computed) {} end", script);
 
-                        *self.write_function.borrow_mut() = Some(lua_ctx.create_registry_value(
-                            lua_ctx.load(&script).eval::<Function>()?,
-                        )?);
+                        *self.write_function.borrow_mut() = Some(
+                            lua_ctx
+                                .create_registry_value(lua_ctx.load(&script).eval::<Function>()?)?,
+                        );
                     }
 
                     lua_ctx
-                        .registry_value::<Function>(
-                            self.write_function.borrow().as_ref().unwrap(),
-                        )?
+                        .registry_value::<Function>(self.write_function.borrow().as_ref().unwrap())?
                         .call((value, raw_table, cooked_table, computed_table))
                         .map_err(|e| e.into())
                 })

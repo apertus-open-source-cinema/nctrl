@@ -98,3 +98,7 @@ where
 pub fn bool_false() -> bool { false }
 
 pub fn bool_true() -> bool { true }
+
+pub fn empty_map<K: std::hash::Hash + Eq, V>() -> std::collections::HashMap<K, V> {
+    std::collections::HashMap::new()
+}
