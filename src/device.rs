@@ -17,7 +17,7 @@ use serde_derive::*;
 use std::{collections::HashMap, fmt::Debug};
 
 use derivative::Derivative;
-use failure::format_err;
+use failure::{ResultExt, format_err};
 
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -45,12 +45,33 @@ pub struct Device {
 // as we want computed registers to be fast, i see no way currently to
 // just use one global lua vm
 
+pub trait ToStringOrVecU8 {
+    fn bytes(self) -> Vec<u8>;
+}
+
+impl<T: ToString> ToStringOrVecU8 for T {
+    fn bytes(self) -> Vec<u8> {
+        self.to_string().as_bytes().to_vec()
+    }
+}
+
+// shitty hack because specialization is not stable
+// TODO(robin): revisit when (if) specialization ever lands
+// (tracking issue: https://github.com/rust-lang/rust/issues/31844)
+struct Bytes(Vec<u8>);
+
+impl ToStringOrVecU8 for Bytes {
+    fn bytes(self) -> Vec<u8> {
+        self.0
+    }
+}
+
 macro_rules! with_register_from_set {
     ($self:ident.$reg_set:ident, $reg_name:ident, $op:tt) => {
         {
             $self.$reg_set
                 .get($reg_name)
-                .ok_or_else(|| format_err!(concat!("tried to ,", $op, " non existant ", stringify!($reg_set), " register {}"), $reg_name))?
+                .ok_or_else(|| format_err!(concat!("tried to ", $op, " non existant ", stringify!($reg_set), " register {}"), $reg_name))?
         }
     };
 }
@@ -59,6 +80,8 @@ macro_rules! read_reg_from_set {
     ($self:ident.$reg_set:ident, $reg_name:ident, $extra:expr) => {
         with_register_from_set!($self.$reg_set, $reg_name, "read")
             .read_value(&mut std::iter::empty(), $extra)
+            .with_context(|e| format!("error while reading register {}.{}: {}", stringify!($reg_set), $reg_name, e))
+            .map_err(|e| e.into())
             .map(|v| match v {
                 Either::Right(s) => s,
                 _ => panic!("got directory entries from a register"),
@@ -68,8 +91,10 @@ macro_rules! read_reg_from_set {
 
 macro_rules! write_reg_from_set {
     ($self:ident.$reg_set:ident, $reg_name:ident, $extra:expr, $value:ident) => {
-        with_register_from_set!($self.$reg_set, $reg_name, "read to")
-            .write_value(&mut std::iter::empty(), $value.to_string().as_bytes().to_vec(), $extra)
+        with_register_from_set!($self.$reg_set, $reg_name, "write to")
+            .write_value(&mut std::iter::empty(), $value.bytes(), $extra)
+            .with_context(|e| format!("error while writing to register {}.{}: {}", stringify!($reg_set), $reg_name, e))
+            .map_err(|e| e.into())
     }
 }
 
@@ -78,7 +103,7 @@ impl Device {
         read_reg_from_set!(self.raw, name, &self.channel)
     }
 
-    pub fn write_raw<T: ToString>(&self, name: &str, value: T) -> fuseable::Result<()> {
+    pub fn write_raw<T: ToStringOrVecU8>(&self, name: &str, value: T) -> fuseable::Result<()> {
         write_reg_from_set!(self.raw, name, &self.channel, value)
     }
 
@@ -86,7 +111,7 @@ impl Device {
         read_reg_from_set!(self.cooked, name, &self.channel)
     }
 
-    pub fn write_cooked<T: ToString>(&self, name: &str, value: T) -> fuseable::Result<()> {
+    pub fn write_cooked<T: ToStringOrVecU8>(&self, name: &str, value: T) -> fuseable::Result<()> {
         write_reg_from_set!(self.cooked, name, &self.channel, value)
     }
 
@@ -94,7 +119,7 @@ impl Device {
         read_reg_from_set!(self.computed, name, &self)
     }
 
-    pub fn write_computed<T: ToString>(&self, name: &str, value: T) -> fuseable::Result<()> {
+    pub fn write_computed<T: ToStringOrVecU8>(&self, name: &str, value: T) -> fuseable::Result<()> {
         write_reg_from_set!(self.computed, name, &self, value)
     }
 }
@@ -114,10 +139,10 @@ macro_rules! inject {
 }
 
 macro_rules! inject_read {
-    ($path:expr, $path_iter:ident, $injected_property:ident <-> $extra:expr) => {
+    ($actual_path:expr, $self:ident.$path:ident, $path_iter:ident) => {
         {
             inject!($path_iter, path,
-                (Some(_), None) => $path.read(&mut path).map(|value| match value {
+                (Some(_), None) => $actual_path.read(&mut path).map(|value| match value {
                     Either::Left(mut dir_entries) => {
                         dir_entries.push("value".to_owned());
                         Either::Left(dir_entries)
@@ -126,25 +151,19 @@ macro_rules! inject_read {
                         panic!("tought I would get directory entires, but got file content")
                     }
                 }),
-                (Some(name), Some("value")) => $path
-                    .get(name)
-                    .ok_or_else(|| FuseableError::not_found(name))?
-                    .read_value(&mut std::iter::empty(), $extra),
-                _ => $path.read(&mut path)
+                (Some(name), Some("value")) => $self.$path(name).map(fuseable::Either::Right),
+                _ => $actual_path.read(&mut path)
             )
         }
     };
 }
 
 macro_rules! inject_write {
-    ($path:expr, $path_iter:ident, $injected_property:ident <-> $extra:expr, $value:ident) => {
+    ($actual_path:expr, $self:ident.$path:ident, $path_iter:ident, $value:ident) => {
         {
             inject!($path_iter, path,
-                    (Some(name), Some("value")) => $path
-                        .get(name)
-                        .ok_or_else(|| FuseableError::not_found(name))?
-                        .write_value(&mut std::iter::empty(), $value, $extra),
-                    _ => $path.write(&mut path, $value)
+                    (Some(name), Some("value")) => $self.$path(name, Bytes($value)),
+                    _ => $actual_path.write(&mut path, $value)
             )
         }
     };
@@ -189,13 +208,13 @@ impl Fuseable for Device {
         match path.next() {
             Some("channel") => self.channel.read(path),
             Some("raw") => {
-                inject_read!(self.raw, path, value <-> &self.channel)
+                inject_read!(self.raw, self.read_raw, path)
             }
             Some("cooked") => {
-                inject_read!(self.cooked, path, value <-> &self.channel)
+                inject_read!(self.cooked, self.read_cooked, path)
             }
             Some("computed") => {
-                inject_read!(self.computed, path, value <-> &self)
+                inject_read!(self.computed, self.read_computed, path)
             }
             Some(name) => Err(FuseableError::not_found(name)),
             None => Ok(Either::Left(vec![
@@ -215,13 +234,13 @@ impl Fuseable for Device {
         match path.next() {
             Some("channel") => Err(FuseableError::unsupported("write", type_name(&self.channel))),
             Some("raw") => {
-                inject_write!(self.raw, path, value <-> &self.channel, value)
+                inject_write!(self.raw, self.write_raw, path, value)
             }
             Some("cooked") => {
-                inject_write!(self.cooked, path, value <-> &self.channel, value)
+                inject_write!(self.cooked, self.write_cooked, path, value)
             }
             Some("computed") => {
-                inject_write!(self.computed, path, value <-> &self, value)
+                inject_write!(self.computed, self.write_computed, path, value)
             }
             Some(name) => Err(FuseableError::not_found(name)),
             None => Err(FuseableError::unsupported("write", type_name(&self))),
