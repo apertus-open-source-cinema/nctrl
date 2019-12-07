@@ -9,8 +9,8 @@ use failure::format_err;
 use fuseable::{type_name, Either, FuseableError};
 use fuseable_derive::Fuseable;
 use itertools::izip;
-use parse_num::parse_num_mask;
 use log::debug;
+use parse_num::parse_num_mask;
 
 use serde_derive::*;
 use std::fmt::Debug;

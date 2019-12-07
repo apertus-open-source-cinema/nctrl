@@ -7,3 +7,23 @@ analog_gain:
     local fine = value / coarse
     cooked.coarse_gain = coarse
     cooked.fine_gain = fine
+
+extclk:
+  description: "Get the extclock frequency"
+  type: float
+  get: return globals("extclock")
+
+extclk2:
+  description: "Get the extclock frequency"
+  type: float
+  get: return extclock
+
+gain:
+  description: ""
+  type: float
+  get: return default_gain
+
+gain2:
+  description: ""
+  type: float
+  get: return gain(4, 5)

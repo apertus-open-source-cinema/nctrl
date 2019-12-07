@@ -1,6 +1,7 @@
+use crate::camera;
 use fuseable::FuseableError;
 use fuseable_derive::Fuseable;
-use log::{debug};
+use log::debug;
 
 script! {
     "hard resets the sensor and brings it into standby\n"
@@ -31,7 +32,7 @@ script! {
             Err(FuseableError::unsupported("read", fuseable::type_name(&self)))
         }
         write [value] => (self, ar0330, sensor_io) {
-            let extclk = 24000000;
+            let extclk = camera::globals("extclock")?;
             // init
             // toggle reset (active low)
             sensor_io.write_raw("reset", 0x7)?;

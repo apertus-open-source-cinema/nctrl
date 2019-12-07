@@ -4,7 +4,6 @@ use failure::format_err;
 use crate::address::Address;
 use crate::device::Device;
 use std::sync::{MutexGuard};
-use log::debug;
 
 pub struct MockMemory {
     hash_map: HashMap<usize, u8>,

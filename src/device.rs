@@ -6,7 +6,6 @@ use crate::{
     serde_util::{bool_true, by_path},
     valuemap::*,
 };
-use rlua::Lua;
 
 use fuseable::{type_name, Either, Fuseable, FuseableError};
 
@@ -17,7 +16,7 @@ use serde_derive::*;
 use std::{collections::HashMap, fmt::Debug};
 
 use derivative::Derivative;
-use failure::{ResultExt, format_err};
+use failure::{format_err, ResultExt};
 
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -26,33 +25,14 @@ pub struct Device {
     pub raw: HashMap<String, RawRegister>,
     pub cooked: HashMap<String, CookedRegister>,
     pub computed: HashMap<String, ComputedRegister>,
-    #[derivative(Debug = "ignore")]
-    pub lua_vm: Lua,
 }
-
-// one lua vm for each device, preloaded with the right functions and
-// maybe we even store the precompiled function for each computed
-// register?
-
-// this is kinda sad, because we also need a lua vm for the whole
-// camera (for lua scripts), but it is hard to use that one for
-// computed registers aswell, because computed registers already have
-// the device locked for them and thus we can preload the lua vm with
-// the functions needed to access the device, this is not the case for
-// lua scripts, these need to first lock the devices and then can
-// access them
-
-// as we want computed registers to be fast, i see no way currently to
-// just use one global lua vm
 
 pub trait ToStringOrVecU8 {
     fn bytes(self) -> Vec<u8>;
 }
 
 impl<T: ToString> ToStringOrVecU8 for T {
-    fn bytes(self) -> Vec<u8> {
-        self.to_string().as_bytes().to_vec()
-    }
+    fn bytes(self) -> Vec<u8> { self.to_string().as_bytes().to_vec() }
 }
 
 // shitty hack because specialization is not stable
@@ -61,41 +41,54 @@ impl<T: ToString> ToStringOrVecU8 for T {
 struct Bytes(Vec<u8>);
 
 impl ToStringOrVecU8 for Bytes {
-    fn bytes(self) -> Vec<u8> {
-        self.0
-    }
+    fn bytes(self) -> Vec<u8> { self.0 }
 }
 
 macro_rules! with_register_from_set {
-    ($self:ident.$reg_set:ident, $reg_name:ident, $op:tt) => {
-        {
-            $self.$reg_set
-                .get($reg_name)
-                .ok_or_else(|| format_err!(concat!("tried to ", $op, " non existant ", stringify!($reg_set), " register {}"), $reg_name))?
-        }
-    };
+    ($self:ident.$reg_set:ident, $reg_name:ident, $op:tt) => {{
+        $self.$reg_set.get($reg_name).ok_or_else(|| {
+            format_err!(
+                concat!("tried to ", $op, " non existant ", stringify!($reg_set), " register {}"),
+                $reg_name
+            )
+        })?
+    }};
 }
 
 macro_rules! read_reg_from_set {
     ($self:ident.$reg_set:ident, $reg_name:ident, $extra:expr) => {
         with_register_from_set!($self.$reg_set, $reg_name, "read")
             .read_value(&mut std::iter::empty(), $extra)
-            .with_context(|e| format!("error while reading register {}.{}: {}", stringify!($reg_set), $reg_name, e))
+            .with_context(|e| {
+                format!(
+                    "error while reading register {}.{}: {}",
+                    stringify!($reg_set),
+                    $reg_name,
+                    e
+                )
+            })
             .map_err(|e| e.into())
             .map(|v| match v {
                 Either::Right(s) => s,
                 _ => panic!("got directory entries from a register"),
             })
-    }
+    };
 }
 
 macro_rules! write_reg_from_set {
     ($self:ident.$reg_set:ident, $reg_name:ident, $extra:expr, $value:ident) => {
         with_register_from_set!($self.$reg_set, $reg_name, "write to")
             .write_value(&mut std::iter::empty(), $value.bytes(), $extra)
-            .with_context(|e| format!("error while writing to register {}.{}: {}", stringify!($reg_set), $reg_name, e))
+            .with_context(|e| {
+                format!(
+                    "error while writing to register {}.{}: {}",
+                    stringify!($reg_set),
+                    $reg_name,
+                    e
+                )
+            })
             .map_err(|e| e.into())
-    }
+    };
 }
 
 impl Device {
@@ -187,15 +180,9 @@ impl Fuseable for Device {
     fn is_dir(&self, path: &mut dyn Iterator<Item = &str>) -> fuseable::Result<bool> {
         match path.next() {
             Some("channel") => self.channel.is_dir(path),
-            Some("raw") => {
-                inject_is_dir!(self.raw, path, value)
-            }
-            Some("cooked") => {
-                inject_is_dir!(self.cooked, path, value)
-            }
-            Some("computed") => {
-                inject_is_dir!(self.computed, path, value)
-            }
+            Some("raw") => inject_is_dir!(self.raw, path, value),
+            Some("cooked") => inject_is_dir!(self.cooked, path, value),
+            Some("computed") => inject_is_dir!(self.computed, path, value),
             Some(name) => Err(FuseableError::not_found(name)),
             None => Ok(true),
         }
@@ -207,15 +194,9 @@ impl Fuseable for Device {
     ) -> fuseable::Result<Either<Vec<String>, String>> {
         match path.next() {
             Some("channel") => self.channel.read(path),
-            Some("raw") => {
-                inject_read!(self.raw, self.read_raw, path)
-            }
-            Some("cooked") => {
-                inject_read!(self.cooked, self.read_cooked, path)
-            }
-            Some("computed") => {
-                inject_read!(self.computed, self.read_computed, path)
-            }
+            Some("raw") => inject_read!(self.raw, self.read_raw, path),
+            Some("cooked") => inject_read!(self.cooked, self.read_cooked, path),
+            Some("computed") => inject_read!(self.computed, self.read_computed, path),
             Some(name) => Err(FuseableError::not_found(name)),
             None => Ok(Either::Left(vec![
                 "channel".to_owned(),
@@ -233,15 +214,9 @@ impl Fuseable for Device {
     ) -> fuseable::Result<()> {
         match path.next() {
             Some("channel") => Err(FuseableError::unsupported("write", type_name(&self.channel))),
-            Some("raw") => {
-                inject_write!(self.raw, self.write_raw, path, value)
-            }
-            Some("cooked") => {
-                inject_write!(self.cooked, self.write_cooked, path, value)
-            }
-            Some("computed") => {
-                inject_write!(self.computed, self.write_computed, path, value)
-            }
+            Some("raw") => inject_write!(self.raw, self.write_raw, path, value),
+            Some("cooked") => inject_write!(self.cooked, self.write_cooked, path, value),
+            Some("computed") => inject_write!(self.computed, self.write_computed, path, value),
             Some(name) => Err(FuseableError::not_found(name)),
             None => Err(FuseableError::unsupported("write", type_name(&self))),
         }
@@ -299,6 +274,6 @@ impl<'de> Deserialize<'de> for Device {
             })
             .collect::<Result<HashMap<String, CookedRegister>, _>>()?;
 
-        Ok(Device { channel, raw, cooked, computed, lua_vm: Lua::new() })
+        Ok(Device { channel, raw, cooked, computed })
     }
 }

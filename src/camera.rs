@@ -1,6 +1,8 @@
+use failure::format_err;
 use itertools::Itertools;
 use serde::{Deserialize, Deserializer};
 use serde_derive::*;
+use derivative::Derivative;
 use std::{
     collections::HashMap,
     ops::Deref,
@@ -10,10 +12,12 @@ use std::{
 use crate::{
     device::Device,
     scripts::{scripts_from_model, Script},
+    serde_util::empty_map,
+    lua_script::LuaScript,
+    lua_util
 };
 use fuseable::{type_name, Either, Fuseable, FuseableError};
 use fuseable_derive::Fuseable;
-use log::debug;
 use crate::communication_channel::mock_memory::MockMemory;
 
 static mut CAMERA: Option<Arc<RwLock<Camera>>> = None;
@@ -27,13 +31,33 @@ pub fn camera() -> Arc<RwLock<Camera>> {
     }
 }
 
+pub fn with_camera<F: FnOnce(&Camera) -> T, T>(func: F) -> T {
+    func(&camera().read().unwrap())
+}
+
+pub fn globals<T: std::str::FromStr>(name: &str) -> fuseable::Result<T>
+where
+    <T as std::str::FromStr>::Err: std::error::Error + Sync + Send + 'static,
+{
+    return (*camera().read().unwrap())
+        .globals
+        .get(name)
+        .ok_or_else(|| format_err!("tried to get non existant global {}", name))
+        .and_then(|v| v.parse().map_err(|e: <T as std::str::FromStr>::Err| e.into()))
+}
+
 pub fn set_camera(cam: Camera) { unsafe { CAMERA = Some(Arc::new(RwLock::new(cam))) } }
 
-#[derive(Debug, Fuseable)]
+#[derive(Fuseable, Derivative)]
+#[derivative(Debug)]
 pub struct Camera {
     camera_model: String,
     pub devices: HashMap<String, Mutex<Device>>,
-    scripts: HashMap<String, Mutex<Box<dyn Script>>>,
+    pub scripts: HashMap<String, Mutex<Box<dyn Script>>>,
+    globals: HashMap<String, String>,
+    #[fuseable(skip)]
+    #[derivative(Debug = "ignore")]
+    pub lua_vm: rlua::Lua,
 }
 
 pub struct SharedCamera {
@@ -63,7 +87,7 @@ impl Fuseable for SharedCamera {
                     _ => cam.scripts.is_dir(&mut path),
                 }
             }
-            _ => cam.is_dir(&mut path)
+            _ => cam.is_dir(&mut path),
         }
     }
 
@@ -102,7 +126,7 @@ impl Fuseable for SharedCamera {
                     _ => cam.scripts.read(&mut path),
                 }
             }
-            _ => cam.read(&mut path)
+            _ => cam.read(&mut path),
         }
     }
 
@@ -159,17 +183,37 @@ impl<'de> Deserialize<'de> for Camera {
         pub struct CameraWithoutScripts {
             camera_model: String,
             devices: HashMap<String, Mutex<Device>>,
+            #[serde(default = "empty_map")]
+            globals: HashMap<String, String>,
+            #[serde(default = "empty_map")]
+            scripts: HashMap<String, LuaScript>
         }
 
-        let CameraWithoutScripts { camera_model, devices } =
+        let CameraWithoutScripts { camera_model, devices, globals, scripts } =
             CameraWithoutScripts::deserialize(deserializer)?;
 
-        let scripts = scripts_from_model(&camera_model)
+        let lua_vm = lua_util::create_lua_vm();
+
+        // doesn't work without the type annotation :(
+        let mut scripts: HashMap<String, Mutex<Box<dyn Script>>> = scripts
+            .into_iter()
+            .map(|(k, mut v)| {
+                // init the functions
+                v.init_functions(&lua_vm);
+
+                (k, Mutex::new(Box::new(v) as Box<dyn Script>))
+            })
+            .collect();
+
+        // doesn't work without the type annotation :(
+        let rust_scripts: HashMap<String, Mutex<Box<dyn Script>>> = scripts_from_model(&camera_model)
             .into_iter()
             .map(|(k, v)| (k, Mutex::new(v)))
             .collect();
 
-        Ok(Camera { scripts, camera_model, devices })
+        scripts.extend(rust_scripts);
+
+        Ok(Camera { scripts, camera_model, devices, globals, lua_vm })
     }
 }
 
