@@ -1,14 +1,11 @@
 use crate::{
     address::Address,
-    camera,
     common::Description,
     communication_channel::CommunicationChannel,
-    lua_util::{self, FailureCompat},
     registers::{ComputedRegister, CookedRegister, RawRegister},
     serde_util::{bool_true, by_path},
     valuemap::*,
 };
-use rlua::Lua;
 
 use fuseable::{type_name, Either, Fuseable, FuseableError};
 
@@ -28,24 +25,7 @@ pub struct Device {
     raw: HashMap<String, RawRegister>,
     cooked: HashMap<String, CookedRegister>,
     computed: HashMap<String, ComputedRegister>,
-    #[derivative(Debug = "ignore")]
-    pub lua_vm: Lua,
 }
-
-// one lua vm for each device, preloaded with the right functions and
-// maybe we even store the precompiled function for each computed
-// register?
-
-// this is kinda sad, because we also need a lua vm for the whole
-// camera (for lua scripts), but it is hard to use that one for
-// computed registers aswell, because computed registers already have
-// the device locked for them and thus we can preload the lua vm with
-// the functions needed to access the device, this is not the case for
-// lua scripts, these need to first lock the devices and then can
-// access them
-
-// as we want computed registers to be fast, i see no way currently to
-// just use one global lua vm
 
 pub trait ToStringOrVecU8 {
     fn bytes(self) -> Vec<u8>;
@@ -294,8 +274,6 @@ impl<'de> Deserialize<'de> for Device {
             })
             .collect::<Result<HashMap<String, CookedRegister>, _>>()?;
 
-        let lua_vm = lua_util::create_lua_vm();
-
-        Ok(Device { channel, raw, cooked, computed, lua_vm })
+        Ok(Device { channel, raw, cooked, computed })
     }
 }

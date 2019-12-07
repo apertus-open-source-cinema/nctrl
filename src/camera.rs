@@ -30,6 +30,10 @@ pub fn camera() -> Arc<RwLock<Camera>> {
     }
 }
 
+pub fn with_camera<F: FnOnce(&Camera) -> T, T>(func: F) -> T {
+    func(&camera().read().unwrap())
+}
+
 pub fn globals<T: std::str::FromStr>(name: &str) -> fuseable::Result<T>
 where
     <T as std::str::FromStr>::Err: std::error::Error + Sync + Send + 'static,
@@ -48,7 +52,7 @@ pub fn set_camera(cam: Camera) { unsafe { CAMERA = Some(Arc::new(RwLock::new(cam
 pub struct Camera {
     camera_model: String,
     pub devices: HashMap<String, Mutex<Device>>,
-    scripts: HashMap<String, Mutex<Box<dyn Script>>>,
+    pub scripts: HashMap<String, Mutex<Box<dyn Script>>>,
     globals: HashMap<String, String>,
     #[fuseable(skip)]
     #[derivative(Debug = "ignore")]
@@ -187,10 +191,17 @@ impl<'de> Deserialize<'de> for Camera {
         let CameraWithoutScripts { camera_model, devices, globals, scripts } =
             CameraWithoutScripts::deserialize(deserializer)?;
 
+        let lua_vm = lua_util::create_lua_vm();
+
         // doesn't work without the type annotation :(
         let mut scripts: HashMap<String, Mutex<Box<dyn Script>>> = scripts
             .into_iter()
-            .map(|(k, v)| (k, Mutex::new(Box::new(v) as Box<dyn Script>)))
+            .map(|(k, mut v)| {
+                // init the functions
+                v.init_functions(&lua_vm);
+
+                (k, Mutex::new(Box::new(v) as Box<dyn Script>))
+            })
             .collect();
 
         // doesn't work without the type annotation :(
@@ -200,8 +211,6 @@ impl<'de> Deserialize<'de> for Camera {
             .collect();
 
         scripts.extend(rust_scripts);
-
-        let lua_vm = lua_util::create_lua_vm();
 
         Ok(Camera { scripts, camera_model, devices, globals, lua_vm })
     }

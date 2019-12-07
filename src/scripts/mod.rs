@@ -1,12 +1,15 @@
 use std::fmt::Debug;
 
 use fuseable::Fuseable;
+use rlua::RegistryKey;
 
 use crate::camera::Camera;
 
 pub trait Script: Debug + Fuseable {
     fn read(&self, cam: &Camera) -> fuseable::Result<String>;
     fn write(&self, cam: &Camera, value: Vec<u8>) -> fuseable::Result<()>;
+    fn read_key(&self) -> Option<&RegistryKey>;
+    fn write_key(&self) -> Option<&RegistryKey>;
 }
 
 macro_rules! script {
@@ -39,6 +42,16 @@ macro_rules! script {
 
 
             impl super::Script for $struct_name {
+                // TODO(robin): implement these
+                fn read_key(&self) -> Option<&rlua::RegistryKey> {
+                    unimplemented!()
+                }
+
+                // TODO(robin): implement these
+                fn write_key(&self) -> Option<&rlua::RegistryKey> {
+                    unimplemented!()
+                }
+
                 #[allow(unused_variables)]
                 fn read(&$self_read, cam: &super::Camera) -> fuseable::Result<String> {
                     $(let $regs_read = cam.devices[stringify!($regs_read)].lock().unwrap();)*

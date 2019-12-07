@@ -102,6 +102,38 @@ pub fn create_lua_vm() -> rlua::Lua {
         ctx.globals().set_metatable(Some(meta_table));
 
         ctx.globals().set("globals", globals).unwrap();
+
+
+        let script_get = ctx
+            .create_function(|ctx,  (_table, name): (rlua::Table, String)| {
+                camera::with_camera(|cam| {
+                    println!("trying to read script {}", name);
+
+                    let script = cam.scripts[&name].lock().unwrap();
+                    let read_func = script.read_key();
+                    let write_func = script.write_key();
+
+                    let script_table = ctx.create_table()?;
+
+                    read_func.map(|key| {
+                        script_table.set("read", ctx.registry_value::<rlua::Function>(&key).unwrap()).unwrap();
+                    });
+
+                    write_func.map(|key| {
+                        script_table.set("write", ctx.registry_value::<rlua::Function>(&key).unwrap()).unwrap();
+                    });
+
+                    Ok(script_table)
+                })
+            }).unwrap();
+
+        let scripts_metatable = ctx.create_table().unwrap();
+        scripts_metatable.set("__index", script_get).unwrap();
+
+        let scripts = ctx.create_table().unwrap();
+        scripts.set_metatable(Some(scripts_metatable));
+
+        ctx.globals().set("scripts", scripts).unwrap();
     });
 
     lua_vm

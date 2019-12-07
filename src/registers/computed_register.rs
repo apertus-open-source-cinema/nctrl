@@ -2,6 +2,7 @@ use crate::{
     common::{Description, Range},
     device::Device,
     lua_util::FailureCompat,
+    camera
 };
 
 use fuseable::{type_name, Either, FuseableError};
@@ -55,9 +56,7 @@ impl ComputedRegister {
     ) -> fuseable::Result<Either<Vec<String>, String>> {
         match path.next() {
             Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
-            None => device
-                .lua_vm
-                .context(|lua_ctx| {
+            None => camera::with_camera(|camera| camera.lua_vm.context(|lua_ctx| {
                     lua_ctx.scope(|lua| {
                         let raw_table = make_table!(lua_ctx, lua, |name| {
                             device.read_raw(&name).map_err(FailureCompat::failure_to_lua)
@@ -94,7 +93,7 @@ impl ComputedRegister {
                     })
                 })
                 .map(Either::Right),
-        }
+        )}
     }
 
     pub fn write_value(
@@ -105,7 +104,7 @@ impl ComputedRegister {
     ) -> fuseable::Result<()> {
         match path.next() {
             Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
-            None => device.lua_vm.context(|lua_ctx| {
+            None => camera::with_camera(|camera| camera.lua_vm.context(|lua_ctx| {
                 lua_ctx.scope(|lua| {
                     let raw_table = make_table!(
                         lua_ctx,
@@ -174,6 +173,6 @@ impl ComputedRegister {
                         .map_err(|e| e.into())
                 })
             }),
-        }
+        )}
     }
 }
