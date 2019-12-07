@@ -26,39 +26,6 @@ pub struct LuaScript {
     write_function: Option<RegistryKey>,
 }
 
-impl LuaScript {
-    pub fn init_functions(&mut self, lua_vm: &rlua::Lua) {
-        let mut devices_unpack = String::new();
-        for device_name in &self.uses {
-            devices_unpack = format!("{0}local {1} = devices.{1}\n", devices_unpack, device_name);
-        }
-
-        lua_vm.context(|ctx| {
-            // closure capture is shit
-            let read_function = &mut self.read_function;
-            let write_function = &mut self.write_function;
-
-            self.get.as_ref().map(|script| {
-                let script = format!("function (devices) {} {} end", devices_unpack, script);
-
-                *read_function =
-                    Some(ctx.create_registry_value(
-                        ctx.load(&script).eval::<Function>().unwrap(),
-                    ).unwrap());
-            });
-
-            self.set.as_ref().map(|script| {
-                let script = format!("function (devices, value) {} {} end", devices_unpack, script);
-
-                *write_function =
-                    Some(ctx.create_registry_value(
-                        ctx.load(&script).eval::<Function>().unwrap(),
-                    ).unwrap());
-            });
-        })
-    }
-}
-
 macro_rules! with_device_table {
     ($self:expr, $cam:ident, |$ctx:ident, $devices_table:ident| $func:tt) => {
         $cam.lua_vm.context(|$ctx| {
@@ -119,6 +86,37 @@ macro_rules! with_device_table {
 }
 
 impl Script for LuaScript {
+    fn init_functions(&mut self, lua_vm: &rlua::Lua) {
+        let mut devices_unpack = String::new();
+        for device_name in &self.uses {
+            devices_unpack = format!("{0}local {1} = devices.{1}\n", devices_unpack, device_name);
+        }
+
+        lua_vm.context(|ctx| {
+            // closure capture is shit
+            let read_function = &mut self.read_function;
+            let write_function = &mut self.write_function;
+
+            self.get.as_ref().map(|script| {
+                let script = format!("function (devices) {} {} end", devices_unpack, script);
+
+                *read_function =
+                    Some(ctx.create_registry_value(
+                        ctx.load(&script).eval::<Function>().unwrap(),
+                    ).unwrap());
+            });
+
+            self.set.as_ref().map(|script| {
+                let script = format!("function (devices, value) {} {} end", devices_unpack, script);
+
+                *write_function =
+                    Some(ctx.create_registry_value(
+                        ctx.load(&script).eval::<Function>().unwrap(),
+                    ).unwrap());
+            });
+        })
+    }
+
     fn read_key(&self) -> Option<&RegistryKey> {
         self.read_function.as_ref()
     }

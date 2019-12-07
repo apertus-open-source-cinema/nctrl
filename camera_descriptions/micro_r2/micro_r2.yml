@@ -38,6 +38,7 @@ scripts:
       sensor_io.raw.reset = 7
       ar0330.computed.analog_gain = 2
 
+      scripts.kick.write(devices, "dummy")
       return extclock .. ", " .. scripts.test2.read(devices)
     set: |
       scripts.test2.write(devices, value)

@@ -1,3 +1,4 @@
+use std::fmt::{self, Display, Debug};
 use failure::format_err;
 use itertools::Itertools;
 use serde::{Deserialize, Deserializer};
@@ -35,7 +36,28 @@ pub fn with_camera<F: FnOnce(&Camera) -> T, T>(func: F) -> T {
     func(&camera().read().unwrap())
 }
 
-pub fn globals<T: std::str::FromStr>(name: &str) -> fuseable::Result<T>
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
+pub struct GlobalsError<E>(E);
+
+
+impl From<GlobalsError<failure::Error>> for rlua::Error {
+    fn from(err: GlobalsError<failure::Error>) -> rlua::Error {
+        rlua::Error::ExternalError(Arc::new(err))
+    }
+}
+
+impl<E: Display> Display for GlobalsError<E> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "error while reading global variable: ")?;
+        Display::fmt(&self.0, f)
+    }
+}
+
+impl<E: Display + Debug> std::error::Error for GlobalsError<E> {
+    fn description(&self) -> &'static str { "An error has occurred." }
+}
+
+pub fn globals<T: std::str::FromStr>(name: &str) -> Result<T, GlobalsError<failure::Error>>
 where
     <T as std::str::FromStr>::Err: std::error::Error + Sync + Send + 'static,
 {
@@ -44,6 +66,7 @@ where
         .get(name)
         .ok_or_else(|| format_err!("tried to get non existant global {}", name))
         .and_then(|v| v.parse().map_err(|e: <T as std::str::FromStr>::Err| e.into()))
+        .map_err(GlobalsError)
 }
 
 pub fn set_camera(cam: Camera) { unsafe { CAMERA = Some(Arc::new(RwLock::new(cam))) } }
@@ -198,7 +221,6 @@ impl<'de> Deserialize<'de> for Camera {
         let mut scripts: HashMap<String, Mutex<Box<dyn Script>>> = scripts
             .into_iter()
             .map(|(k, mut v)| {
-                // init the functions
                 v.init_functions(&lua_vm);
 
                 (k, Mutex::new(Box::new(v) as Box<dyn Script>))
@@ -208,7 +230,11 @@ impl<'de> Deserialize<'de> for Camera {
         // doesn't work without the type annotation :(
         let rust_scripts: HashMap<String, Mutex<Box<dyn Script>>> = scripts_from_model(&camera_model)
             .into_iter()
-            .map(|(k, v)| (k, Mutex::new(v)))
+            .map(|(k, mut v)| {
+                v.init_functions(&lua_vm);
+
+                (k, Mutex::new(v))
+            })
             .collect();
 
         scripts.extend(rust_scripts);

@@ -7,7 +7,8 @@ script! {
     "hard resets the sensor and brings it into standby\n"
     Reset { test: u8 } => {
         read => (self) {
-            Err(FuseableError::unsupported("read", fuseable::type_name(&self)))
+            // Err(FuseableError::unsupported("read", fuseable::type_name(&self)))
+            Err(FuseableError::unsupported("read", "bla"))
         }
         write [value] => (self, ar0330, sensor_io) {
             debug!("writing {:?}", value);
@@ -29,7 +30,8 @@ script! {
     "start up the sensor in default settings"
     Kick {} => {
         read => (self) {
-            Err(FuseableError::unsupported("read", fuseable::type_name(&self)))
+            // Err(FuseableError::unsupported("read", fuseable::type_name(&self)))
+            Err(FuseableError::unsupported("read", "bla"))
         }
         write [value] => (self, ar0330, sensor_io) {
             let extclk = camera::globals("extclock")?;
@@ -170,28 +172,6 @@ script! {
         }
     }
 
-}
-
-script! {
-    "hard resets the ar0331 and brings it into standby\n"
-    ResetAR0331 { test: u8 } => {
-        read => (self) {
-            Err(FuseableError::unsupported("read", fuseable::type_name(&self)))
-        }
-        write [value] => (self, sensor, sensor_io) {
-            debug!("writing {:?}", value);
-
-            sensor_io.write_raw("reset", 1)?;
-
-            std::thread::sleep(std::time::Duration::from_millis(10));
-
-            sensor_io.write_raw("reset", 0)?;
-            sensor.write_cooked("software_reset", 0)?;
-            sensor.write_cooked("stream", 1)?;
-
-            Ok(())
-        }
-    }
 }
 
 script_set! {

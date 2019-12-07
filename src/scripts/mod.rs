@@ -8,8 +8,11 @@ use crate::camera::Camera;
 pub trait Script: Debug + Fuseable {
     fn read(&self, cam: &Camera) -> fuseable::Result<String>;
     fn write(&self, cam: &Camera, value: Vec<u8>) -> fuseable::Result<()>;
+
     fn read_key(&self) -> Option<&RegistryKey>;
     fn write_key(&self) -> Option<&RegistryKey>;
+
+    fn init_functions(&mut self, lua_vm: &rlua::Lua);
 }
 
 macro_rules! script {
@@ -20,6 +23,10 @@ macro_rules! script {
             #[derive(Debug, Fuseable)]
             struct $struct_name {
                 description: String,
+                #[fuseable(skip)]
+                read_function: Option<rlua::RegistryKey>,
+                #[fuseable(skip)]
+                write_function: Option<rlua::RegistryKey>,
                 $($elem: $elem_typ,)*
             }
 
@@ -35,6 +42,8 @@ macro_rules! script {
 
                     $struct_name {
                         description: $desc.to_string(),
+                        read_function: None,
+                        write_function: None,
                         $($elem: for_default.$elem),*
                     }
                 }
@@ -42,14 +51,12 @@ macro_rules! script {
 
 
             impl super::Script for $struct_name {
-                // TODO(robin): implement these
                 fn read_key(&self) -> Option<&rlua::RegistryKey> {
-                    unimplemented!()
+                    self.read_function.as_ref()
                 }
 
-                // TODO(robin): implement these
                 fn write_key(&self) -> Option<&rlua::RegistryKey> {
-                    unimplemented!()
+                    self.write_function.as_ref()
                 }
 
                 #[allow(unused_variables)]
@@ -63,6 +70,33 @@ macro_rules! script {
                     $(let $regs_write = cam.devices[stringify!($regs_write)].lock().unwrap();)*
 
                     $body_write
+                }
+
+                #[allow(unused_variables)]
+                fn init_functions(&mut $self_read, lua_vm: &rlua::Lua) {
+                    lua_vm.context(|ctx| {
+                        // closure capture is shit
+                        let read_function = &mut $self_read.read_function;
+                        let write_function = &mut $self_read.write_function;
+
+                        let read_func = ctx.create_function::<_, String, _>(|_, devices: rlua::Table| {
+                            $(let $regs_read = crate::lua_util::LuaDeviceWrapper(devices.get(stringify!($regs_read))?);)*
+
+                            $body_read.map_err(crate::lua_util::FailureCompat::failure_to_lua)
+                        }).unwrap();
+
+                        *read_function = Some(ctx.create_registry_value(read_func).unwrap());
+
+                        let write_func = ctx.create_function::<_, (), _>(|_, (devices, $value_name): (rlua::Table, String)| {
+                            // TODO(robin): find a better way to pass a Vec<u8>? (maybe userdata?)
+                            let $value_name = $value_name.as_bytes().to_vec();
+                            $(let $regs_write = crate::lua_util::LuaDeviceWrapper(devices.get(stringify!($regs_write))?);)*
+
+                            $body_write.map_err(crate::lua_util::FailureCompat::failure_to_lua)
+                        }).unwrap();
+
+                        *write_function = Some(ctx.create_registry_value(write_func).unwrap());
+                    })
                 }
             }
     };
