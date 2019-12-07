@@ -17,6 +17,11 @@ devices:
         cooked: "ar0330_cooked.yml"
         computed: "ar0330_computed.yml"
 
-properties:
+globals:
   extclock: 24000000
   default_bitstream: no_patch.bit.bin
+  gain: |
+    function (reg_a, reg_b)
+       return reg_a * reg_b
+    end
+  default_gain: gain(1, 2)

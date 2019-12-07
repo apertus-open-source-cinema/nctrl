@@ -32,7 +32,7 @@ script! {
             Err(FuseableError::unsupported("read", fuseable::type_name(&self)))
         }
         write [value] => (self, ar0330, sensor_io) {
-            let extclk = camera::property("extclock")?;
+            let extclk = camera::globals("extclock")?;
             // init
             // toggle reset (active low)
             sensor_io.write_raw("reset", 0x7)?;

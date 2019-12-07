@@ -11,4 +11,19 @@ analog_gain:
 extclk:
   description: "Get the extclock frequency"
   type: float
-  get: return property("extclock")
+  get: return globals("extclock")
+
+extclk2:
+  description: "Get the extclock frequency"
+  type: float
+  get: return extclock
+
+gain:
+  description: ""
+  type: float
+  get: return default_gain
+
+gain2:
+  description: ""
+  type: float
+  get: return gain(4, 5)

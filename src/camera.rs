@@ -27,14 +27,14 @@ pub fn camera() -> Arc<RwLock<Camera>> {
     }
 }
 
-pub fn property<T: std::str::FromStr>(name: &str) -> fuseable::Result<T>
+pub fn globals<T: std::str::FromStr>(name: &str) -> fuseable::Result<T>
 where
     <T as std::str::FromStr>::Err: std::error::Error + Sync + Send + 'static,
 {
     return (*camera().read().unwrap())
-        .properties
+        .globals
         .get(name)
-        .ok_or_else(|| format_err!("tried to get non existant property {}", name))
+        .ok_or_else(|| format_err!("tried to get non existant global {}", name))
         .and_then(|v| v.parse().map_err(|e: <T as std::str::FromStr>::Err| e.into()))
 }
 
@@ -45,7 +45,7 @@ pub struct Camera {
     camera_model: String,
     pub devices: HashMap<String, Mutex<Device>>,
     scripts: HashMap<String, Mutex<Box<dyn Script>>>,
-    properties: HashMap<String, String>,
+    globals: HashMap<String, String>,
 }
 
 pub struct SharedCamera {
@@ -172,10 +172,10 @@ impl<'de> Deserialize<'de> for Camera {
             camera_model: String,
             devices: HashMap<String, Mutex<Device>>,
             #[serde(default = "empty_map")]
-            properties: HashMap<String, String>,
+            globals: HashMap<String, String>,
         }
 
-        let CameraWithoutScripts { camera_model, devices, properties } =
+        let CameraWithoutScripts { camera_model, devices, globals } =
             CameraWithoutScripts::deserialize(deserializer)?;
 
         let scripts = scripts_from_model(&camera_model)
@@ -183,7 +183,7 @@ impl<'de> Deserialize<'de> for Camera {
             .map(|(k, v)| (k, Mutex::new(v)))
             .collect();
 
-        Ok(Camera { scripts, camera_model, devices, properties })
+        Ok(Camera { scripts, camera_model, devices, globals })
     }
 }
 
