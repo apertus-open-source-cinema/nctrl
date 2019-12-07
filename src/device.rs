@@ -3,7 +3,7 @@ use crate::{
     camera,
     common::Description,
     communication_channel::CommunicationChannel,
-    lua_util::FailureCompat,
+    lua_util::{self, FailureCompat},
     registers::{ComputedRegister, CookedRegister, RawRegister},
     serde_util::{bool_true, by_path},
     valuemap::*,
@@ -294,27 +294,7 @@ impl<'de> Deserialize<'de> for Device {
             })
             .collect::<Result<HashMap<String, CookedRegister>, _>>()?;
 
-        let lua_vm = Lua::new();
-
-        // TODO(robin): this could be optimized by `load`ing them all once at startup
-        // however that also comes with some problems like globals depending on other globals
-        lua_vm.context(|ctx| {
-            let globals = ctx
-                .create_function(|_, name: String| {
-                    camera::globals::<String>(&name).map_err(|e| FailureCompat::failure_to_lua(e))
-                })
-                .unwrap();
-
-            let meta_table = ctx.create_table().unwrap();
-
-            let global_index = ctx.load(r#" function (table, name) local func, err = load("return " .. globals(name)) return func() end"#).eval::<rlua::Function>().unwrap();
-
-            meta_table.set("__index", global_index).unwrap();
-
-            ctx.globals().set_metatable(Some(meta_table));
-
-            ctx.globals().set("globals", globals).unwrap();
-        });
+        let lua_vm = lua_util::create_lua_vm();
 
         Ok(Device { channel, raw, cooked, computed, lua_vm })
     }

@@ -9,7 +9,7 @@ use fuseable_derive::Fuseable;
 
 use failure::format_err;
 
-use rlua::{Function, RegistryKey, Table, ToLua};
+use rlua::{Function, RegistryKey, ToLua};
 
 use serde_derive::*;
 
@@ -45,59 +45,6 @@ pub struct ComputedRegister {
     #[fuseable(skip)]
     #[serde(skip)]
     write_function: std::cell::RefCell<Option<RegistryKey>>,
-}
-
-// i can't figure out the lifetimes for a function that would do this, so do a
-// macro
-macro_rules! make_table {
-    (@gen_read $scope:ident, $table:ident, $read_name:ident, $read:tt) => {
-        let read =
-            $scope.create_function(move |_, (_table, $read_name): (Table, String)| {
-                $read
-            })?;
-
-        $table.set("__index", read)?;
-    };
-    (@gen_write $scope:ident, $table:ident, $write_name:ident, $write_val:ident, $write:tt) => {
-        let write =
-            $scope.create_function(move |_, (_table, $write_name, $write_val): (Table, String, String)| {
-                $write
-            })?;
-
-        $table.set("__newindex", write)?;
-    };
-    ($context:ident, $scope:ident, |$read_name:ident| $read:tt) => {
-        {
-            let meta_table = $context.create_table()?;
-
-            make_table!(@gen_read $scope, meta_table, $read_name, $read);
-
-            let table = $context.create_table().map(|v| {
-                v.set_metatable(Some(meta_table));
-                v
-            });
-
-            let table: fuseable::Result<Table> = table.map_err(|e| e.into());
-            table
-        }
-    };
-    ($context:ident, $scope:ident, |$read_name:ident| $read:tt, |$write_name:ident, $write_val:ident| $write:tt) => {
-        {
-            let meta_table = $context.create_table()?;
-
-            make_table!(@gen_read $scope, meta_table, $read_name, $read);
-            make_table!(@gen_write $scope, meta_table, $write_name, $write_val, $write);
-
-            let table = $context.create_table().map(|v| {
-                v.set_metatable(Some(meta_table));
-                v
-            });
-
-            let table: fuseable::Result<Table> = table.map_err(|e| e.into());
-            table
-        }
-
-    };
 }
 
 impl ComputedRegister {

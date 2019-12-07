@@ -25,3 +25,16 @@ globals:
        return reg_a * reg_b
     end
   default_gain: gain(1, 2)
+
+scripts:
+  test:
+    description:
+    uses:
+      - ar0330
+      - sensor_io
+    get: |
+      sensor_io.raw.reset = 7
+      sensor_io.raw.reset = 0
+      sensor_io.raw.reset = 7
+      ar0330.computed.analog_gain = 2
+      return extclock

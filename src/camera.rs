@@ -2,6 +2,7 @@ use failure::format_err;
 use itertools::Itertools;
 use serde::{Deserialize, Deserializer};
 use serde_derive::*;
+use derivative::Derivative;
 use std::{
     collections::HashMap,
     ops::Deref,
@@ -12,6 +13,8 @@ use crate::{
     device::Device,
     scripts::{scripts_from_model, Script},
     serde_util::empty_map,
+    lua_script::LuaScript,
+    lua_util
 };
 use fuseable::{type_name, Either, Fuseable, FuseableError};
 use fuseable_derive::Fuseable;
@@ -40,12 +43,16 @@ where
 
 pub fn set_camera(cam: Camera) { unsafe { CAMERA = Some(Arc::new(RwLock::new(cam))) } }
 
-#[derive(Debug, Fuseable)]
+#[derive(Fuseable, Derivative)]
+#[derivative(Debug)]
 pub struct Camera {
     camera_model: String,
     pub devices: HashMap<String, Mutex<Device>>,
     scripts: HashMap<String, Mutex<Box<dyn Script>>>,
     globals: HashMap<String, String>,
+    #[fuseable(skip)]
+    #[derivative(Debug = "ignore")]
+    pub lua_vm: rlua::Lua,
 }
 
 pub struct SharedCamera {
@@ -173,17 +180,30 @@ impl<'de> Deserialize<'de> for Camera {
             devices: HashMap<String, Mutex<Device>>,
             #[serde(default = "empty_map")]
             globals: HashMap<String, String>,
+            #[serde(default = "empty_map")]
+            scripts: HashMap<String, LuaScript>
         }
 
-        let CameraWithoutScripts { camera_model, devices, globals } =
+        let CameraWithoutScripts { camera_model, devices, globals, scripts } =
             CameraWithoutScripts::deserialize(deserializer)?;
 
-        let scripts = scripts_from_model(&camera_model)
+        // doesn't work without the type annotation :(
+        let mut scripts: HashMap<String, Mutex<Box<dyn Script>>> = scripts
+            .into_iter()
+            .map(|(k, v)| (k, Mutex::new(Box::new(v) as Box<dyn Script>)))
+            .collect();
+
+        // doesn't work without the type annotation :(
+        let rust_scripts: HashMap<String, Mutex<Box<dyn Script>>> = scripts_from_model(&camera_model)
             .into_iter()
             .map(|(k, v)| (k, Mutex::new(v)))
             .collect();
 
-        Ok(Camera { scripts, camera_model, devices, globals })
+        scripts.extend(rust_scripts);
+
+        let lua_vm = lua_util::create_lua_vm();
+
+        Ok(Camera { scripts, camera_model, devices, globals, lua_vm })
     }
 }
 
