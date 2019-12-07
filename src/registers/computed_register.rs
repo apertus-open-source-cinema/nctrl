@@ -59,7 +59,10 @@ impl FailureCompat<failure::Error> {
 }
 
 impl<E: Display> Display for FailureCompat<E> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { Display::fmt(&self.0, f) }
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Lua error: ")?;
+        Display::fmt(&self.0, f)
+    }
 }
 
 impl<E: Display + Debug> std::error::Error for FailureCompat<E> {
