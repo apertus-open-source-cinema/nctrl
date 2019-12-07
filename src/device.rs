@@ -23,9 +23,9 @@ use failure::{ResultExt, format_err};
 #[derivative(Debug)]
 pub struct Device {
     pub channel: CommunicationChannel,
-    raw: HashMap<String, RawRegister>,
-    cooked: HashMap<String, CookedRegister>,
-    computed: HashMap<String, ComputedRegister>,
+    pub raw: HashMap<String, RawRegister>,
+    pub cooked: HashMap<String, CookedRegister>,
+    pub computed: HashMap<String, ComputedRegister>,
     #[derivative(Debug = "ignore")]
     pub lua_vm: Lua,
 }

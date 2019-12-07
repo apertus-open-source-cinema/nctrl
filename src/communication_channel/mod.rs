@@ -11,10 +11,21 @@ use serde::*;
 use serde_derive::{Deserialize, Serialize};
 use std::{fs::OpenOptions, sync::RwLock};
 use log::{debug};
+use lazy_static::{lazy_static};
+use std::sync::Mutex;
 
 use crate::bit_slice::{slice, slice_write};
+use std::collections::HashMap;
+use crate::communication_channel::mock_memory::MockMemory;
+
+pub mod mock_memory;
 
 pub type CommunicationChannel = Box<dyn CommChannel>;
+
+lazy_static! {
+    static ref MOCK_MEMORIES: Mutex<HashMap<String, MockMemory>> = Mutex::new(HashMap::new());
+}
+
 
 pub trait CommChannel: Debug + Fuseable {
     // these are assumed to be bytewise
@@ -22,17 +33,31 @@ pub trait CommChannel: Debug + Fuseable {
     fn write_value_real(&self, address: &Address, value: Vec<u8>) -> Result<()>;
 
     fn read_value_mock(&self, address: &Address) -> Result<Vec<u8>> {
-        debug!("MOCK READ {:?} bytes at {:?} by {:?}", address.bytes(), address, self);
-        Ok(vec![0; address.bytes().unwrap_or(0)])
+        let mock_memories = MOCK_MEMORIES.lock().unwrap();
+        let mock_memory = mock_memories.get(&format!("{:?}", self)).unwrap();
+        let value = mock_memory.read(address).map(|x| x.clone());
+        debug!("mock_read: {:?} at {:?} by {:?}", &value.as_ref().unwrap(), address.as_u64(), self);
+        value.map(|x| x.clone())
     }
 
     fn write_value_mock(&self, address: &Address, value: Vec<u8>) -> Result<()> {
-        debug!("MOCK WRITE {:?} to {:?} by {:?}", value, address, self);
+        let mut mock_memories = MOCK_MEMORIES.lock().unwrap();
+        let mock_memory = mock_memories.get_mut(&format!("{:?}", self)).unwrap();
+        mock_memory.write(address, value.clone());
+        debug!("mock_write: {:?} to {:?} by {:?}", value.clone(), address.as_u64(), self);
         Ok(())
     }
 
-    fn mock_mode(&mut self, mock: bool);
-    fn get_mock_mode(&self) -> bool;
+    fn set_mock(&mut self, mock_memory: MockMemory) {
+        MOCK_MEMORIES.lock().unwrap().insert(format!("{:?}", self), mock_memory);
+    }
+    fn unset_mock(&mut self) {
+        MOCK_MEMORIES.lock().unwrap().remove(&format!("{:?}", self));
+    }
+
+    fn get_mock_mode(&self) -> bool {
+        MOCK_MEMORIES.lock().unwrap().contains_key(&format!("{:?}", self))
+    }
 
     fn read_value(&self, address: &Address) -> Result<Vec<u8>> {
         let v = if self.get_mock_mode() {
@@ -82,9 +107,6 @@ struct I2CCdev {
     #[serde(skip)]
     #[derivative(Debug = "ignore", PartialEq = "ignore")]
     dev: RwLock<Option<LinuxI2CDevice>>,
-    #[fuseable(ro)]
-    #[serde(skip)]
-    mock: bool,
 }
 
 #[derive(Derivative, Serialize, Deserialize, Fuseable)]
@@ -96,9 +118,6 @@ struct MemoryMap {
     #[serde(skip)]
     #[derivative(Debug = "ignore", PartialEq = "ignore")]
     dev: RwLock<Option<MmapMut>>,
-    #[fuseable(ro)]
-    #[serde(skip)]
-    mock: bool,
 }
 
 #[derive(Derivative, Serialize, Fuseable)]
@@ -123,7 +142,7 @@ impl<'de> Deserialize<'de> for CMVSPIBridge {
 
         let CMVSPIBridgeConfig { base, len } = CMVSPIBridgeConfig::deserialize(deserializer)?;
 
-        let channel = MemoryMap { base, len, dev: RwLock::new(None), mock: false };
+        let channel = MemoryMap { base, len, dev: RwLock::new(None) };
 
         Ok(CMVSPIBridge { base, len, channel })
     }
@@ -176,10 +195,6 @@ impl CommChannel for I2CCdev {
 
         with_dev(&self.dev, |i2c_dev| i2c_dev.write(&tmp).map_err(|e| e.into()), || self.init())
     }
-
-    fn mock_mode(&mut self, mock: bool) { self.mock = mock; }
-
-    fn get_mock_mode(&self) -> bool { self.mock }
 }
 
 impl CommChannel for MemoryMap {
@@ -227,10 +242,6 @@ impl CommChannel for MemoryMap {
             || self.init(),
         )
     }
-
-    fn mock_mode(&mut self, mock: bool) { self.mock = mock; }
-
-    fn get_mock_mode(&self) -> bool { self.mock }
 }
 
 fn with_dev<D, F, I, T>(dev: &RwLock<Option<D>>, func: F, init: I) -> Result<T>
@@ -274,10 +285,6 @@ impl CommChannel for CMVSPIBridge {
     fn write_value_real(&self, address: &Address, value: Vec<u8>) -> Result<()> {
         self.channel.write_value_real(&Self::addr_to_mmap_addr(address), value)
     }
-
-    fn mock_mode(&mut self, mock: bool) { self.channel.mock_mode(mock); }
-
-    fn get_mock_mode(&self) -> bool { self.channel.get_mock_mode() }
 }
 
 macro_rules! comm_channel_config {

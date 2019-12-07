@@ -1,7 +1,7 @@
 use crate::common::{to_hex, Description, Range};
 
 use crate::{
-    address::Address, communication_channel::CommunicationChannel, serde_util::by_string_option_num,
+    address::Address, communication_channel::CommunicationChannel,
 };
 
 use failure::format_err;
@@ -27,7 +27,7 @@ pub struct RawRegister {
     range: Option<Range>,
     #[fuseable(ro)]
     #[serde(default, deserialize_with = "by_string_option_num")]
-    default: Option<u64>,
+    pub default: Option<Vec<u8>>,
     #[fuseable(ro)]
     description: Option<Description>,
 }
@@ -44,8 +44,7 @@ impl<'de> Deserialize<'de> for RawRegister {
             mask: Option<String>,
             #[serde(flatten)]
             range: Option<Range>,
-            #[serde(default, deserialize_with = "by_string_option_num")]
-            default: Option<u64>,
+            default: Option<String>,
             description: Option<Description>,
         }
 
@@ -54,12 +53,15 @@ impl<'de> Deserialize<'de> for RawRegister {
         let address = Address::parse(&reg.address, reg.width.map(|v| v as usize))
             .map_err(|_| D::Error::custom("error parsing address"))?;
 
+        // TODO: error handling here!
+        let default = reg.default.map(|x| parse_num::parse_num(x).unwrap());
+
         Ok(RawRegister {
             address,
             width: reg.width,
             mask: reg.mask,
             range: reg.range,
-            default: reg.default,
+            default,
             description: reg.description,
         })
     }

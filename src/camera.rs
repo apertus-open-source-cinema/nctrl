@@ -13,6 +13,8 @@ use crate::{
 };
 use fuseable::{type_name, Either, Fuseable, FuseableError};
 use fuseable_derive::Fuseable;
+use log::debug;
+use crate::communication_channel::mock_memory::MockMemory;
 
 static mut CAMERA: Option<Arc<RwLock<Camera>>> = None;
 
@@ -173,8 +175,16 @@ impl<'de> Deserialize<'de> for Camera {
 
 impl Camera {
     pub fn mocked(&mut self, mock: bool) {
-        for rs in self.devices.values_mut() {
-            rs.lock().unwrap().channel.mock_mode(mock);
+        for (_name, device) in &self.devices {
+            if mock {
+                let mut mock_memory = None;
+                { // scoping to free the lock
+                    mock_memory = Some(MockMemory::filled_with_device_defaults(&device.lock().unwrap()));
+                }
+                device.lock().unwrap().channel.set_mock(mock_memory.unwrap())
+            } else {
+                device.lock().unwrap().channel.unset_mock()
+            }
         }
     }
 }

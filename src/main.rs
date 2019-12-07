@@ -40,6 +40,8 @@ fn main() {
 
     info!("parsing yml file");
     let mut sensor: Camera = serde_yaml::from_str(&contents).unwrap();
+
+    info!("setting mocked mode to {}", opt.mock);
     sensor.mocked(opt.mock);
 
     set_camera(sensor);
