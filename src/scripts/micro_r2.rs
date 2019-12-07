@@ -1,5 +1,6 @@
 use fuseable::FuseableError;
 use fuseable_derive::Fuseable;
+use log::{debug};
 
 script! {
     "hard resets the sensor and brings it into standby\n"
@@ -8,7 +9,7 @@ script! {
             Err(FuseableError::unsupported("read", fuseable::type_name(&self)))
         }
         write [value] => (self, ar0330, sensor_io) {
-            println!("writing {:?}", value);
+            debug!("writing {:?}", value);
 
             sensor_io.write_raw("reset", 1)?;
 
@@ -49,9 +50,9 @@ script! {
             let chip_version = ar0330.read_raw("chip_version_reg")?;
             // assert(chip_version == "0x2304");
 
-            println!("chip_version {}", chip_version);
-            println!("reserved_chiprev {}", ar0330.read_raw("reserved_chiprev")?);
-            println!("version {}", ar0330.read_raw("test_data_red")?);
+            debug!("chip_version {}", chip_version);
+            debug!("reserved_chiprev {}", ar0330.read_raw("reserved_chiprev")?);
+            debug!("version {}", ar0330.read_raw("test_data_red")?);
 
             /*
             write("magic_patch1", 0x0146);
@@ -177,7 +178,7 @@ script! {
             Err(FuseableError::unsupported("read", fuseable::type_name(&self)))
         }
         write [value] => (self, sensor, sensor_io) {
-            println!("writing {:?}", value);
+            debug!("writing {:?}", value);
 
             sensor_io.write_raw("reset", 1)?;
 

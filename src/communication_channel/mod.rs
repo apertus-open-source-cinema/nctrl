@@ -10,6 +10,7 @@ use paste;
 use serde::*;
 use serde_derive::{Deserialize, Serialize};
 use std::{fs::OpenOptions, sync::RwLock};
+use log::{debug};
 
 use crate::bit_slice::{slice, slice_write};
 
@@ -21,12 +22,12 @@ pub trait CommChannel: Debug + Fuseable {
     fn write_value_real(&self, address: &Address, value: Vec<u8>) -> Result<()>;
 
     fn read_value_mock(&self, address: &Address) -> Result<Vec<u8>> {
-        println!("MOCK READ {:?} bytes at {:?} by {:?}", address.bytes(), address, self);
+        debug!("MOCK READ {:?} bytes at {:?} by {:?}", address.bytes(), address, self);
         Ok(vec![0; address.bytes().unwrap_or(0)])
     }
 
     fn write_value_mock(&self, address: &Address, value: Vec<u8>) -> Result<()> {
-        println!("MOCK WRITE {:?} to {:?} by {:?}", value, address, self);
+        debug!("MOCK WRITE {:?} to {:?} by {:?}", value, address, self);
         Ok(())
     }
 
@@ -242,9 +243,9 @@ where
     if dev.is_none() {
         *dev = Some(init()?);
 
-        println!("opened device");
+        debug!("opened device");
     } else {
-        println!("had cached device");
+        debug!("had cached device");
     }
 
     match *dev {

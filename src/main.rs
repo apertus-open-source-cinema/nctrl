@@ -5,7 +5,8 @@ use nctrl::{
 };
 use std::{ffi::OsStr, io::Read, path::PathBuf};
 use structopt::StructOpt;
-use log::info;
+use log::{info};
+use env_logger::{Builder, Env};
 
 /// Basic daemon for controlling the various components of a camera
 #[derive(StructOpt, Debug)]
@@ -24,7 +25,10 @@ struct Opt {
 }
 
 fn main() {
-    env_logger::init();
+    Builder::from_env(Env::default().default_filter_or("info"))
+        .format_indent(Some(4))
+        .format_timestamp(None)
+        .init();
 
     let opt = Opt::from_args();
 
@@ -34,6 +38,7 @@ fn main() {
     let mut contents = String::new();
     f.read_to_string(&mut contents).expect("something went wrong reading the file");
 
+    info!("parsing yml file");
     let mut sensor: Camera = serde_yaml::from_str(&contents).unwrap();
     sensor.mocked(opt.mock);
 
@@ -44,7 +49,7 @@ fn main() {
         .map(|o| o.as_ref())
         .collect::<Vec<&OsStr>>();
 
-    info!("ncrtl was successfully initialized");
+    info!("successfully initialized");
 
     fuse::mount(FuseableFS::new(&mut SharedCamera { camera: camera() }), opt.mountpoint, &options)
         .unwrap();

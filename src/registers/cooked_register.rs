@@ -10,7 +10,7 @@ use fuseable::{type_name, Either, FuseableError};
 use fuseable_derive::Fuseable;
 use itertools::izip;
 use parse_num::parse_num_mask;
-use log::info;
+use log::debug;
 
 use serde_derive::*;
 use std::fmt::Debug;
@@ -96,7 +96,7 @@ impl CookedRegister {
                     }
                 };
 
-                info!("{:?} encoded to {:?}", value, encoded_value);
+                debug!("{:?} encoded to {:?}", value, encoded_value);
 
                 comm_channel.write_value(&self.address, encoded_value)
             }
