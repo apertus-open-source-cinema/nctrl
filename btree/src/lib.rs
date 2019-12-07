@@ -243,6 +243,12 @@ impl<V: PartialOrd + Debug, I: BTreeIdx + Debug, P: BTreeProxy<V, I>>
         let mut current = self.root();
         let mut next;
 
+        // tree is empty and has no root, fuck you
+        // TODO(robin): maybe try to figure out why this happens when using vscode + nctrl?
+        if current.is_none() {
+            return None
+        }
+
         loop {
             let value = self.value(current);
 
