@@ -21,3 +21,4 @@ old_stuff
 t
 *.debug
 *.out
+crash-rr.tar.gz
