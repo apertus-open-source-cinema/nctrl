@@ -172,7 +172,7 @@ impl Address {
     // TODO(robin): to fix this use byteorder crate and specify the byteorder of
     // base byteorder of base should be big endian to match all the other stuff
     pub fn as_u64(&self) -> u64 {
-        assert!(self.base.len() < 9, "base should be no longer than 8 bytes");
+        assert!(self.base.len() < 9, "base should be no longer than 8 bytes, but it is {:?}", self.base);
 
         let mut base: u64 = 0;
 

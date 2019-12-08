@@ -47,11 +47,11 @@ exp_time_high:
     default: 0
     description: Sets the exposure time in Internal Exposure Mode. Sets the exposure time for the even columns in interleaved HDR mode.
 exp_time2_low:
-    address: exp_time_low2[0:16]
+    address: exp_time2_low[0:16]
     default: 1536
     description: Sets the exposure time for the odd columns in interleaved HDR mode.
 exp_time2_high:
-    address: exp_time_high2[0:8]
+    address: exp_time2_high[0:8]
     default: 0
     description: Sets the exposure time for the odd columns in interleaved HDR mode.
 exp_kp1_low:
