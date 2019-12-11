@@ -68,3 +68,14 @@ exposure_time_s:
   type: float
   get: return computed.exposure_time / 10e9
   set: computed.exposure_time = value * 10e9
+
+temperature_celsius:
+  description: > 
+    The sensor temperature in degrees celsius.
+    Could be completely off un uncalibrated state
+  type: float
+  get: |
+    temperature_sensor_clock = (lvds_clk / pixel_bits)
+    offset_dn = (825 * temperature_sensor_clock) / 30
+    slope = (3.5 * temperature_sensor_clock) / 30
+    return (offset_dn + raw.temp_sensor) / slope
