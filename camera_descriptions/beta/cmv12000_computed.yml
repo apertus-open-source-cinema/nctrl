@@ -59,10 +59,12 @@ exposure_time:
       val = (pixels - computed.fot_overlap) / (raw.slot_timing + 1) + 1;
     end
 
-    computed.exposure_time_raw = val
+    computed.exposure_time_raw = math.floor(val)
 
-test:
-  description: a simple test
+exposure_time_s:
+  description: >
+    The exposure time in seconds.
+    If the sensor is in interleaved HDR mode this applies to the even rows.
   type: float
-  get: return raw.exp_time_low
-  set: raw.exp_time_low = 1
+  get: return computed.exposure_time / 10e9
+  set: computed.exposure_time = value * 10e9
