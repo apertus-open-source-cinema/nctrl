@@ -1,4 +1,4 @@
-use crate::address::Address;
+use crate::address::{Address, Slice};
 use core::fmt::Debug;
 use derivative::*;
 use failure::format_err;
@@ -272,6 +272,8 @@ impl CMVSPIBridge {
         let spi_reg = address.as_u64();
         let base = 4 * spi_reg;
         let mut address = address.clone();
+        // clear slice to avoid double handling of it in mock mode
+        address.slice = Some(Slice { start: 0, end: (address.bytes().unwrap() * 8) as u8 });
         address.set_base_from_u64(base);
         address
     }
