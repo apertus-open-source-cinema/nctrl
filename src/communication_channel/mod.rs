@@ -279,11 +279,23 @@ impl CMVSPIBridge {
 
 impl CommChannel for CMVSPIBridge {
     fn read_value_real(&self, address: &Address) -> Result<Vec<u8>> {
-        self.channel.read_value_real(&Self::addr_to_mmap_addr(address))
+        self.channel.read_value(&Self::addr_to_mmap_addr(address))
     }
 
     fn write_value_real(&self, address: &Address, value: Vec<u8>) -> Result<()> {
-        self.channel.write_value_real(&Self::addr_to_mmap_addr(address), value)
+        self.channel.write_value(&Self::addr_to_mmap_addr(address), value)
+    }
+
+    fn set_mock(&mut self, mock_memory: MockMemory) {
+        self.channel.set_mock(mock_memory)
+    }
+
+    fn unset_mock(&mut self) {
+        self.channel.unset_mock()
+    }
+
+    fn get_mock_mode(&self) -> bool {
+        false
     }
 }
 
