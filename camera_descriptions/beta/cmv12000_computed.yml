@@ -22,33 +22,44 @@ analog_gain:
     cooked.pga_gain = final_gain
     cooked.pga_div = final_div
 
+exposure_time_raw:
+  description: raw register setting of the exposure time
+  type: int
+  get: |
+    return raw.exp_time_low | (raw.exp_time_high << 16)
+  set: |
+    raw.exp_time_low = value & 0xFFFF
+    raw.exp_time_high = value >> 16
+
+
+fot_overlap:
+  description: ""
+  type: int
+  get: |
+    return 34 * (raw.fot_timing & 0xFF) + 1;
+
 exposure_time:
   description: > 
-    The exposure time in seconds.
+    The exposure time in nano seconds.
     If the sensor is in interleaved HDR mode this applies to the even rows.
   type: float
   get: |
-    val = raw.exp_time_low | (raw.exp_time_high << 16)
-    lvds = 250e6
-    bits = 12
     -- formula from the datasheet p38
-    -- return raw.exp_time_low
-    return ((val - 1) * (raw.slot_timing + 1) + (34 * raw.fot_timing & 0xFF) + 1) * (1 / lvds) * bits
-  set: |
-    etime_ns = value*10e-9
 
+    val = computed.exposure_time_raw
+    time_in_pixels = (val - 1) * (raw.slot_timing + 1) + computed.fot_overlap
+
+    return time_in_pixels * (pixel_bits / lvds_clk) * 1e9;
+  set: |
     -- stolen code from https://github.com/apertus-open-source-cinema/axiom-beta-firmware/blob/master/software/sensor_tools/snap/snap.c#L415
-    lvds = 250e6
-    bits = 12
-    fot_overlap = 34 * (raw.fot_timing & 0xFF) + 1
-    d = etime_ns * (lvds/bits) * 1e-9
+
+    pixels = value * 1e-9 * (lvds_clk / pixel_bits) -- number of pixels for one exposure
     val = 1
-    if fot_overlap < d then
-      val = (d - raw.fot_timing)/(fot_overlap + 1) + 1;
+    if tonumber(computed.fot_overlap) < pixels then
+      val = (pixels - computed.fot_overlap) / (raw.slot_timing + 1) + 1;
     end
 
-    raw.exp_time_low = val & 0xFFFF
-    raw.exp_time_high = val >> 16
+    computed.exposure_time_raw = val
 
 test:
   description: a simple test

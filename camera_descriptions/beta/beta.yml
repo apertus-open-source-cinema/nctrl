@@ -76,3 +76,7 @@ devices:
 #            len: 0x00020000
 #        raw: "illumination_control_raw.yml"
 #        cooked: "illumination_control_cooked.yml"
+
+globals:
+  lvds_clk: 250e6 # MHz
+  pixel_bits: 12 # number of bits per pixel
