@@ -5,7 +5,27 @@ use rlua::RegistryKey;
 
 use crate::camera::Camera;
 
+
+// also think about how the arguments should be typed
+// we probably want everything to travel as Vec<u8> and only be casted to the wanted type when
+// the used
+// however: how do we distinguish numbers in binary from numbers in ascii
+// maybe we just say you are never supposed to do numbers in binary and only binary data as binary, in which case you use it as Vec<u8>? That sounds good (of course it has some overhead, especially when considering transports where we easily could use binary data)
+// so then we can finally easily strip and add \n's for non binary data
+
+// or userdata? yes investigate userdata!!!
+pub trait DeviceLike {
+    read_{raw, cooked, computed}
+    write_{raw, cooked, computed}
+}
+
 pub trait Script: Debug + Fuseable {
+    fn run(&self, devices: HashMap<String, DeviceLike>, args: HashMap<String, String>) -> fuseable::Result<String>;
+
+    // the devices this script needs
+    fn devices(&self) -> Vec<String>;
+
+    /*
     fn read(&self, cam: &Camera) -> fuseable::Result<String>;
     fn write(&self, cam: &Camera, value: Vec<u8>) -> fuseable::Result<()>;
 
@@ -13,6 +33,7 @@ pub trait Script: Debug + Fuseable {
     fn write_key(&self) -> Option<&RegistryKey>;
 
     fn init_functions(&mut self, lua_vm: &rlua::Lua);
+    */
 }
 
 macro_rules! script {
@@ -20,6 +41,12 @@ macro_rules! script {
         read => ($self_read:ident $(,$regs_read:ident)*) $body_read:block
         write [$value_name:ident] => ($self_write:ident $(,$regs_write:ident)*) $body_write:block
     } } => {
+        paste::item!{
+            #[derive(Debug, Fuseable, Default)]
+            struct [<$struct_name Args>] {
+                $($elem: $elem_typ,)*
+            }
+
             #[derive(Debug, Fuseable)]
             struct $struct_name {
                 description: String,
@@ -27,24 +54,17 @@ macro_rules! script {
                 read_function: Option<rlua::RegistryKey>,
                 #[fuseable(skip)]
                 write_function: Option<rlua::RegistryKey>,
-                $($elem: $elem_typ,)*
+                args: [<$struct_name Args>]
             }
+        }
 
             impl Default for $struct_name {
                 fn default() -> $struct_name {
-                    #[derive(Default)]
-                    struct ForDefault {
-                        $($elem: $elem_typ,)*
-                    }
-
-                    #[allow(unused_variables)]
-                    let for_default = ForDefault::default();
-
                     $struct_name {
                         description: $desc.to_string(),
                         read_function: None,
                         write_function: None,
-                        $($elem: for_default.$elem),*
+                        args: Default::default()
                     }
                 }
             }

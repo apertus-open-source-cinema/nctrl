@@ -55,6 +55,7 @@ pub trait CommChannel: Debug + Fuseable {
         MOCK_MEMORIES.lock().unwrap().remove(&format!("{:?}", self));
     }
 
+    // TODO(anuejn): this is probably very slow
     fn get_mock_mode(&self) -> bool {
         MOCK_MEMORIES.lock().unwrap().contains_key(&format!("{:?}", self))
     }
