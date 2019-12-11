@@ -66,8 +66,8 @@ exposure_time_s:
     The exposure time in seconds.
     If the sensor is in interleaved HDR mode this applies to the even rows.
   type: float
-  get: return computed.exposure_time / 10e9
-  set: computed.exposure_time = value * 10e9
+  get: return computed.exposure_time / 1e9
+  set: computed.exposure_time = value * 1e9
 
 temperature_celsius:
   description: > 
