@@ -61,13 +61,13 @@ exposure_time:
 
     computed.exposure_time_raw = math.floor(val)
 
-exposure_time_s:
+exposure_time_ms:
   description: >
-    The exposure time in seconds.
+    The exposure time in miliseconds.
     If the sensor is in interleaved HDR mode this applies to the even rows.
   type: float
-  get: return computed.exposure_time / 10e9
-  set: computed.exposure_time = value * 10e9
+  get: return computed.exposure_time / 1e6
+  set: computed.exposure_time = value * 1e6
 
 temperature_celsius:
   description: > 
