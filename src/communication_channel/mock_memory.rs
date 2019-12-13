@@ -30,7 +30,7 @@ impl MockMemory {
     pub fn write(&mut self, address: &Address, value: Vec<u8>) {
         let offset = address.as_u64() as usize;
 
-        for (i, byte) in value.iter().enumerate() {
+        for (i, byte) in value.iter().rev().enumerate() {
             self.hash_map.insert(offset + i, *byte);
         }
     }
@@ -38,10 +38,12 @@ impl MockMemory {
     pub fn read(&self, address: &Address) -> Result<Vec<u8>> {
         let offset = address.as_u64() as usize;
 
-        let ret: Vec<u8> =  (0..address.bytes().ok_or_else(|| format_err!("MockMemoy doesn't support unbounded read"))?)
+        let mut ret: Vec<u8> =  (0..address.bytes().ok_or_else(|| format_err!("MockMemoy doesn't support unbounded read"))?)
             .map(|x| self.hash_map.get(&(offset + x)).unwrap_or(&0u8))
             .map(|x| x.clone())
             .collect();
+
+        ret.reverse();
 
         Ok(ret)
     }

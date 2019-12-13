@@ -11,8 +11,8 @@ use std::{
 };
 
 use crate::{
-    device::Device,
-    scripts::{scripts_from_model, Script},
+    device::{Device, DeviceLike},
+    scripts::{Script, scripts_from_model},
     serde_util::empty_map,
     lua_script::LuaScript,
     lua_util
@@ -55,6 +55,15 @@ impl<E: Display> Display for GlobalsError<E> {
 
 impl<E: Display + Debug> std::error::Error for GlobalsError<E> {
     fn description(&self) -> &'static str { "An error has occurred." }
+}
+
+pub fn run_script(name: &str, devices: HashMap<String, &dyn DeviceLike>) -> fuseable::Result<String> {
+    with_camera(|cam| {
+        cam.scripts
+            .get(name)
+            .ok_or_else(|| format_err!("tried to run non existant script {}", name))?
+            .lock().unwrap().run(devices)
+    })
 }
 
 pub fn globals<T: std::str::FromStr>(name: &str) -> Result<T, GlobalsError<failure::Error>>
@@ -138,13 +147,27 @@ impl Fuseable for SharedCamera {
                             panic!("tought I would get directory entires, but got file content")
                         }
                     }),
-                    (Some(name), Some("value")) => Script::read(
-                        &**cam.scripts // wat???
+                    (Some(name), Some("value")) => {
+                        let script = &**cam.scripts // wat???
                             .get(name)
                             .ok_or_else(|| FuseableError::not_found(name))?
-                            .lock().unwrap(),
-                        &cam,
-                    )
+                            .lock().unwrap();
+
+                        let device_names = script.devices();
+
+                        let device_handles: Vec<_> = device_names
+                            .iter()
+                            .map(|device_name| cam.devices[device_name].lock().unwrap())
+                            .collect();
+
+                        let mut devices: HashMap<String, &dyn DeviceLike> = HashMap::new();
+
+                        for (handle, name) in device_handles.iter().zip(device_names) {
+                            devices.insert(name, &**handle as &dyn DeviceLike);
+                        }
+
+                        script.run(devices)
+                    }
                     .map(Either::Right),
                     _ => cam.scripts.read(&mut path),
                 }
@@ -169,28 +192,13 @@ impl Fuseable for SharedCamera {
                 },
                 None => Err(FuseableError::unsupported("write", "camera.devices")),
             },
-            Some("scripts") => {
-                let (mut peek, mut path) = path.tee();
-                let path = &mut path;
-                let script_name = peek.next();
-                let script_field = peek.next();
-
-                match (script_name, script_field) {
-                    (Some(name), Some("value")) => Script::write(
-                        &**cam.scripts // wat??
-                            .get(name)
-                            .ok_or_else(|| FuseableError::not_found(name))?
-                            .lock().unwrap(),
-                        &cam,
-                        value,
-                    ),
-                    (Some(name), _) => match cam.scripts.get(name) {
-                        Some(script) => script.lock().unwrap().write(path, value),
-                        None => Err(FuseableError::not_found(format!("camera.scripts.{}", name))),
-                    },
-                    (None, _) => Err(FuseableError::unsupported("write", "camera.devices")),
-                }
-            }
+            Some("scripts") => match path.next() {
+                Some(name) => match cam.scripts.get(name) {
+                    Some(script) => script.lock().unwrap().write(path, value),
+                    None => Err(FuseableError::not_found(format!("camera.scripts.{}", name))),
+                },
+                None => Err(FuseableError::unsupported("write", "camera.scripts")),
+            },
             Some(name) => Err(FuseableError::not_found(name)),
             None => Err(FuseableError::unsupported("write", type_name(&self))),
         }
@@ -231,7 +239,6 @@ impl<'de> Deserialize<'de> for Camera {
         let rust_scripts: HashMap<String, Mutex<Box<dyn Script>>> = scripts_from_model(&camera_model)
             .into_iter()
             .map(|(k, mut v)| {
-                v.init_functions(&lua_vm);
 
                 (k, Mutex::new(v))
             })

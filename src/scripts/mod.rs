@@ -1,9 +1,13 @@
 use std::fmt::Debug;
+use std::collections::HashMap;
 
 use fuseable::Fuseable;
+use fuseable_derive::Fuseable;
 use rlua::RegistryKey;
 
-use crate::camera::Camera;
+use crate::device::DeviceLike;
+use crate::camera::{Camera, run_script};
+use crate::common::ToStringOrVecU8;
 
 
 // also think about how the arguments should be typed
@@ -13,33 +17,47 @@ use crate::camera::Camera;
 // maybe we just say you are never supposed to do numbers in binary and only binary data as binary, in which case you use it as Vec<u8>? That sounds good (of course it has some overhead, especially when considering transports where we easily could use binary data)
 // so then we can finally easily strip and add \n's for non binary data
 
-// or userdata? yes investigate userdata!!!
-pub trait DeviceLike {
-    read_{raw, cooked, computed}
-    write_{raw, cooked, computed}
+struct DeviceLikeWrapper<'a>(&'a dyn DeviceLike);
+
+#[allow(dead_code)]
+impl<'a> DeviceLikeWrapper<'a> {
+    fn read_raw(&self, name: &str) -> fuseable::Result<String> {
+        self.0.read_raw(name)
+    }
+
+    fn write_raw<T: ToStringOrVecU8>(&self, name: &str, value: T) -> fuseable::Result<()> {
+        self.0.write_raw(name, value.bytes())
+    }
+
+    fn read_cooked(&self, name: &str) -> fuseable::Result<String> {
+        self.0.read_cooked(name)
+    }
+
+    fn write_cooked<T: ToStringOrVecU8>(&self, name: &str, value: T) -> fuseable::Result<()> {
+        self.0.write_cooked(name, value.bytes())
+    }
+
+    fn read_computed(&self, name: &str) -> fuseable::Result<String> {
+        self.0.read_computed(name)
+    }
+
+    fn write_computed<T: ToStringOrVecU8>(&self, name: &str, value: T) -> fuseable::Result<()> {
+        self.0.write_computed(name, value.bytes())
+    }
 }
 
 pub trait Script: Debug + Fuseable {
-    fn run(&self, devices: HashMap<String, DeviceLike>, args: HashMap<String, String>) -> fuseable::Result<String>;
+    // TODO(robin): support arguments
+    // TODO(robin): change the return to Vec<u8>
+    fn run(&self, devices: HashMap<String, &dyn DeviceLike> /* , args: HashMap<String, Vec<u8>> */) -> fuseable::Result<String>;
 
     // the devices this script needs
     fn devices(&self) -> Vec<String>;
-
-    /*
-    fn read(&self, cam: &Camera) -> fuseable::Result<String>;
-    fn write(&self, cam: &Camera, value: Vec<u8>) -> fuseable::Result<()>;
-
-    fn read_key(&self) -> Option<&RegistryKey>;
-    fn write_key(&self) -> Option<&RegistryKey>;
-
-    fn init_functions(&mut self, lua_vm: &rlua::Lua);
-    */
 }
 
 macro_rules! script {
     { $desc:tt $struct_name:ident {$($elem:ident:$elem_typ:ty),*}  => {
-        read => ($self_read:ident $(,$regs_read:ident)*) $body_read:block
-        write [$value_name:ident] => ($self_write:ident $(,$regs_write:ident)*) $body_write:block
+        ($self:ident, $devices_name:ident = { $($devices:ident),* }) $body:block
     } } => {
         paste::item!{
             #[derive(Debug, Fuseable, Default)]
@@ -50,10 +68,6 @@ macro_rules! script {
             #[derive(Debug, Fuseable)]
             struct $struct_name {
                 description: String,
-                #[fuseable(skip)]
-                read_function: Option<rlua::RegistryKey>,
-                #[fuseable(skip)]
-                write_function: Option<rlua::RegistryKey>,
                 args: [<$struct_name Args>]
             }
         }
@@ -62,8 +76,6 @@ macro_rules! script {
                 fn default() -> $struct_name {
                     $struct_name {
                         description: $desc.to_string(),
-                        read_function: None,
-                        write_function: None,
                         args: Default::default()
                     }
                 }
@@ -71,52 +83,14 @@ macro_rules! script {
 
 
             impl super::Script for $struct_name {
-                fn read_key(&self) -> Option<&rlua::RegistryKey> {
-                    self.read_function.as_ref()
-                }
-
-                fn write_key(&self) -> Option<&rlua::RegistryKey> {
-                    self.write_function.as_ref()
-                }
-
                 #[allow(unused_variables)]
-                fn read(&$self_read, cam: &super::Camera) -> fuseable::Result<String> {
-                    $(let $regs_read = cam.devices[stringify!($regs_read)].lock().unwrap();)*
-
-                    $body_read
-                }
-                #[allow(unused_variables)]
-                fn write(&$self_write, cam: &super::Camera, $value_name: Vec<u8>) -> fuseable::Result<()> {
-                    $(let $regs_write = cam.devices[stringify!($regs_write)].lock().unwrap();)*
-
-                    $body_write
+                fn run(&$self, $devices_name: std::collections::HashMap<String, &dyn crate::device::DeviceLike>) -> fuseable::Result<String> {
+                    $(let $devices = crate::scripts::DeviceLikeWrapper($devices_name[stringify!($devices)]);)*
+                    $body
                 }
 
-                #[allow(unused_variables)]
-                fn init_functions(&mut $self_read, lua_vm: &rlua::Lua) {
-                    lua_vm.context(|ctx| {
-                        // closure capture is shit
-                        let read_function = &mut $self_read.read_function;
-                        let write_function = &mut $self_read.write_function;
-
-                        let read_func = ctx.create_function::<_, String, _>(|_, devices: rlua::Table| {
-                            $(let $regs_read = crate::lua_util::LuaDeviceWrapper(devices.get(stringify!($regs_read))?);)*
-
-                            $body_read.map_err(crate::lua_util::FailureCompat::failure_to_lua)
-                        }).unwrap();
-
-                        *read_function = Some(ctx.create_registry_value(read_func).unwrap());
-
-                        let write_func = ctx.create_function::<_, (), _>(|_, (devices, $value_name): (rlua::Table, String)| {
-                            // TODO(robin): find a better way to pass a Vec<u8>? (maybe userdata?)
-                            let $value_name = $value_name.as_bytes().to_vec();
-                            $(let $regs_write = crate::lua_util::LuaDeviceWrapper(devices.get(stringify!($regs_write))?);)*
-
-                            $body_write.map_err(crate::lua_util::FailureCompat::failure_to_lua)
-                        }).unwrap();
-
-                        *write_function = Some(ctx.create_registry_value(write_func).unwrap());
-                    })
+                fn devices(&$self) -> Vec<String> {
+                    vec![$(stringify!($devices).to_owned()),*]
                 }
             }
     };

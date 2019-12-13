@@ -18,6 +18,17 @@ use std::{collections::HashMap, fmt::Debug};
 use derivative::Derivative;
 use failure::{format_err, ResultExt};
 
+pub trait DeviceLike {
+    fn read_raw(&self, name: &str) -> fuseable::Result<String>;
+    fn write_raw(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()>;
+
+    fn read_cooked(&self, name: &str) -> fuseable::Result<String>;
+    fn write_cooked(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()>;
+
+    fn read_computed(&self, name: &str) -> fuseable::Result<String>;
+    fn write_computed(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()>;
+}
+
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct Device {
@@ -25,23 +36,6 @@ pub struct Device {
     pub raw: HashMap<String, RawRegister>,
     pub cooked: HashMap<String, CookedRegister>,
     pub computed: HashMap<String, ComputedRegister>,
-}
-
-pub trait ToStringOrVecU8 {
-    fn bytes(self) -> Vec<u8>;
-}
-
-impl<T: ToString> ToStringOrVecU8 for T {
-    fn bytes(self) -> Vec<u8> { self.to_string().as_bytes().to_vec() }
-}
-
-// shitty hack because specialization is not stable
-// TODO(robin): revisit when (if) specialization ever lands
-// (tracking issue: https://github.com/rust-lang/rust/issues/31844)
-struct Bytes(Vec<u8>);
-
-impl ToStringOrVecU8 for Bytes {
-    fn bytes(self) -> Vec<u8> { self.0 }
 }
 
 macro_rules! with_register_from_set {
@@ -78,7 +72,7 @@ macro_rules! read_reg_from_set {
 macro_rules! write_reg_from_set {
     ($self:ident.$reg_set:ident, $reg_name:ident, $extra:expr, $value:ident) => {
         with_register_from_set!($self.$reg_set, $reg_name, "write to")
-            .write_value(&mut std::iter::empty(), $value.bytes(), $extra)
+            .write_value(&mut std::iter::empty(), $value, $extra)
             .with_context(|e| {
                 format!(
                     "error while writing to register {}.{}: {}",
@@ -91,28 +85,28 @@ macro_rules! write_reg_from_set {
     };
 }
 
-impl Device {
-    pub fn read_raw(&self, name: &str) -> fuseable::Result<String> {
+impl DeviceLike for Device {
+    fn read_raw(&self, name: &str) -> fuseable::Result<String> {
         read_reg_from_set!(self.raw, name, &self.channel)
     }
 
-    pub fn write_raw<T: ToStringOrVecU8>(&self, name: &str, value: T) -> fuseable::Result<()> {
+    fn write_raw(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()> {
         write_reg_from_set!(self.raw, name, &self.channel, value)
     }
 
-    pub fn read_cooked(&self, name: &str) -> fuseable::Result<String> {
+    fn read_cooked(&self, name: &str) -> fuseable::Result<String> {
         read_reg_from_set!(self.cooked, name, &self.channel)
     }
 
-    pub fn write_cooked<T: ToStringOrVecU8>(&self, name: &str, value: T) -> fuseable::Result<()> {
+    fn write_cooked(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()> {
         write_reg_from_set!(self.cooked, name, &self.channel, value)
     }
 
-    pub fn read_computed(&self, name: &str) -> fuseable::Result<String> {
+    fn read_computed(&self, name: &str) -> fuseable::Result<String> {
         read_reg_from_set!(self.computed, name, &self)
     }
 
-    pub fn write_computed<T: ToStringOrVecU8>(&self, name: &str, value: T) -> fuseable::Result<()> {
+    fn write_computed(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()> {
         write_reg_from_set!(self.computed, name, &self, value)
     }
 }
@@ -155,7 +149,7 @@ macro_rules! inject_write {
     ($actual_path:expr, $self:ident.$path:ident, $path_iter:ident, $value:ident) => {
         {
             inject!($path_iter, path,
-                    (Some(name), Some("value")) => $self.$path(name, Bytes($value)),
+                    (Some(name), Some("value")) => $self.$path(name, $value),
                     _ => $actual_path.write(&mut path, $value)
             )
         }

@@ -6,13 +6,7 @@ use log::debug;
 script! {
     "hard resets the sensor and brings it into standby\n"
     Reset { test: u8 } => {
-        read => (self) {
-            // Err(FuseableError::unsupported("read", fuseable::type_name(&self)))
-            Err(FuseableError::unsupported("read", "bla"))
-        }
-        write [value] => (self, ar0330, sensor_io) {
-            debug!("writing {:?}", value);
-
+        (self, devices = { ar0330, sensor_io }) {
             sensor_io.write_raw("reset", 1)?;
 
             std::thread::sleep(std::time::Duration::from_millis(10));
@@ -21,7 +15,7 @@ script! {
             ar0330.write_cooked("software_reset", 0)?;
             ar0330.write_cooked("stream", 1)?;
 
-            Ok(())
+            Ok("".to_owned())
         }
     }
 }
@@ -29,11 +23,7 @@ script! {
 script! {
     "start up the sensor in default settings"
     Kick {} => {
-        read => (self) {
-            // Err(FuseableError::unsupported("read", fuseable::type_name(&self)))
-            Err(FuseableError::unsupported("read", "bla"))
-        }
-        write [value] => (self, ar0330, sensor_io) {
+        (self, devices = { ar0330, sensor_io }) {
             let extclk = camera::globals("extclock")?;
             // init
             // toggle reset (active low)
@@ -168,15 +158,46 @@ script! {
             // streaming enable
             ar0330.write_raw("mode_select", 1)?;
 
-            Ok(())
+            Ok("".to_owned())
         }
     }
+}
 
+use crate::{scripts::{Script, DeviceLikeWrapper}, device::DeviceLike, camera::run_script};
+use std::collections::HashMap;
+
+
+#[derive(Fuseable, Debug, Default)]
+pub struct TestScript {}
+
+impl Script for TestScript {
+    fn run(&self, devices: HashMap<String, &dyn DeviceLike> /* , args: HashMap<String, Vec<u8>> */) -> fuseable::Result<String> {
+        let ar0330 = DeviceLikeWrapper(devices["ar0330"]);
+        let sensor_io = DeviceLikeWrapper(devices["sensor_io"]);
+
+        // println!("args: {:?}", args);
+
+        ar0330.write_raw("analog_gain", 1)?;
+        println!("hello rust; analog_gain: {}", ar0330.read_computed("analog_gain")?);
+        println!("now running a lua script from rust: {}", run_script("test2", devices)?);
+
+        sensor_io.write_raw("reset", 7)?;
+        sensor_io.write_raw("reset", 0)?;
+        sensor_io.write_raw("reset", 7)?;
+
+        Ok("success".to_string())
+    }
+
+    // the devices this script needs
+    fn devices(&self) -> Vec<String> {
+        vec!["sensor_io".to_string(), "ar0330".to_string()]
+    }
 }
 
 script_set! {
     MicroR2Scripts => {
         "reset": Reset,
-        "kick": Kick
+        "kick": Kick,
+        "rust_test": TestScript
     }
 }

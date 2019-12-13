@@ -1,6 +1,6 @@
 use crate::{
     common::{Description, Range},
-    device::Device,
+    device::{Device, DeviceLike},
     lua_util::FailureCompat,
     camera
 };
@@ -111,7 +111,7 @@ impl ComputedRegister {
                         lua,
                         |name| { device.read_raw(&name).map_err(FailureCompat::failure_to_lua) },
                         |name, value| {
-                            device.write_raw(&name, value).map_err(FailureCompat::failure_to_lua)
+                            device.write_raw(&name, value.as_bytes().to_vec()).map_err(FailureCompat::failure_to_lua)
                         }
                     )?;
 
@@ -120,7 +120,7 @@ impl ComputedRegister {
                         lua,
                         |name| { device.read_cooked(&name).map_err(FailureCompat::failure_to_lua) },
                         |name, value| {
-                            device.write_cooked(&name, value).map_err(FailureCompat::failure_to_lua)
+                            device.write_cooked(&name, value.as_bytes().to_vec()).map_err(FailureCompat::failure_to_lua)
                         }
                     )?;
 
@@ -132,7 +132,7 @@ impl ComputedRegister {
                         },
                         |name, value| {
                             device
-                                .write_computed(&name, value)
+                                .write_computed(&name, value.as_bytes().to_vec())
                                 .map_err(FailureCompat::failure_to_lua)
                         }
                     )?;

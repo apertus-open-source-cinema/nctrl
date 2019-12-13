@@ -1,7 +1,9 @@
 use core::fmt::{self, Display};
-use rlua::Error as LuaError;
-use std::{fmt::Debug, sync::Arc};
-use crate::camera;
+use rlua::{Error as LuaError, UserData, UserDataMethods, MetaMethod};
+use std::{fmt::Debug, sync::Arc, collections::HashMap};
+use failure::format_err;
+
+use crate::{camera, device::DeviceLike};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
 pub struct FailureCompat<E>(E);
@@ -103,28 +105,40 @@ pub fn create_lua_vm() -> rlua::Lua {
 
         ctx.globals().set("globals", globals).unwrap();
 
-
         let script_get = ctx
             .create_function(|ctx,  (_table, name): (rlua::Table, String)| {
-                camera::with_camera(|cam| {
-                    println!("trying to read script {}", name);
+                let return_table = ctx.create_table()?;
+                let return_metatable = ctx.create_table()?;
 
-                    let script = cam.scripts[&name].lock().unwrap();
-                    let read_func = script.read_key();
-                    let write_func = script.write_key();
+                let call = ctx.create_function(move |_ctx, (_, devices): (rlua::Table, rlua::Table)| {
+                    camera::with_camera(|cam| {
+                        let script = cam.scripts.get(&name)
+                            .ok_or_else(|| format_err!("tried to run non existant script {}", name))
+                            .map_err(FailureCompat::failure_to_lua)?
+                            .lock().unwrap();
 
-                    let script_table = ctx.create_table()?;
+                        let devices = devices
+                            .pairs()
+                            .map(|key_value| {
+                                key_value
+                                    .map(|(name, device_table)| {
+                                        (name, DeviceLikeFromLua { device_table })
+                                    })
+                            }).collect::<Result<HashMap<String, DeviceLikeFromLua>, _>>()?;
 
-                    read_func.map(|key| {
-                        script_table.set("read", ctx.registry_value::<rlua::Function>(&key).unwrap()).unwrap();
-                    });
+                        script
+                            .run(devices
+                                 .iter()
+                                 .map(|(name, device)| (name.clone(), device as &dyn DeviceLike))
+                                 .collect())
+                            .map_err(FailureCompat::failure_to_lua)
+                    })
+                })?;
 
-                    write_func.map(|key| {
-                        script_table.set("write", ctx.registry_value::<rlua::Function>(&key).unwrap()).unwrap();
-                    });
+                return_metatable.set("__call", call)?;
+                return_table.set_metatable(Some(return_metatable));
 
-                    Ok(script_table)
-                })
+                Ok(return_table)
             }).unwrap();
 
         let scripts_metatable = ctx.create_table().unwrap();
@@ -139,45 +153,36 @@ pub fn create_lua_vm() -> rlua::Lua {
     lua_vm
 }
 
-pub struct LuaDeviceWrapper<'a>(pub rlua::Table<'a>);
+pub struct DeviceLikeFromLua<'a> {
+    device_table: rlua::Table<'a>,
+}
 
-// TODO(robin): error handling
-// TODO(robin): figure out a way to get a empty table (maybe pass one in?)
-impl<'a> LuaDeviceWrapper<'a> {
-    #[allow(dead_code)]
-    pub fn read_raw(&self, name: &str) -> std::result::Result<String, rlua::Error> {
-//            .ok_or_else(|| format_err!("rust script was called from lua and the device {:?} had no metatable", self.0)).map_err(FailureCompat::failure_to_lua)?;
-        let metatable =  self.0.get::<_, rlua::Table>("raw").unwrap().get_metatable().unwrap();
-        metatable.get::<_, rlua::Function>("__index")?.call::<_, String>((self.0.clone(), name))
+impl<'a> DeviceLike for DeviceLikeFromLua<'a> {
+    fn read_raw(&self, name: &str) -> fuseable::Result<String> {
+        Ok(self.device_table.get::<_, rlua::Table>("raw")?.get(name)?)
     }
 
-    #[allow(dead_code)]
-    pub fn write_raw<T: crate::device::ToStringOrVecU8 + rlua::ToLua<'a>>(&self, name: &str, value: T) -> std::result::Result<(), rlua::Error> {
-        let metatable =  self.0.get::<_, rlua::Table>("raw").unwrap().get_metatable().unwrap();
-        metatable.get::<_, rlua::Function>("__newindex")?.call((self.0.clone(), name, value))
+    // TODO(robin): don't cast to string!!
+    fn write_raw(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()> {
+        let value = String::from_utf8(value)?;
+        Ok(self.device_table.get::<_, rlua::Table>("raw")?.set(name, value)?)
     }
 
-    #[allow(dead_code)]
-    pub fn read_cooked(&self, name: &str) -> std::result::Result<String, rlua::Error> {
-        let metatable =  self.0.get::<_, rlua::Table>("cooked").unwrap().get_metatable().unwrap();
-        metatable.get::<_, rlua::Function>("__index")?.call::<_, String>((self.0.clone(), name))
+    fn read_cooked(&self, name: &str) -> fuseable::Result<String> {
+        Ok(self.device_table.get::<_, rlua::Table>("cooked")?.get(name)?)
     }
 
-    #[allow(dead_code)]
-    pub fn write_cooked<T: crate::device::ToStringOrVecU8 + rlua::ToLua<'a>>(&self, name: &str, value: T) -> std::result::Result<(), rlua::Error> {
-        let metatable =  self.0.get::<_, rlua::Table>("cooked").unwrap().get_metatable().unwrap();
-        metatable.get::<_, rlua::Function>("__newindex")?.call((self.0.clone(), name, value))
+    fn write_cooked(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()> {
+        let value = String::from_utf8(value)?;
+        Ok(self.device_table.get::<_, rlua::Table>("cooked")?.set(name, value)?)
     }
 
-    #[allow(dead_code)]
-    pub fn read_computed(&self, name: &str) -> std::result::Result<String, rlua::Error> {
-        let metatable =  self.0.get::<_, rlua::Table>("computed").unwrap().get_metatable().unwrap();
-        metatable.get::<_, rlua::Function>("__index")?.call::<_, String>((self.0.clone(), name))
+    fn read_computed(&self, name: &str) -> fuseable::Result<String> {
+        Ok(self.device_table.get::<_, rlua::Table>("computed")?.get(name)?)
     }
 
-    #[allow(dead_code)]
-    pub fn write_computed<T: crate::device::ToStringOrVecU8 + rlua::ToLua<'a>>(&self, name: &str, value: T) -> std::result::Result<(), rlua::Error> {
-        let metatable =  self.0.get::<_, rlua::Table>("computed").unwrap().get_metatable().unwrap();
-        metatable.get::<_, rlua::Function>("__newindex")?.call((self.0.clone(), name, value))
+    fn write_computed(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()> {
+        let value = String::from_utf8(value)?;
+        Ok(self.device_table.get::<_, rlua::Table>("computed")?.set(name, value)?)
     }
 }

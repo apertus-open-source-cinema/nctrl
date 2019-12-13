@@ -21,3 +21,20 @@ pub fn to_hex(v: &Vec<u8>) -> String {
         "".to_string()
     }
 }
+
+pub trait ToStringOrVecU8 {
+    fn bytes(self) -> Vec<u8>;
+}
+
+impl<T: ToString> ToStringOrVecU8 for T {
+    fn bytes(self) -> Vec<u8> { self.to_string().as_bytes().to_vec() }
+}
+
+// shitty hack because specialization is not stable
+// TODO(robin): revisit when (if) specialization ever lands
+// (tracking issue: https://github.com/rust-lang/rust/issues/31844)
+pub struct Bytes(Vec<u8>);
+
+impl ToStringOrVecU8 for Bytes {
+    fn bytes(self) -> Vec<u8> { self.0 }
+}
