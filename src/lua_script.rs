@@ -1,5 +1,5 @@
-use crate::{scripts::Script, camera::{Camera, with_camera}, lua_util::FailureCompat, device::DeviceLike};
-use fuseable::Result;
+use crate::{scripts::Script, camera::{with_camera}, lua_util::FailureCompat, device::DeviceLike};
+
 use fuseable_derive::Fuseable;
 use serde_derive::*;
 use failure::format_err;

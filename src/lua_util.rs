@@ -1,5 +1,5 @@
 use core::fmt::{self, Display};
-use rlua::{Error as LuaError, UserData, UserDataMethods, MetaMethod};
+use rlua::{Error as LuaError};
 use std::{fmt::Debug, sync::Arc, collections::HashMap};
 use failure::format_err;
 

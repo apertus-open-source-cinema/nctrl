@@ -1,5 +1,5 @@
 use crate::camera;
-use fuseable::FuseableError;
+
 use fuseable_derive::Fuseable;
 use log::debug;
 

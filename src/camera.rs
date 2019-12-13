@@ -238,7 +238,7 @@ impl<'de> Deserialize<'de> for Camera {
         // doesn't work without the type annotation :(
         let rust_scripts: HashMap<String, Mutex<Box<dyn Script>>> = scripts_from_model(&camera_model)
             .into_iter()
-            .map(|(k, mut v)| {
+            .map(|(k, v)| {
 
                 (k, Mutex::new(v))
             })
