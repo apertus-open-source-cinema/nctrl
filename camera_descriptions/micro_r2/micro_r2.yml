@@ -32,7 +32,7 @@ scripts:
     uses:
       - ar0330
       - sensor_io
-    get: |
+    script: |
       sensor_io.raw.reset = 7
       sensor_io.raw.reset = 0
       sensor_io.raw.reset = 7
@@ -43,14 +43,10 @@ scripts:
       print("now running a rust script from lua " .. scripts.rust_test(devices))
 
       return extclock .. ", " .. scripts.test2(devices)
-    set: |
-      scripts.test2.write(devices, value)
 
   test2:
     description:
     uses:
       - ar0330
-    get: |
+    script: |
       return ar0330.computed.analog_gain
-    set: |
-      ar0330.computed.analog_gain = value

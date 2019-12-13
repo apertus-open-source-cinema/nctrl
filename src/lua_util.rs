@@ -25,13 +25,13 @@ impl<E: Display + Debug> std::error::Error for FailureCompat<E> {
     fn description(&self) -> &'static str { "An error has occurred." }
 }
 
-// i can't figure out the lifetimes for a function that would do this, so do a
-// macro
+// i can't figure out the lifetimes for a function that would do this,
+// so take a macro
 #[macro_export(local_inner_macros)]
 macro_rules! make_table {
     (@gen_read $scope:ident, $table:ident, $read_name:ident, $read:tt) => {
         let read =
-            $scope.create_function(move |_, (_table, $read_name): (Table, String)| {
+            $scope.create_function(move |_, (_table, $read_name): (rlua::Table, String)| {
                 $read
             })?;
 
@@ -39,55 +39,104 @@ macro_rules! make_table {
     };
     (@gen_write $scope:ident, $table:ident, $write_name:ident, $write_val:ident, $write:tt) => {
         let write =
-            $scope.create_function(move |_, (_table, $write_name, $write_val): (Table, String, String)| {
+            $scope.create_function(move |_, (_table, $write_name, $write_val): (rlua::Table, String, String)| {
                 $write
             })?;
 
         $table.set("__newindex", write)?;
     };
-    ($context:ident, $scope:ident, |$read_name:ident| $read:tt) => {
+    (@gen_table $context:ident, $meta_table:ident, $body:block) => {
         {
-            use rlua::Table;
+            let $meta_table = $context.create_table()?;
 
-            let meta_table = $context.create_table()?;
+            $body
 
-            make_table!(@gen_read $scope, meta_table, $read_name, $read);
-
-            let table = $context.create_table().map(|v| {
-                v.set_metatable(Some(meta_table));
+            let table: fuseable::Result<rlua::Table> = Ok($context.create_table().map(|v| {
+                v.set_metatable(Some($meta_table));
                 v
-            });
+            })?);
 
-            let table: fuseable::Result<Table> = table.map_err(|e| e.into());
             table
         }
+    };
+    ($context:ident, $scope:ident, |$read_name:ident| $read:tt) => {
+        make_table!(@gen_table $context, meta_table, {
+            make_table!(@gen_read $scope, meta_table, $read_name, $read);
+        })
     };
     ($context:ident, $scope:ident, |$read_name:ident| $read:tt, |$write_name:ident, $write_val:ident| $write:tt) => {
-        {
-            use rlua::Table;
-
-            let meta_table = $context.create_table()?;
-
+        make_table!(@gen_table $context, meta_table, {
             make_table!(@gen_read $scope, meta_table, $read_name, $read);
             make_table!(@gen_write $scope, meta_table, $write_name, $write_val, $write);
-
-            let table = $context.create_table().map(|v| {
-                v.set_metatable(Some(meta_table));
-                v
-            });
-
-            let table: fuseable::Result<Table> = table.map_err(|e| e.into());
-            table
-        }
-
+        })
     };
+}
+
+
+// make device_table a metatable (or even a better directly device using userdata) and override raw, cooked and computed to return a table with metatable that overrides __index and __newindex??
+
+#[macro_export(local_inner_macros)]
+macro_rules! rw_tables_from_device {
+    ($ctx:ident, $scope:ident, $device:ident) => {
+        {
+        let raw_table = make_table!(
+            $ctx,
+            $scope,
+            |name| { $device.read_raw(&name).map_err(FailureCompat::failure_to_lua) },
+            |name, value| {
+                $device.write_raw(&name, value.as_bytes().to_vec()).map_err(FailureCompat::failure_to_lua)
+            }
+        )?;
+
+        let cooked_table = make_table!(
+            $ctx,
+            $scope,
+            |name| { $device.read_cooked(&name).map_err(FailureCompat::failure_to_lua) },
+            |name, value| {
+                $device.write_cooked(&name, value.as_bytes().to_vec()).map_err(FailureCompat::failure_to_lua)
+            }
+        )?;
+
+        let computed_table = make_table!(
+            $ctx,
+            $scope,
+            |name| {
+                $device.read_computed(&name).map_err(FailureCompat::failure_to_lua)
+            },
+            |name, value| {
+                $device
+                    .write_computed(&name, value.as_bytes().to_vec())
+                    .map_err(FailureCompat::failure_to_lua)
+            }
+        )?;
+
+        (raw_table, cooked_table, computed_table)
+        }
+    }
+}
+
+#[macro_export(local_inner_macros)]
+macro_rules! ro_tables_from_device {
+    ($ctx:ident, $scope:ident, $device:ident) => {
+        {
+        let raw_table = make_table!($ctx, $scope, |name| {
+            $device.read_raw(&name).map_err(FailureCompat::failure_to_lua)
+        })?;
+        let cooked_table = make_table!($ctx, $scope, |name| {
+            $device.read_cooked(&name).map_err(FailureCompat::failure_to_lua)
+        })?;
+        let computed_table = make_table!($ctx, $scope, |name| {
+            $device.read_computed(&name).map_err(FailureCompat::failure_to_lua)
+        })?;
+
+        (raw_table, cooked_table, computed_table)
+        }
+    }
 }
 
 pub fn create_lua_vm() -> rlua::Lua {
     let lua_vm = rlua::Lua::new();
 
-    // TODO(robin): this could be optimized by `load`ing them all once at startup
-    // however that also comes with some problems like globals depending on other globals
     lua_vm.context(|ctx| {
         let globals = ctx
             .create_function(|_, name: String| {
@@ -97,6 +146,8 @@ pub fn create_lua_vm() -> rlua::Lua {
 
         let meta_table = ctx.create_table().unwrap();
 
+        // TODO(robin): this could be optimized by `load`ing them all once at startup
+        // however that also comes with some problems like globals depending on other globals
         let global_index = ctx.load(r#" function (table, name) local func, err = load("return " .. globals(name)) return func() end"#).eval::<rlua::Function>().unwrap();
 
         meta_table.set("__index", global_index).unwrap();
@@ -172,6 +223,7 @@ impl<'a> DeviceLike for DeviceLikeFromLua<'a> {
         Ok(self.device_table.get::<_, rlua::Table>("cooked")?.get(name)?)
     }
 
+    // TODO(robin): don't cast to string!!
     fn write_cooked(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()> {
         let value = String::from_utf8(value)?;
         Ok(self.device_table.get::<_, rlua::Table>("cooked")?.set(name, value)?)
@@ -181,6 +233,7 @@ impl<'a> DeviceLike for DeviceLikeFromLua<'a> {
         Ok(self.device_table.get::<_, rlua::Table>("computed")?.get(name)?)
     }
 
+    // TODO(robin): don't cast to string!!
     fn write_computed(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()> {
         let value = String::from_utf8(value)?;
         Ok(self.device_table.get::<_, rlua::Table>("computed")?.set(name, value)?)

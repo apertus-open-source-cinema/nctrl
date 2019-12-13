@@ -58,15 +58,7 @@ impl ComputedRegister {
             Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
             None => camera::with_camera(|camera| camera.lua_vm.context(|lua_ctx| {
                     lua_ctx.scope(|lua| {
-                        let raw_table = make_table!(lua_ctx, lua, |name| {
-                            device.read_raw(&name).map_err(FailureCompat::failure_to_lua)
-                        })?;
-                        let cooked_table = make_table!(lua_ctx, lua, |name| {
-                            device.read_cooked(&name).map_err(FailureCompat::failure_to_lua)
-                        })?;
-                        let computed_table = make_table!(lua_ctx, lua, |name| {
-                            device.read_computed(&name).map_err(FailureCompat::failure_to_lua)
-                        })?;
+                        let (raw_tbl, cooked_tbl, computed_tbl) = ro_tables_from_device!(lua_ctx, lua, device);
 
                         if self.read_function.borrow().is_none() {
                             let script = self.get.as_ref().ok_or_else(|| {
@@ -88,7 +80,7 @@ impl ComputedRegister {
                             .registry_value::<Function>(
                                 self.read_function.borrow().as_ref().unwrap(),
                             )?
-                            .call::<_, String>((raw_table, cooked_table, computed_table))
+                            .call::<_, String>((raw_tbl, cooked_tbl, computed_tbl))
                             .map_err(|e| e.into())
                     })
                 })
@@ -105,37 +97,9 @@ impl ComputedRegister {
         match path.next() {
             Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
             None => camera::with_camera(|camera| camera.lua_vm.context(|lua_ctx| {
+                // TODO(robin): cleanup / combine with lua scripts stuff
                 lua_ctx.scope(|lua| {
-                    let raw_table = make_table!(
-                        lua_ctx,
-                        lua,
-                        |name| { device.read_raw(&name).map_err(FailureCompat::failure_to_lua) },
-                        |name, value| {
-                            device.write_raw(&name, value.as_bytes().to_vec()).map_err(FailureCompat::failure_to_lua)
-                        }
-                    )?;
-
-                    let cooked_table = make_table!(
-                        lua_ctx,
-                        lua,
-                        |name| { device.read_cooked(&name).map_err(FailureCompat::failure_to_lua) },
-                        |name, value| {
-                            device.write_cooked(&name, value.as_bytes().to_vec()).map_err(FailureCompat::failure_to_lua)
-                        }
-                    )?;
-
-                    let computed_table = make_table!(
-                        lua_ctx,
-                        lua,
-                        |name| {
-                            device.read_computed(&name).map_err(FailureCompat::failure_to_lua)
-                        },
-                        |name, value| {
-                            device
-                                .write_computed(&name, value.as_bytes().to_vec())
-                                .map_err(FailureCompat::failure_to_lua)
-                        }
-                    )?;
+                    let (raw_tbl, cooked_tbl, computed_tbl) = rw_tables_from_device!(lua_ctx, lua, device);
 
                     let value = match self.ty {
                         ComputedRegisterType::Float => {
@@ -169,7 +133,7 @@ impl ComputedRegister {
 
                     lua_ctx
                         .registry_value::<Function>(self.write_function.borrow().as_ref().unwrap())?
-                        .call((value, raw_table, cooked_table, computed_table))
+                        .call((value, raw_tbl, cooked_tbl, computed_tbl))
                         .map_err(|e| e.into())
                 })
             }),

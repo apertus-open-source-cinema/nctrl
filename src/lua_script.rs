@@ -12,19 +12,14 @@ pub struct LuaScript {
     #[fuseable(ro)]
     description: String,
     #[fuseable(ro)]
-    get: Option<String>,
-    #[fuseable(ro)]
-    set: Option<String>,
+    script: String,
     #[serde(default = "Vec::new")]
     #[fuseable(ro)]
     uses: Vec<String>,
 
     #[fuseable(skip)]
     #[serde(skip)]
-    read_function: Option<RegistryKey>,
-    #[fuseable(skip)]
-    #[serde(skip)]
-    write_function: Option<RegistryKey>,
+    lua_function: Option<RegistryKey>,
 }
 
 impl LuaScript {
@@ -35,27 +30,12 @@ impl LuaScript {
         }
 
         lua_vm.context(|ctx| {
-            // closure capture is shit
-            let read_function = &mut self.read_function;
-            let write_function = &mut self.write_function;
+            let script = format!("function (devices) {} {} end", devices_unpack, self.script);
 
-            self.get.as_ref().map(|script| {
-                let script = format!("function (devices) {} {} end", devices_unpack, script);
-
-                *read_function =
-                    Some(ctx.create_registry_value(
-                        ctx.load(&script).eval::<Function>().unwrap(),
-                    ).unwrap());
-            });
-
-            self.set.as_ref().map(|script| {
-                let script = format!("function (devices, value) {} {} end", devices_unpack, script);
-
-                *write_function =
-                    Some(ctx.create_registry_value(
-                        ctx.load(&script).eval::<Function>().unwrap(),
-                    ).unwrap());
-            });
+            self.lua_function =
+                Some(ctx.create_registry_value(
+                    ctx.load(&script).eval::<Function>().unwrap(),
+                ).unwrap());
         })
     }
 }
@@ -67,53 +47,20 @@ impl Script for LuaScript {
 
             ctx.scope(|lua| {
                 for (device_name, device) in devices.iter() {
-
-                    // make device_table a metatable (or even a better directly device using userdata) and override raw, cooked and computed to return a table with metatable that overrides __index and __newindex??
-                    // maybe this can also be used for computed registers?
-
                     let device_table = ctx.create_table()?;
 
-                    let raw_table = make_table!(
-                        ctx,
-                        lua,
-                        |name| { device.read_raw(&name).map_err(FailureCompat::failure_to_lua) },
-                        |name, value| {
-                            device.write_raw(&name, value.as_bytes().to_vec()).map_err(FailureCompat::failure_to_lua)
-                        }
-                    )?;
+                    let (raw_tbl, cooked_tbl, computed_tbl) = rw_tables_from_device!(ctx, lua, device);
 
-                    let cooked_table = make_table!(
-                        ctx,
-                        lua,
-                        |name| { device.read_cooked(&name).map_err(FailureCompat::failure_to_lua) },
-                        |name, value| {
-                            device.write_cooked(&name, value.as_bytes().to_vec()).map_err(FailureCompat::failure_to_lua)
-                        }
-                    )?;
-
-                    let computed_table = make_table!(
-                        ctx,
-                        lua,
-                        |name| {
-                            device.read_computed(&name).map_err(FailureCompat::failure_to_lua)
-                        },
-                        |name, value| {
-                            device
-                                .write_computed(&name, value.as_bytes().to_vec())
-                                .map_err(FailureCompat::failure_to_lua)
-                        }
-                    )?;
-
-                    device_table.set("raw", raw_table)?;
-                    device_table.set("cooked", cooked_table)?;
-                    device_table.set("computed", computed_table)?;
+                    device_table.set("raw", raw_tbl)?;
+                    device_table.set("cooked", cooked_tbl)?;
+                    device_table.set("computed", computed_tbl)?;
 
                     devices_table.set(device_name.as_str(), device_table)?;
                 }
 
                 ctx
                     .registry_value::<Function>(
-                        self.read_function.as_ref()
+                        self.lua_function.as_ref()
                             .ok_or_else(|| format_err!("cannot read script {:#?} with no get script", self))?
                     )?
                     .call(devices_table)
