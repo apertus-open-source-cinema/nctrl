@@ -1,8 +1,6 @@
-use std::fmt::Debug;
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug};
 
 use fuseable::Fuseable;
-
 
 
 use crate::device::DeviceLike;
@@ -11,35 +9,32 @@ use crate::common::ToStringOrVecU8;
 
 
 // also think about how the arguments should be typed
-// we probably want everything to travel as Vec<u8> and only be casted to the wanted type when
-// the used
+// we probably want everything to travel as Vec<u8> and only be casted to the
+// wanted type when the used
 // however: how do we distinguish numbers in binary from numbers in ascii
-// maybe we just say you are never supposed to do numbers in binary and only binary data as binary, in which case you use it as Vec<u8>? That sounds good (of course it has some overhead, especially when considering transports where we easily could use binary data)
-// so then we can finally easily strip and add \n's for non binary data
+// maybe we just say you are never supposed to do numbers in binary and only
+// binary data as binary, in which case you use it as Vec<u8>? That sounds good
+// (of course it has some overhead, especially when considering transports where
+// we easily could use binary data) so then we can finally easily strip and add
+// \n's for non binary data
 
 struct DeviceLikeWrapper<'a>(&'a dyn DeviceLike);
 
 #[allow(dead_code)]
 impl<'a> DeviceLikeWrapper<'a> {
-    fn read_raw(&self, name: &str) -> fuseable::Result<String> {
-        self.0.read_raw(name)
-    }
+    fn read_raw(&self, name: &str) -> fuseable::Result<String> { self.0.read_raw(name) }
 
     fn write_raw<T: ToStringOrVecU8>(&self, name: &str, value: T) -> fuseable::Result<()> {
         self.0.write_raw(name, value.bytes())
     }
 
-    fn read_cooked(&self, name: &str) -> fuseable::Result<String> {
-        self.0.read_cooked(name)
-    }
+    fn read_cooked(&self, name: &str) -> fuseable::Result<String> { self.0.read_cooked(name) }
 
     fn write_cooked<T: ToStringOrVecU8>(&self, name: &str, value: T) -> fuseable::Result<()> {
         self.0.write_cooked(name, value.bytes())
     }
 
-    fn read_computed(&self, name: &str) -> fuseable::Result<String> {
-        self.0.read_computed(name)
-    }
+    fn read_computed(&self, name: &str) -> fuseable::Result<String> { self.0.read_computed(name) }
 
     fn write_computed<T: ToStringOrVecU8>(&self, name: &str, value: T) -> fuseable::Result<()> {
         self.0.write_computed(name, value.bytes())
@@ -49,7 +44,10 @@ impl<'a> DeviceLikeWrapper<'a> {
 pub trait Script: Debug + Fuseable {
     // TODO(robin): support arguments
     // TODO(robin): change the return to Vec<u8>
-    fn run(&self, devices: HashMap<String, &dyn DeviceLike> /* , args: HashMap<String, Vec<u8>> */) -> fuseable::Result<String>;
+    fn run(
+        &self,
+        devices: HashMap<String, &dyn DeviceLike>, /* , args: HashMap<String, Vec<u8>> */
+    ) -> fuseable::Result<String>;
 
     // the devices this script needs
     fn devices(&self) -> Vec<String>;

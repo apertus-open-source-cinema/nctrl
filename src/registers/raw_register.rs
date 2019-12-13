@@ -1,8 +1,6 @@
 use crate::common::{to_hex, Description, Range};
 
-use crate::{
-    address::Address, communication_channel::CommunicationChannel,
-};
+use crate::{address::Address, communication_channel::CommunicationChannel};
 
 use failure::format_err;
 use fuseable::{type_name, Either, FuseableError};

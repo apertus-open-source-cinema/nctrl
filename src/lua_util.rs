@@ -1,7 +1,7 @@
 use core::fmt::{self, Display};
-use rlua::{Error as LuaError};
-use std::{fmt::Debug, sync::Arc, collections::HashMap};
 use failure::format_err;
+use rlua::Error as LuaError;
+use std::{collections::HashMap, fmt::Debug, sync::Arc};
 
 use crate::{camera, device::DeviceLike};
 
@@ -73,18 +73,21 @@ macro_rules! make_table {
 }
 
 
-// make device_table a metatable (or even a better directly device using userdata) and override raw, cooked and computed to return a table with metatable that overrides __index and __newindex??
+// make device_table a metatable (or even a better directly device using
+// userdata) and override raw, cooked and computed to return a table with
+// metatable that overrides __index and __newindex??
 
 #[macro_export(local_inner_macros)]
 macro_rules! rw_tables_from_device {
-    ($ctx:ident, $scope:ident, $device:ident) => {
-        {
+    ($ctx:ident, $scope:ident, $device:ident) => {{
         let raw_table = make_table!(
             $ctx,
             $scope,
             |name| { $device.read_raw(&name).map_err(FailureCompat::failure_to_lua) },
             |name, value| {
-                $device.write_raw(&name, value.as_bytes().to_vec()).map_err(FailureCompat::failure_to_lua)
+                $device
+                    .write_raw(&name, value.as_bytes().to_vec())
+                    .map_err(FailureCompat::failure_to_lua)
             }
         )?;
 
@@ -93,16 +96,16 @@ macro_rules! rw_tables_from_device {
             $scope,
             |name| { $device.read_cooked(&name).map_err(FailureCompat::failure_to_lua) },
             |name, value| {
-                $device.write_cooked(&name, value.as_bytes().to_vec()).map_err(FailureCompat::failure_to_lua)
+                $device
+                    .write_cooked(&name, value.as_bytes().to_vec())
+                    .map_err(FailureCompat::failure_to_lua)
             }
         )?;
 
         let computed_table = make_table!(
             $ctx,
             $scope,
-            |name| {
-                $device.read_computed(&name).map_err(FailureCompat::failure_to_lua)
-            },
+            |name| { $device.read_computed(&name).map_err(FailureCompat::failure_to_lua) },
             |name, value| {
                 $device
                     .write_computed(&name, value.as_bytes().to_vec())
@@ -111,14 +114,12 @@ macro_rules! rw_tables_from_device {
         )?;
 
         (raw_table, cooked_table, computed_table)
-        }
-    }
+    }};
 }
 
 #[macro_export(local_inner_macros)]
 macro_rules! ro_tables_from_device {
-    ($ctx:ident, $scope:ident, $device:ident) => {
-        {
+    ($ctx:ident, $scope:ident, $device:ident) => {{
         let raw_table = make_table!($ctx, $scope, |name| {
             $device.read_raw(&name).map_err(FailureCompat::failure_to_lua)
         })?;
@@ -130,8 +131,7 @@ macro_rules! ro_tables_from_device {
         })?;
 
         (raw_table, cooked_table, computed_table)
-        }
-    }
+    }};
 }
 
 pub fn create_lua_vm() -> rlua::Lua {

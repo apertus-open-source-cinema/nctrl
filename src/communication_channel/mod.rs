@@ -5,18 +5,22 @@ use failure::format_err;
 use fuseable::{Fuseable, Result};
 use fuseable_derive::*;
 use i2cdev::{core::I2CDevice, linux::LinuxI2CDevice};
+use lazy_static::lazy_static;
 use log::debug;
 use memmap::{MmapMut, MmapOptions};
 use paste;
 use serde::*;
 use serde_derive::{Deserialize, Serialize};
-use std::{fs::OpenOptions, sync::RwLock};
-use lazy_static::{lazy_static};
-use std::sync::Mutex;
+use std::{
+    fs::OpenOptions,
+    sync::{Mutex, RwLock},
+};
 
-use crate::bit_slice::{slice, slice_write};
+use crate::{
+    bit_slice::{slice, slice_write},
+    communication_channel::mock_memory::MockMemory,
+};
 use std::collections::HashMap;
-use crate::communication_channel::mock_memory::MockMemory;
 
 pub mod mock_memory;
 
@@ -51,9 +55,7 @@ pub trait CommChannel: Debug + Fuseable {
     fn set_mock(&mut self, mock_memory: MockMemory) {
         MOCK_MEMORIES.lock().unwrap().insert(format!("{:?}", self), mock_memory);
     }
-    fn unset_mock(&mut self) {
-        MOCK_MEMORIES.lock().unwrap().remove(&format!("{:?}", self));
-    }
+    fn unset_mock(&mut self) { MOCK_MEMORIES.lock().unwrap().remove(&format!("{:?}", self)); }
 
     // TODO(anuejn): this is probably very slow
     fn get_mock_mode(&self) -> bool {
@@ -289,17 +291,11 @@ impl CommChannel for CMVSPIBridge {
         self.channel.write_value(&Self::addr_to_mmap_addr(address), value)
     }
 
-    fn set_mock(&mut self, mock_memory: MockMemory) {
-        self.channel.set_mock(mock_memory)
-    }
+    fn set_mock(&mut self, mock_memory: MockMemory) { self.channel.set_mock(mock_memory) }
 
-    fn unset_mock(&mut self) {
-        self.channel.unset_mock()
-    }
+    fn unset_mock(&mut self) { self.channel.unset_mock() }
 
-    fn get_mock_mode(&self) -> bool {
-        false
-    }
+    fn get_mock_mode(&self) -> bool { false }
 }
 
 macro_rules! comm_channel_config {

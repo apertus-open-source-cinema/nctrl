@@ -1,25 +1,25 @@
-use std::fmt::{self, Display, Debug};
+use derivative::Derivative;
 use failure::format_err;
 use itertools::Itertools;
 use serde::{Deserialize, Deserializer};
 use serde_derive::*;
-use derivative::Derivative;
 use std::{
     collections::HashMap,
+    fmt::{self, Debug, Display},
     ops::Deref,
     sync::{Arc, Mutex, RwLock},
 };
 
 use crate::{
+    communication_channel::mock_memory::MockMemory,
     device::{Device, DeviceLike},
-    scripts::{Script, scripts_from_model},
-    serde_util::empty_map,
     lua_script::LuaScript,
-    lua_util
+    lua_util,
+    scripts::{scripts_from_model, Script},
+    serde_util::empty_map,
 };
 use fuseable::{type_name, Either, Fuseable, FuseableError};
 use fuseable_derive::Fuseable;
-use crate::communication_channel::mock_memory::MockMemory;
 
 static mut CAMERA: Option<Arc<RwLock<Camera>>> = None;
 
@@ -32,9 +32,7 @@ pub fn camera() -> Arc<RwLock<Camera>> {
     }
 }
 
-pub fn with_camera<F: FnOnce(&Camera) -> T, T>(func: F) -> T {
-    func(&camera().read().unwrap())
-}
+pub fn with_camera<F: FnOnce(&Camera) -> T, T>(func: F) -> T { func(&camera().read().unwrap()) }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
 pub struct GlobalsError<E>(E);
@@ -57,12 +55,17 @@ impl<E: Display + Debug> std::error::Error for GlobalsError<E> {
     fn description(&self) -> &'static str { "An error has occurred." }
 }
 
-pub fn run_script(name: &str, devices: HashMap<String, &dyn DeviceLike>) -> fuseable::Result<String> {
+pub fn run_script(
+    name: &str,
+    devices: HashMap<String, &dyn DeviceLike>,
+) -> fuseable::Result<String> {
     with_camera(|cam| {
         cam.scripts
             .get(name)
             .ok_or_else(|| format_err!("tried to run non existant script {}", name))?
-            .lock().unwrap().run(devices)
+            .lock()
+            .unwrap()
+            .run(devices)
     })
 }
 
@@ -217,7 +220,7 @@ impl<'de> Deserialize<'de> for Camera {
             #[serde(default = "empty_map")]
             globals: HashMap<String, String>,
             #[serde(default = "empty_map")]
-            scripts: HashMap<String, LuaScript>
+            scripts: HashMap<String, LuaScript>,
         }
 
         let CameraWithoutScripts { camera_model, devices, globals, scripts } =
@@ -236,13 +239,11 @@ impl<'de> Deserialize<'de> for Camera {
             .collect();
 
         // doesn't work without the type annotation :(
-        let rust_scripts: HashMap<String, Mutex<Box<dyn Script>>> = scripts_from_model(&camera_model)
-            .into_iter()
-            .map(|(k, v)| {
-
-                (k, Mutex::new(v))
-            })
-            .collect();
+        let rust_scripts: HashMap<String, Mutex<Box<dyn Script>>> =
+            scripts_from_model(&camera_model)
+                .into_iter()
+                .map(|(k, v)| (k, Mutex::new(v)))
+                .collect();
 
         scripts.extend(rust_scripts);
 

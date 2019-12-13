@@ -1,8 +1,8 @@
-use crate::{scripts::Script, camera::{with_camera}, lua_util::FailureCompat, device::DeviceLike};
+use crate::{camera::with_camera, device::DeviceLike, lua_util::FailureCompat, scripts::Script};
 
+use failure::format_err;
 use fuseable_derive::Fuseable;
 use serde_derive::*;
-use failure::format_err;
 use std::collections::HashMap;
 
 use rlua::{Function, RegistryKey};
@@ -32,44 +32,45 @@ impl LuaScript {
         lua_vm.context(|ctx| {
             let script = format!("function (devices) {} {} end", devices_unpack, self.script);
 
-            self.lua_function =
-                Some(ctx.create_registry_value(
-                    ctx.load(&script).eval::<Function>().unwrap(),
-                ).unwrap());
+            self.lua_function = Some(
+                ctx.create_registry_value(ctx.load(&script).eval::<Function>().unwrap()).unwrap(),
+            );
         })
     }
 }
 
 impl Script for LuaScript {
-    fn run(&self, devices: HashMap<String, &dyn DeviceLike> /* , args: HashMap<String, Vec<u8>> */) -> fuseable::Result<String> {
-        with_camera(|cam| cam.lua_vm.context(|ctx| {
-            let devices_table = ctx.create_table()?;
+    fn run(
+        &self,
+        devices: HashMap<String, &dyn DeviceLike>, /* , args: HashMap<String, Vec<u8>> */
+    ) -> fuseable::Result<String> {
+        with_camera(|cam| {
+            cam.lua_vm.context(|ctx| {
+                let devices_table = ctx.create_table()?;
 
-            ctx.scope(|lua| {
-                for (device_name, device) in devices.iter() {
-                    let device_table = ctx.create_table()?;
+                ctx.scope(|lua| {
+                    for (device_name, device) in devices.iter() {
+                        let device_table = ctx.create_table()?;
 
-                    let (raw_tbl, cooked_tbl, computed_tbl) = rw_tables_from_device!(ctx, lua, device);
+                        let (raw_tbl, cooked_tbl, computed_tbl) =
+                            rw_tables_from_device!(ctx, lua, device);
 
-                    device_table.set("raw", raw_tbl)?;
-                    device_table.set("cooked", cooked_tbl)?;
-                    device_table.set("computed", computed_tbl)?;
+                        device_table.set("raw", raw_tbl)?;
+                        device_table.set("cooked", cooked_tbl)?;
+                        device_table.set("computed", computed_tbl)?;
 
-                    devices_table.set(device_name.as_str(), device_table)?;
-                }
+                        devices_table.set(device_name.as_str(), device_table)?;
+                    }
 
-                ctx
-                    .registry_value::<Function>(
-                        self.lua_function.as_ref()
-                            .ok_or_else(|| format_err!("cannot read script {:#?} with no get script", self))?
-                    )?
+                    ctx.registry_value::<Function>(self.lua_function.as_ref().ok_or_else(
+                        || format_err!("cannot read script {:#?} with no get script", self),
+                    )?)?
                     .call(devices_table)
                     .map_err(|e| e.into())
+                })
             })
-        }))
+        })
     }
 
-    fn devices(&self) -> Vec<String> {
-        self.uses.clone()
-    }
+    fn devices(&self) -> Vec<String> { self.uses.clone() }
 }

@@ -163,7 +163,11 @@ script! {
     }
 }
 
-use crate::{scripts::{Script, DeviceLikeWrapper}, device::DeviceLike, camera::run_script};
+use crate::{
+    camera::run_script,
+    device::DeviceLike,
+    scripts::{DeviceLikeWrapper, Script},
+};
 use std::collections::HashMap;
 
 
@@ -171,7 +175,10 @@ use std::collections::HashMap;
 pub struct TestScript {}
 
 impl Script for TestScript {
-    fn run(&self, devices: HashMap<String, &dyn DeviceLike> /* , args: HashMap<String, Vec<u8>> */) -> fuseable::Result<String> {
+    fn run(
+        &self,
+        devices: HashMap<String, &dyn DeviceLike>, /* , args: HashMap<String, Vec<u8>> */
+    ) -> fuseable::Result<String> {
         let ar0330 = DeviceLikeWrapper(devices["ar0330"]);
         let sensor_io = DeviceLikeWrapper(devices["sensor_io"]);
 
@@ -189,9 +196,7 @@ impl Script for TestScript {
     }
 
     // the devices this script needs
-    fn devices(&self) -> Vec<String> {
-        vec!["sensor_io".to_string(), "ar0330".to_string()]
-    }
+    fn devices(&self) -> Vec<String> { vec!["sensor_io".to_string(), "ar0330".to_string()] }
 }
 
 script_set! {
