@@ -33,6 +33,7 @@ impl<T: ToString> ToStringOrVecU8 for T {
 // shitty hack because specialization is not stable
 // TODO(robin): revisit when (if) specialization ever lands
 // (tracking issue: https://github.com/rust-lang/rust/issues/31844)
+#[allow(dead_code)]
 pub struct Bytes(Vec<u8>);
 
 impl ToStringOrVecU8 for Bytes {

@@ -254,11 +254,9 @@ impl Camera {
     pub fn mocked(&mut self, mock: bool) {
         for (_name, device) in &self.devices {
             if mock {
-                let mut mock_memory = None;
-                { // scoping to free the lock
-                    mock_memory = Some(MockMemory::filled_with_device_defaults(&device.lock().unwrap()));
-                }
-                device.lock().unwrap().channel.set_mock(mock_memory.unwrap())
+                let mock_memory = MockMemory::filled_with_device_defaults(&device.lock().unwrap());
+
+                device.lock().unwrap().channel.set_mock(mock_memory)
             } else {
                 device.lock().unwrap().channel.unset_mock()
             }
