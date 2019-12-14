@@ -73,6 +73,7 @@ macro_rules! make_table {
 }
 
 
+// TODO(robin): consider:
 // make device_table a metatable (or even a better directly device using
 // userdata) and override raw, cooked and computed to return a table with
 // metatable that overrides __index and __newindex??

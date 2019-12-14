@@ -13,9 +13,8 @@ use std::{
 use crate::{
     communication_channel::mock_memory::MockMemory,
     device::{Device, DeviceLike},
-    lua_script::LuaScript,
     lua_util,
-    scripts::{scripts_from_model, Script},
+    scripts::{scripts_from_model, Script, LuaScript},
     serde_util::empty_map,
 };
 use fuseable::{type_name, Either, Fuseable, FuseableError};

@@ -104,7 +104,6 @@ impl ComputedRegister {
             Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
             None => camera::with_camera(|camera| {
                 camera.lua_vm.context(|lua_ctx| {
-                    // TODO(robin): cleanup / combine with lua scripts stuff
                     lua_ctx.scope(|lua| {
                         let (raw_tbl, cooked_tbl, computed_tbl) =
                             rw_tables_from_device!(lua_ctx, lua, device);
