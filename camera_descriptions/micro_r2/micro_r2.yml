@@ -40,7 +40,7 @@ scripts:
 
       scripts.kick(devices)
       print("hello from lua: " .. scripts.test2(devices))
-      print("now running a rust script from lua " .. scripts.rust_test(devices))
+      print("now running a rust script from lua " .. scripts.rust_test(devices, {test = "riea"}))
 
       return extclock .. ", " .. scripts.test2(devices)
 

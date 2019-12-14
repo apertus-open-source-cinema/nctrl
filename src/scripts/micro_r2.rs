@@ -177,16 +177,16 @@ pub struct TestScript {}
 impl Script for TestScript {
     fn run(
         &self,
-        devices: HashMap<String, &dyn DeviceLike>, /* , args: HashMap<String, Vec<u8>> */
+        devices: HashMap<String, &dyn DeviceLike>, args: HashMap<String, String>
     ) -> fuseable::Result<String> {
         let ar0330 = DeviceLikeWrapper(devices["ar0330"]);
         let sensor_io = DeviceLikeWrapper(devices["sensor_io"]);
 
-        // println!("args: {:?}", args);
+        println!("args: {:?}", args);
 
         ar0330.write_raw("analog_gain", 1)?;
         println!("hello rust; analog_gain: {}", ar0330.read_computed("analog_gain")?);
-        println!("now running a lua script from rust: {}", run_script("test2", devices)?);
+        println!("now running a lua script from rust: {}", run_script("test2", devices, None)?);
 
         sensor_io.write_raw("reset", 7)?;
         sensor_io.write_raw("reset", 0)?;

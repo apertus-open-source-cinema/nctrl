@@ -162,7 +162,7 @@ pub fn create_lua_vm() -> rlua::Lua {
                 let return_table = ctx.create_table()?;
                 let return_metatable = ctx.create_table()?;
 
-                let call = ctx.create_function(move |_ctx, (_, devices): (rlua::Table, rlua::Table)| {
+                let call = ctx.create_function(move |_ctx, (_, devices, args): (rlua::Table, rlua::Table, Option<rlua::Table>)| {
                     camera::with_camera(|cam| {
                         let script = cam.scripts.get(&name)
                             .ok_or_else(|| format_err!("tried to run non existant script {}", name))
@@ -178,11 +178,16 @@ pub fn create_lua_vm() -> rlua::Lua {
                                     })
                             }).collect::<Result<HashMap<String, DeviceLikeFromLua>, _>>()?;
 
+                        let args = match args {
+                            Some(args) => args.pairs().collect::<Result<_, _>>()?,
+                            None => HashMap::new()
+                        };
+
                         script
                             .run(devices
                                  .iter()
                                  .map(|(name, device)| (name.clone(), device as &dyn DeviceLike))
-                                 .collect())
+                                 .collect(), args)
                             .map_err(FailureCompat::failure_to_lua)
                     })
                 })?;

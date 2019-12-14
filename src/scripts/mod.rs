@@ -46,7 +46,7 @@ pub trait Script: Debug + Fuseable {
     // TODO(robin): change the return to Vec<u8>
     fn run(
         &self,
-        devices: HashMap<String, &dyn DeviceLike>, /* , args: HashMap<String, Vec<u8>> */
+        devices: HashMap<String, &dyn DeviceLike>, args: HashMap<String, String>
     ) -> fuseable::Result<String>;
 
     // the devices this script needs
@@ -54,13 +54,13 @@ pub trait Script: Debug + Fuseable {
 }
 
 macro_rules! script {
-    { $desc:tt $struct_name:ident {$($elem:ident:$elem_typ:ty),*}  => {
+    { $desc:tt $struct_name:ident {$($args:ident:$args_ty:ty),*}  => {
         ($self:ident, $devices_name:ident = { $($devices:ident),* }) $body:block
     } } => {
         paste::item!{
             #[derive(Debug, Fuseable, Default)]
             struct [<$struct_name Args>] {
-                $($elem: $elem_typ,)*
+                $($args: $args_ty,)*
             }
 
             #[derive(Debug, Fuseable)]
@@ -82,8 +82,9 @@ macro_rules! script {
 
             impl super::Script for $struct_name {
                 #[allow(unused_variables)]
-                fn run(&$self, $devices_name: std::collections::HashMap<String, &dyn crate::device::DeviceLike>) -> fuseable::Result<String> {
+                fn run(&$self, $devices_name: std::collections::HashMap<String, &dyn crate::device::DeviceLike>, args: std::collections::HashMap<String, String>) -> fuseable::Result<String> {
                     $(let $devices = crate::scripts::DeviceLikeWrapper($devices_name[stringify!($devices)]);)*
+                    $(let $args: $args_ty = args[stringify!($args)].parse()?;)*
                     $body
                 }
 

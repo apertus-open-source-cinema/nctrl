@@ -19,6 +19,7 @@ use crate::{
 };
 use fuseable::{type_name, Either, Fuseable, FuseableError};
 use fuseable_derive::Fuseable;
+use log::trace;
 
 static mut CAMERA: Option<Arc<RwLock<Camera>>> = None;
 
@@ -57,14 +58,20 @@ impl<E: Display + Debug> std::error::Error for GlobalsError<E> {
 pub fn run_script(
     name: &str,
     devices: HashMap<String, &dyn DeviceLike>,
+    args: Option<HashMap<String, String>>
 ) -> fuseable::Result<String> {
     with_camera(|cam| {
+        let args = match args {
+            Some(args) => args,
+            None => HashMap::new()
+        };
+
         cam.scripts
             .get(name)
             .ok_or_else(|| format_err!("tried to run non existant script {}", name))?
             .lock()
             .unwrap()
-            .run(devices)
+            .run(devices, args)
     })
 }
 
@@ -168,7 +175,26 @@ impl Fuseable for SharedCamera {
                             devices.insert(name, &**handle as &dyn DeviceLike);
                         }
 
-                        script.run(devices)
+                        // get the script arguments from fuse
+                        let args = match script.read(&mut std::iter::once("args")) {
+                            Ok(Either::Left(args)) => {
+                                args.into_iter().map(|name| {
+                                    let arg_value = match script.read(&mut std::iter::once("args").chain(std::iter::once(name.as_str()))) {
+                                        Ok(Either::Right(val)) => val,
+                                        something_else => panic!("tried to read argument {} of script {:?}, but got {:?}", name, script, something_else)
+                                    };
+
+                                    (name.to_string(), arg_value)
+                                }).collect()
+                            },
+                            _ => HashMap::new()
+                        };
+
+                        // cam.scripts.is_dir(&mut std::iter::once(name)).map(|_| false)
+
+                        trace!("args {:?}", args);
+
+                        script.run(devices, args)
                     }
                     .map(Either::Right),
                     _ => cam.scripts.read(&mut path),

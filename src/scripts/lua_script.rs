@@ -16,6 +16,9 @@ pub struct LuaScript {
     #[serde(default = "Vec::new")]
     #[fuseable(ro)]
     uses: Vec<String>,
+    #[fuseable(ro)]
+    #[serde(default = "Vec::new")]
+    args: Vec<String>,
 
     #[fuseable(skip)]
     #[serde(skip)]
@@ -29,8 +32,13 @@ impl LuaScript {
             devices_unpack = format!("{0}local {1} = devices.{1}\n", devices_unpack, device_name);
         }
 
+        let mut args_unpack = String::new();
+        for arg_name in &self.args {
+            args_unpack = format!("{0}local {1} = args.{1}\n", args_unpack, arg_name);
+        }
+
         lua_vm.context(|ctx| {
-            let script = format!("function (devices) {} {} end", devices_unpack, self.script);
+            let script = format!("function (devices, args) {} {} {} end", devices_unpack, args_unpack, self.script);
 
             self.lua_function = Some(
                 ctx.create_registry_value(ctx.load(&script).eval::<Function>().unwrap()).unwrap(),
@@ -42,7 +50,7 @@ impl LuaScript {
 impl Script for LuaScript {
     fn run(
         &self,
-        devices: HashMap<String, &dyn DeviceLike>, /* , args: HashMap<String, Vec<u8>> */
+        devices: HashMap<String, &dyn DeviceLike>, args: HashMap<String, String>
     ) -> fuseable::Result<String> {
         with_camera(|cam| {
             cam.lua_vm.context(|ctx| {
@@ -65,7 +73,7 @@ impl Script for LuaScript {
                     ctx.registry_value::<Function>(self.lua_function.as_ref().ok_or_else(
                         || format_err!("cannot read script {:#?} with no get script", self),
                     )?)?
-                    .call(devices_table)
+                    .call((devices_table, args))
                     .map_err(|e| e.into())
                 })
             })
