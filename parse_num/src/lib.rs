@@ -24,11 +24,13 @@ fn get_negative_radix_start(s: &[char]) -> Result<(bool, u32, usize), ParseError
         _ => false,
     };
 
+    let offset = if negative { 1 } else { 0 };
+
     match (s.get(0), s.get(1)) {
-        (Some('0'), Some('x')) => Ok((negative, 16, 2)),
-        (Some('0'), Some('o')) => Ok((negative, 8, 2)),
-        (Some('0'), Some('b')) => Ok((negative, 2, 2)),
-        (Some('0'..='9'), _) => Ok((negative, 10, 0)),
+        (Some('0'), Some('x')) => Ok((negative, 16, 2 + offset)),
+        (Some('0'), Some('o')) => Ok((negative, 8, 2 + offset)),
+        (Some('0'), Some('b')) => Ok((negative, 2, 2 + offset)),
+        (Some('0'..='9'), _) => Ok((negative, 10, 0 + offset)),
         _ => Err("could not determine radix".into()),
     }
 }
