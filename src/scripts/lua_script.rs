@@ -138,7 +138,7 @@ impl LuaScript {
             uses,
             arg_types: HashMap::new(),
             args: HashMap::new(),
-            lua_function: None
+            lua_function: None,
         }
     }
 
@@ -149,7 +149,7 @@ impl LuaScript {
         }
 
         let mut args_unpack = String::new();
-        for (arg_name, _) in &self.args {
+        for arg_name in self.args.keys() {
             args_unpack = format!("{0}local {1} = args.{1}\n", args_unpack, arg_name);
         }
 

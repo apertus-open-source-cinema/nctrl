@@ -16,7 +16,7 @@ pub enum Description {
     LongAndShort { long: String, short: String },
 }
 
-pub fn to_hex_string(v: &Vec<u8>) -> fuseable::Result<Vec<u8>> {
+pub fn to_hex_string(v: &[u8]) -> fuseable::Result<Vec<u8>> {
     if !v.is_empty() {
         ("0x".to_string()
             + &v.iter().map(|v| format!("{:02X}", v).to_string()).collect::<String>()

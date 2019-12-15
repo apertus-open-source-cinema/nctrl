@@ -160,8 +160,8 @@ impl Address {
     pub fn set_base_from_u64(&mut self, mut new_base: u64) {
         let mut base = [0u8; 8];
 
-        for i in 0..7 {
-            base[i] = (new_base & 0xff) as u8;
+        for b in base.iter_mut().take(8) {
+            *b = (new_base & 0xff) as u8;
             new_base >>= 8;
         }
 

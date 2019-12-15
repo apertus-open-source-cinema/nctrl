@@ -12,7 +12,7 @@ impl MockMemory {
 
     pub fn filled_with_device_defaults(device: &MutexGuard<Device>) -> MockMemory {
         let mut memory = MockMemory::all_zeros();
-        for (_name, raw_register) in &device.raw {
+        for raw_register in device.raw.values() {
             match &raw_register.default {
                 Some(default) => memory.write(&raw_register.address, default.to_vec()),
                 None => {}
@@ -35,8 +35,7 @@ impl MockMemory {
         let mut ret: Vec<u8> = (0..address
             .bytes()
             .ok_or_else(|| format_err!("MockMemoy doesn't support unbounded read"))?)
-            .map(|x| self.hash_map.get(&(offset + x)).unwrap_or(&0u8))
-            .map(|x| x.clone())
+            .map(|x| *self.hash_map.get(&(offset + x)).unwrap_or(&0u8))
             .collect();
 
         ret.reverse();

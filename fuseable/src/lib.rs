@@ -79,9 +79,7 @@ macro_rules! impl_fuseable_with_to_string {
             ) -> Result<Either<Vec<String>, Vec<u8>>> {
                 match path.next() {
                     Some(s) => Err(FuseableError::not_a_directory(stringify!($t), s)),
-                    None => {
-                        Ok(Either::Right(self.to_string().as_bytes().to_vec()))
-                    },
+                    None => Ok(Either::Right(self.to_string().as_bytes().to_vec())),
                 }
             }
 
@@ -122,7 +120,7 @@ macro_rules! impl_fuseable_with_to_string_trim {
                         let mut string = self.to_string();
                         string.push('\n');
                         Ok(Either::Right(string.as_bytes().to_vec()))
-                    },
+                    }
                 }
             }
 
@@ -278,7 +276,7 @@ impl<TY: Fuseable> Fuseable for Option<TY> {
     fn read(&self, path: &mut dyn Iterator<Item = &str>) -> Result<Either<Vec<String>, Vec<u8>>> {
         match self {
             Some(v) => Fuseable::read(v, path),
-            None => Ok(Either::Right("None".as_bytes().to_vec())),
+            None => Ok(Either::Right(b"None".to_vec())),
         }
     }
 

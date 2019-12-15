@@ -80,7 +80,7 @@ pub fn globals<T: std::str::FromStr>(name: &str) -> Result<T, GlobalsError<failu
 where
     <T as std::str::FromStr>::Err: std::error::Error + Sync + Send + 'static,
 {
-    return (*camera().read().unwrap())
+    (*camera().read().unwrap())
         .globals
         .get(name)
         .ok_or_else(|| format_err!("tried to get non existant global {}", name))
@@ -247,7 +247,7 @@ impl<'de> Deserialize<'de> for Camera {
             #[serde(default = "empty_map")]
             scripts: HashMap<String, LuaScript>,
             #[serde(rename = "init")]
-            init_script: Option<String>
+            init_script: Option<String>,
         }
 
         let CameraWithoutScripts { camera_model, devices, globals, scripts, init_script } =
@@ -280,7 +280,7 @@ impl<'de> Deserialize<'de> for Camera {
 
 impl Camera {
     pub fn mocked(&mut self, mock: bool) {
-        for (_name, device) in &self.devices {
+        for device in self.devices.values() {
             if mock {
                 let mock_memory = MockMemory::filled_with_device_defaults(&device.lock().unwrap());
 
@@ -292,25 +292,32 @@ impl Camera {
     }
 
     pub fn init(&self) -> fuseable::Result<()> {
-        self.init_script.as_ref().map(|script| {
-            let device_names = self.devices.keys().cloned().collect::<Vec<_>>();
-            let device_handles: Vec<_> = device_names
-                .iter()
-                .map(|device_name| self.devices[device_name].lock().unwrap())
-                .collect();
+        self.init_script
+            .as_ref()
+            .map(|script| {
+                let device_names = self.devices.keys().cloned().collect::<Vec<_>>();
+                let device_handles: Vec<_> = device_names
+                    .iter()
+                    .map(|device_name| self.devices[device_name].lock().unwrap())
+                    .collect();
 
-            let mut devices: HashMap<String, &dyn DeviceLike> = HashMap::new();
+                let mut devices: HashMap<String, &dyn DeviceLike> = HashMap::new();
 
-            for (handle, name) in device_handles.iter().zip(&device_names) {
-                devices.insert(name.to_owned(), &**handle as &dyn DeviceLike);
-            }
+                for (handle, name) in device_handles.iter().zip(&device_names) {
+                    devices.insert(name.to_owned(), &**handle as &dyn DeviceLike);
+                }
 
-            let mut script = crate::scripts::LuaScript::with_no_args("".to_owned(), script.to_owned(), device_names);
+                let mut script = crate::scripts::LuaScript::with_no_args(
+                    "".to_owned(),
+                    script.to_owned(),
+                    device_names,
+                );
 
-            script.init(&self.lua_vm);
-            script.run(devices, HashMap::new())?;
+                script.init(&self.lua_vm);
+                script.run(devices, HashMap::new())?;
 
-            Ok(())
-        }).unwrap_or(Ok(()))
+                Ok(())
+            })
+            .unwrap_or(Ok(()))
     }
 }

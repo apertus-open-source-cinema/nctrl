@@ -48,7 +48,7 @@ fn impl_fuseable(ast: &syn::DeriveInput) -> TokenStream {
         };
     };
 
-//    println!("{}", ret);
+    //    println!("{}", ret);
 
     ret
 }

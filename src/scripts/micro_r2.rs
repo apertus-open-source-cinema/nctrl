@@ -68,10 +68,10 @@ script! {
             }
 
             fn optimal_pll_config(extclk: usize, vco_target: usize) -> (usize, usize) {
-                let vco_maximum = 768000000; // chip max
+                let vco_maximum = 768_000_000; // chip max
                 // assert(vco_target < vco_maximum)
                 let vco_max = vco_target;
-                let vco_min = 384000000;
+                let vco_min = 384_000_000;
 
                 let div_min = 1;
                 let div_max = 64;
@@ -97,7 +97,7 @@ script! {
             }
 
             // pll config for 12bit, 4 lane hispi
-            let vco_hispi_4lanes_12bit_clk = 588000000; // 588 MHz
+            let vco_hispi_4lanes_12bit_clk = 588_000_000; // 588 MHz
             let (pre_pll_clk_div, pll_multiplier)
                 = optimal_pll_config(extclk, vco_hispi_4lanes_12bit_clk);
 
@@ -152,7 +152,7 @@ script! {
             // sensor.write_register("dark_control", 0)?;
 
             ar0330.write_raw("analog_gain", 0x0010)?;
-            ar0330.write_raw("global_gain", 0b0000000010000000)?;
+            ar0330.write_raw("global_gain", 0b0000_0000_1000_0000)?;
             ar0330.write_raw("coarse_integration_time", 1200)?;
             ar0330.write_raw("fine_integration_time", 0)?;
 

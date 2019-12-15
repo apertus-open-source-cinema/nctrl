@@ -47,9 +47,7 @@ fn main() {
     set_camera(cam);
 
     // initialize stuff, for example run the init script
-    with_camera(|cam| {
-        cam.init()
-    }).unwrap();
+    with_camera(|cam| cam.init()).unwrap();
 
     let options = ["-o", "allow_other", "-o", "rw", "-o", "fsname=propfs", "-o", "auto_unmount"]
         .iter()
