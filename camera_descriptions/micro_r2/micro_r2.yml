@@ -49,4 +49,21 @@ scripts:
     uses:
       - ar0330
     script: |
+      print("testing lua to lua argument passing", scripts.test3(devices, {a = 1, b = 34.7, c = "abcd", d = {}}))
       return ar0330.computed.analog_gain
+
+  test3:
+    description:
+    uses:
+      - ar0330
+    script: |
+      print("a", a)
+      print("b", b)
+      print("c", c)
+      print("d", d)
+      return ar0330.computed.analog_gain
+    args:
+      a: int
+      b: float
+      c: string
+      d: binary

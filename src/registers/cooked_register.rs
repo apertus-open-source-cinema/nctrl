@@ -1,6 +1,6 @@
 use crate::{
     address::Address,
-    common::{to_hex, Description},
+    common::{to_hex_string, Description},
     communication_channel::CommunicationChannel,
     valuemap::*,
 };
@@ -36,7 +36,7 @@ impl CookedRegister {
         &self,
         path: &mut dyn Iterator<Item = &str>,
         comm_channel: &CommunicationChannel,
-    ) -> fuseable::Result<Either<Vec<String>, String>> {
+    ) -> fuseable::Result<Either<Vec<String>, Vec<u8>>> {
         match path.next() {
             Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
             None => {
@@ -44,7 +44,7 @@ impl CookedRegister {
 
                 match &self.map {
                     Some(map) => map.lookup(value).map(Either::Right),
-                    None => Ok(Either::Right(to_hex(&value))),
+                    None => to_hex_string(&value).map(Either::Right),
                 }
             }
         }
@@ -60,7 +60,7 @@ impl CookedRegister {
             Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
             None => {
                 let encoded_value = match &self.map {
-                    Some(map) => map.encode(String::from_utf8(value.clone())?)?,
+                    Some(map) => map.encode(value.clone())?,
                     None => {
                         if let Some(width) = self.address.bytes() {
                             let (mask, mut value) =

@@ -1,5 +1,6 @@
 mod address;
 mod bit_slice;
+mod bytes;
 pub mod camera;
 mod common;
 mod communication_channel;

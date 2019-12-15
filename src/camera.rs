@@ -14,7 +14,7 @@ use crate::{
     communication_channel::mock_memory::MockMemory,
     device::{Device, DeviceLike},
     lua_util,
-    scripts::{scripts_from_model, Script, LuaScript},
+    scripts::{scripts_from_model, LuaScript, Script},
     serde_util::empty_map,
 };
 use fuseable::{type_name, Either, Fuseable, FuseableError};
@@ -55,24 +55,25 @@ impl<E: Display + Debug> std::error::Error for GlobalsError<E> {
     fn description(&self) -> &'static str { "An error has occurred." }
 }
 
-pub fn run_script(
-    name: &str,
-    devices: HashMap<String, &dyn DeviceLike>,
-    args: Option<HashMap<String, String>>
-) -> fuseable::Result<String> {
-    with_camera(|cam| {
-        let args = match args {
-            Some(args) => args,
-            None => HashMap::new()
-        };
+#[macro_export]
+macro_rules! run_script {
+    ($name:expr, $devices:ident) => {
+        run_script!($name, $devices, {})
+    };
+    ($name:expr, $devices:ident, {$($arg_name:ident:$arg_val:expr),*}) => {
+        crate::camera::with_camera(|cam| {
+            #[allow(unused_mut)]
+            let mut args: HashMap<String, Vec<u8>> = HashMap::new();
+            $(args.insert(stringify!($arg_name).to_owned(), $arg_val.to_bytes()?);)*
 
-        cam.scripts
-            .get(name)
-            .ok_or_else(|| format_err!("tried to run non existant script {}", name))?
-            .lock()
-            .unwrap()
-            .run(devices, args)
-    })
+            cam.scripts
+                .get($name)
+                .ok_or_else(|| failure::format_err!("tried to run non existant script {}", $name))?
+                .lock()
+                .unwrap()
+                .run($devices.clone(), args)
+        })
+    }
 }
 
 pub fn globals<T: std::str::FromStr>(name: &str) -> Result<T, GlobalsError<failure::Error>>
@@ -135,7 +136,7 @@ impl Fuseable for SharedCamera {
     fn read(
         &self,
         path: &mut dyn Iterator<Item = &str>,
-    ) -> fuseable::Result<Either<Vec<String>, String>> {
+    ) -> fuseable::Result<Either<Vec<String>, Vec<u8>>> {
         let cam = self.camera();
         let (mut peek, mut path) = path.tee();
         let field = peek.next();
@@ -189,10 +190,7 @@ impl Fuseable for SharedCamera {
                             },
                             _ => HashMap::new()
                         };
-
-                        // cam.scripts.is_dir(&mut std::iter::once(name)).map(|_| false)
-
-                        trace!("args {:?}", args);
+                        trace!("running script {} with args {:?}", name, args);
 
                         script.run(devices, args)
                     }

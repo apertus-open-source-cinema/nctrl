@@ -19,13 +19,13 @@ use derivative::Derivative;
 use failure::{format_err, ResultExt};
 
 pub trait DeviceLike {
-    fn read_raw(&self, name: &str) -> fuseable::Result<String>;
+    fn read_raw(&self, name: &str) -> fuseable::Result<Vec<u8>>;
     fn write_raw(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()>;
 
-    fn read_cooked(&self, name: &str) -> fuseable::Result<String>;
+    fn read_cooked(&self, name: &str) -> fuseable::Result<Vec<u8>>;
     fn write_cooked(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()>;
 
-    fn read_computed(&self, name: &str) -> fuseable::Result<String>;
+    fn read_computed(&self, name: &str) -> fuseable::Result<Vec<u8>>;
     fn write_computed(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()>;
 }
 
@@ -86,7 +86,7 @@ macro_rules! write_reg_from_set {
 }
 
 impl DeviceLike for Device {
-    fn read_raw(&self, name: &str) -> fuseable::Result<String> {
+    fn read_raw(&self, name: &str) -> fuseable::Result<Vec<u8>> {
         read_reg_from_set!(self.raw, name, &self.channel)
     }
 
@@ -94,7 +94,7 @@ impl DeviceLike for Device {
         write_reg_from_set!(self.raw, name, &self.channel, value)
     }
 
-    fn read_cooked(&self, name: &str) -> fuseable::Result<String> {
+    fn read_cooked(&self, name: &str) -> fuseable::Result<Vec<u8>> {
         read_reg_from_set!(self.cooked, name, &self.channel)
     }
 
@@ -102,7 +102,7 @@ impl DeviceLike for Device {
         write_reg_from_set!(self.cooked, name, &self.channel, value)
     }
 
-    fn read_computed(&self, name: &str) -> fuseable::Result<String> {
+    fn read_computed(&self, name: &str) -> fuseable::Result<Vec<u8>> {
         read_reg_from_set!(self.computed, name, &self)
     }
 
@@ -185,7 +185,7 @@ impl Fuseable for Device {
     fn read(
         &self,
         path: &mut dyn Iterator<Item = &str>,
-    ) -> fuseable::Result<Either<Vec<String>, String>> {
+    ) -> fuseable::Result<Either<Vec<String>, Vec<u8>>> {
         match path.next() {
             Some("channel") => self.channel.read(path),
             Some("raw") => inject_read!(self.raw, self.read_raw, path),

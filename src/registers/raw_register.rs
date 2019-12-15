@@ -1,4 +1,4 @@
-use crate::common::{to_hex, Description, Range};
+use crate::common::{to_hex_string, Description, Range};
 
 use crate::{address::Address, communication_channel::CommunicationChannel};
 
@@ -51,7 +51,7 @@ impl<'de> Deserialize<'de> for RawRegister {
         let address = Address::parse(&reg.address, reg.width.map(|v| v as usize))
             .map_err(|_| D::Error::custom("error parsing address"))?;
 
-        // TODO: error handling here!
+        // TODO(robin): error handling here!
         let default = reg.default.map(|x| parse_num::parse_num(x).unwrap());
 
         Ok(RawRegister {
@@ -70,10 +70,13 @@ impl RawRegister {
         &self,
         path: &mut dyn Iterator<Item = &str>,
         comm_channel: &CommunicationChannel,
-    ) -> fuseable::Result<Either<Vec<String>, String>> {
+    ) -> fuseable::Result<Either<Vec<String>, Vec<u8>>> {
         match path.next() {
             Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
-            None => comm_channel.read_value(&self.address).map(|v| Either::Right(to_hex(&v))),
+            None => comm_channel
+                .read_value(&self.address)
+                .and_then(|v| to_hex_string(&v))
+                .map(Either::Right),
         }
     }
 

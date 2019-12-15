@@ -36,7 +36,7 @@ fn get_negative_radix_start(s: &[char]) -> Result<(bool, u32, usize), ParseError
 }
 
 pub fn parse_num_mask<T: ToString>(s: T) -> Result<(Option<Vec<u8>>, Vec<u8>), ParseError> {
-    let string: Vec<_> = s.to_string().chars().collect();
+    let string: Vec<_> = s.to_string().trim().chars().collect();
     let string = &string[..];
 
     if !string.contains(&'z') {
@@ -79,7 +79,7 @@ pub fn parse_num_mask<T: ToString>(s: T) -> Result<(Option<Vec<u8>>, Vec<u8>), P
 pub fn parse_num_mask_padded<T: ToString + Clone>(
     s: T,
 ) -> Result<(Option<Vec<u8>>, Vec<u8>), ParseError> {
-    let string: Vec<_> = s.to_string().chars().collect();
+    let string: Vec<_> = s.to_string().trim().chars().collect();
     let string = &string[..];
 
     if !string.contains(&'z') {
@@ -160,7 +160,7 @@ fn str_to_vec_radix_negative(s: &str, radix: u32, negative: bool) -> Result<Vec<
 }
 
 pub fn parse_num<T: ToString>(string: T) -> Result<Vec<u8>, ParseError> {
-    let string: Vec<_> = string.to_string().chars().collect();
+    let string: Vec<_> = string.to_string().trim().chars().collect();
     let string = &string[..];
 
     let (negative, radix, start) = get_negative_radix_start(string)?;
@@ -179,7 +179,7 @@ pub fn parse_num<T: ToString>(string: T) -> Result<Vec<u8>, ParseError> {
 // numbers
 pub fn parse_num_padded<T: ToString + Clone>(string: T) -> Result<Vec<u8>, ParseError> {
     let orig_string = string.clone();
-    let string: Vec<_> = string.to_string().chars().collect();
+    let string: Vec<_> = string.to_string().trim().chars().collect();
     let string = &string[..];
 
     let (negative, radix, start) = get_negative_radix_start(string)?;

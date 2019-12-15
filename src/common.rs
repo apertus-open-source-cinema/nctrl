@@ -1,6 +1,8 @@
 use fuseable_derive::Fuseable;
 use serde_derive::*;
 
+use crate::bytes::{FromBytes, ToBytes};
+
 #[derive(Debug, Serialize, Deserialize, Fuseable, Clone)]
 #[serde(untagged)]
 pub enum Range {
@@ -14,28 +16,17 @@ pub enum Description {
     LongAndShort { long: String, short: String },
 }
 
-pub fn to_hex(v: &Vec<u8>) -> String {
+pub fn to_hex_string(v: &Vec<u8>) -> fuseable::Result<Vec<u8>> {
     if !v.is_empty() {
-        "0x".to_string() + &v.iter().map(|v| format!("{:02X}", v).to_string()).collect::<String>()
+        ("0x".to_string()
+            + &v.iter().map(|v| format!("{:02X}", v).to_string()).collect::<String>()
+            + "\n")
+            .to_bytes()
     } else {
-        "".to_string()
+        "\n".to_bytes()
     }
 }
 
-pub trait ToStringOrVecU8 {
-    fn bytes(self) -> Vec<u8>;
-}
+pub fn string(value: Vec<u8>) -> fuseable::Result<String> { FromBytes::from_bytes(value) }
 
-impl<T: ToString> ToStringOrVecU8 for T {
-    fn bytes(self) -> Vec<u8> { self.to_string().as_bytes().to_vec() }
-}
-
-// shitty hack because specialization is not stable
-// TODO(robin): revisit when (if) specialization ever lands
-// (tracking issue: https://github.com/rust-lang/rust/issues/31844)
-#[allow(dead_code)]
-pub struct Bytes(Vec<u8>);
-
-impl ToStringOrVecU8 for Bytes {
-    fn bytes(self) -> Vec<u8> { self.0 }
-}
+pub fn float(value: Vec<u8>) -> fuseable::Result<f64> { FromBytes::from_bytes(value) }

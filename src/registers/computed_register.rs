@@ -1,4 +1,5 @@
 use crate::{
+    bytes::{FromBytes, ToBytes},
     camera,
     common::{Description, Range},
     device::{Device, DeviceLike},
@@ -23,6 +24,8 @@ enum ComputedRegisterType {
     Int,
     #[serde(rename = "string")]
     String,
+    #[serde(rename = "binary")]
+    Binary,
 }
 
 #[derive(Debug, Deserialize, Fuseable)]
@@ -53,7 +56,7 @@ impl ComputedRegister {
         &self,
         path: &mut dyn Iterator<Item = &str>,
         device: &Device,
-    ) -> fuseable::Result<Either<Vec<String>, String>> {
+    ) -> fuseable::Result<Either<Vec<String>, Vec<u8>>> {
         match path.next() {
             Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
             None => camera::with_camera(|camera| {
@@ -85,8 +88,9 @@ impl ComputedRegister {
                                 .registry_value::<Function>(
                                     self.read_function.borrow().as_ref().unwrap(),
                                 )?
-                                .call::<_, String>((raw_tbl, cooked_tbl, computed_tbl))
+                                .call::<_, rlua::Value>((raw_tbl, cooked_tbl, computed_tbl))
                                 .map_err(|e| e.into())
+                                .and_then(ToBytes::to_bytes)
                         })
                     })
                     .map(Either::Right)
@@ -110,14 +114,15 @@ impl ComputedRegister {
 
                         let value = match self.ty {
                             ComputedRegisterType::Float => {
-                                String::from_utf8(value)?.parse::<f64>()?.to_lua(lua_ctx)?
+                                <f64 as FromBytes>::from_bytes(value)?.to_lua(lua_ctx)?
                             }
                             ComputedRegisterType::Int => {
-                                String::from_utf8(value)?.parse::<i64>()?.to_lua(lua_ctx)?
+                                <i64 as FromBytes>::from_bytes(value)?.to_lua(lua_ctx)?
                             }
                             ComputedRegisterType::String => {
-                                String::from_utf8(value)?.to_lua(lua_ctx)?
+                                <String as FromBytes>::from_bytes(value)?.to_lua(lua_ctx)?
                             }
+                            ComputedRegisterType::Binary => value.to_lua(lua_ctx)?,
                         };
 
 

@@ -37,7 +37,7 @@ fn impl_fuseable(ast: &syn::DeriveInput) -> TokenStream {
                     #is_dir
                 }
 
-                fn read(&self, path: &mut Iterator<Item = &str>) -> Result<Either<Vec<String>, String>> {
+                fn read(&self, path: &mut Iterator<Item = &str>) -> Result<Either<Vec<String>, Vec<u8>>> {
                     #read
                 }
 
@@ -316,7 +316,7 @@ fn impl_enum_variant_unit(name: &syn::Ident) -> (TokenStream, TokenStream, Token
         => {
             match path.next() {
                 Some(s) => Err(FuseableError::not_a_directory(stringify!($t), s)),
-                None => Ok(Either::Right(stringify!(#name).to_owned()))
+                None => Ok(Either::Right(stringify!(#name).as_bytes().to_vec()))
             }
         }
     };

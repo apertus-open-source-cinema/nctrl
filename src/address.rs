@@ -191,8 +191,7 @@ impl Address {
     // bytes from base to the end
     pub fn bytes(&self) -> Option<usize> {
         self.slice.as_ref().map(|s| {
-            let bits = s.end; //
-                              //  - self.slice_start;
+            let bits = s.end;
             let extra_byte = if bits % 8 > 0 { 1 } else { 0 };
 
             (extra_byte + (bits >> 3)) as usize

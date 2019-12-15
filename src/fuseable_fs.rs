@@ -170,9 +170,9 @@ impl<'a, T: Fuseable> Filesystem for FuseableFS<'a, T> {
                         Ok(Either::Left(_)) => {
                             panic!("we got a mismatch");
                         }
-                        Ok(Either::Right(data)) => reply.data(data.as_bytes()),
+                        Ok(Either::Right(data)) => reply.data(&data),
                         Err(e) => {
-                            error!("{}", e);
+                            error!("{:}", e);
                             reply.error(EINVAL)
                         }
                     }

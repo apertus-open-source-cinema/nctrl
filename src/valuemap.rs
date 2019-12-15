@@ -3,12 +3,15 @@ use failure::format_err;
 use fuseable::Result;
 use fuseable_derive::Fuseable;
 use isomorphism::BiMap;
-use parse_num::{parse_num, parse_num_padded, ParseError};
+use parse_num::{parse_num_padded, ParseError};
 use serde::*;
 use serde_derive::*;
 use std::{cmp::Ordering, collections::HashMap, str::FromStr};
 
-use crate::common::to_hex;
+use crate::{
+    bytes::{FromBytes, ToBytes},
+    common::to_hex_string,
+};
 
 #[derive(Debug, Serialize, Deserialize, Hash, Eq, PartialEq, Clone)]
 pub enum Value {
@@ -19,7 +22,11 @@ pub enum Value {
 impl core::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Value::Value(v) => write!(f, "{}", to_hex(v)),
+            Value::Value(v) => write!(
+                f,
+                "{}",
+                <String as FromBytes>::from_bytes(to_hex_string(v).unwrap()).unwrap()
+            ),
             Value::Any => write!(f, "Any"),
         }
     }
@@ -49,37 +56,37 @@ pub enum ValueMap {
 }
 
 impl ValueMap {
-    pub fn lookup(&self, v: Vec<u8>) -> Result<String> {
+    pub fn lookup(&self, v: Vec<u8>) -> Result<Vec<u8>> {
         match self {
             ValueMap::Keywords(map) => match map.get_left(&Value::Value(v.clone())) {
-                Some(v) => Ok(v.clone()),
+                Some(v) => v.clone().to_bytes(),
                 None => match map.get_left(&Value::Any) {
-                    Some(v) => Ok(v.clone()),
+                    Some(v) => v.to_bytes(),
                     None => Err(format_err!("could not find {:?} in valuemap {:?}", v, self)),
                 },
             },
             ValueMap::Floating(map) => match map.get(&Value::Value(v.clone())) {
-                Some(v) => Ok(v.to_string()),
+                Some(v) => v.to_bytes(),
                 None => match map.get(&Value::Any) {
-                    Some(v) => Ok(v.to_string()),
+                    Some(v) => v.to_bytes(),
                     None => Err(format_err!("could not find {:?} in valuemap {:?}", v, self)),
                 },
             },
             ValueMap::Fixed(map) => match map.get(&Value::Value(v.clone())) {
-                Some(v) => Ok(v.to_string()),
+                Some(v) => v.to_bytes(),
                 None => match map.get(&Value::Any) {
-                    Some(v) => Ok(v.to_string()),
+                    Some(v) => v.to_bytes(),
                     None => Err(format_err!("could not find {:?} in valuemap {:?}", v, self)),
                 },
             },
         }
     }
 
-    pub fn encode(&self, s: String) -> Result<Vec<u8>> {
+    pub fn encode(&self, s: Vec<u8>) -> Result<Vec<u8>> {
         match self {
             ValueMap::Keywords(map) => {
                 let v = map
-                    .get_right(&s)
+                    .get_right(&<String as FromBytes>::from_bytes(s.clone())?)
                     .ok_or_else(|| format_err!("could not find {:?} in valuemap {:?}", s, self))?;
                 match v {
                     Value::Value(v) => Ok(v.clone()),
@@ -108,7 +115,7 @@ impl ValueMap {
                 }
             }
             ValueMap::Floating(map) => {
-                let wanted_value: f64 = s.parse()?;
+                let wanted_value: f64 = FromBytes::from_bytes(s.clone())?;
 
                 let (v, _) = map
                     .iter()
@@ -148,12 +155,11 @@ impl ValueMap {
                 }
             }
             ValueMap::Fixed(map) => {
-                let wanted_value: u64 = to_u64(&parse_num(s.clone())?);
+                let wanted_value: u64 = FromBytes::from_bytes(s)?;
 
-                let (v, _) = map
-                    .iter()
-                    .find(|(_, v)| **v == wanted_value)
-                    .ok_or_else(|| format_err!("could not find {} in valuemap {:?}", s, self))?;
+                let (v, _) = map.iter().find(|(_, v)| **v == wanted_value).ok_or_else(|| {
+                    format_err!("could not find {} in valuemap {:?}", wanted_value, self)
+                })?;
 
                 match v {
                     Value::Value(v) => Ok(v.clone()),
@@ -183,19 +189,6 @@ impl ValueMap {
             }
         }
     }
-}
-
-fn to_u64(bytes: &[u8]) -> u64 {
-    assert!(bytes.len() < 9, "base should be no longer than 8 bytes");
-
-    let mut out: u64 = 0;
-
-    for byte in bytes.iter().rev() {
-        out <<= 8;
-        out |= u64::from(*byte);
-    }
-
-    out
 }
 
 pub fn deser_valuemap<'de, D>(deserializer: D) -> std::result::Result<Option<ValueMap>, D::Error>

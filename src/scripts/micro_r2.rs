@@ -1,4 +1,7 @@
-use crate::camera;
+use crate::{
+    camera,
+    common::{float, string},
+};
 
 use fuseable_derive::Fuseable;
 use log::debug;
@@ -15,7 +18,7 @@ script! {
             ar0330.write_cooked("software_reset", 0)?;
             ar0330.write_cooked("stream", 1)?;
 
-            Ok("".to_owned())
+            ().to_bytes()
         }
     }
 }
@@ -43,9 +46,9 @@ script! {
             let chip_version = ar0330.read_raw("chip_version_reg")?;
             // assert(chip_version == "0x2304");
 
-            debug!("chip_version {}", chip_version);
-            debug!("reserved_chiprev {}", ar0330.read_raw("reserved_chiprev")?);
-            debug!("version {}", ar0330.read_raw("test_data_red")?);
+            debug!("chip_version {}", string(chip_version)?);
+            debug!("reserved_chiprev {}", string(ar0330.read_raw("reserved_chiprev")?)?);
+            debug!("version {}", string(ar0330.read_raw("test_data_red")?)?);
 
             /*
             write("magic_patch1", 0x0146);
@@ -158,14 +161,15 @@ script! {
             // streaming enable
             ar0330.write_raw("mode_select", 1)?;
 
-            Ok("".to_owned())
+            ().to_bytes()
         }
     }
 }
 
 use crate::{
-    camera::run_script,
+    bytes::ToBytes,
     device::DeviceLike,
+    run_script,
     scripts::{DeviceLikeWrapper, Script},
 };
 use std::collections::HashMap;
@@ -177,22 +181,32 @@ pub struct TestScript {}
 impl Script for TestScript {
     fn run(
         &self,
-        devices: HashMap<String, &dyn DeviceLike>, args: HashMap<String, String>
-    ) -> fuseable::Result<String> {
+        devices: HashMap<String, &dyn DeviceLike>,
+        args: HashMap<String, Vec<u8>>,
+    ) -> fuseable::Result<Vec<u8>> {
         let ar0330 = DeviceLikeWrapper(devices["ar0330"]);
         let sensor_io = DeviceLikeWrapper(devices["sensor_io"]);
 
         println!("args: {:?}", args);
 
         ar0330.write_raw("analog_gain", 1)?;
-        println!("hello rust; analog_gain: {}", ar0330.read_computed("analog_gain")?);
-        println!("now running a lua script from rust: {}", run_script("test2", devices, None)?);
+        println!("hello rust; analog_gain: {}", float(ar0330.read_computed("analog_gain")?)?);
+        println!("now running a lua script from rust: {}", float(run_script!("test2", devices)?)?);
+        println!(
+            "now running a lua script from rust with args: {}",
+            float(run_script!("test3", devices, {
+                a: 123,
+                b: 1.23,
+                c: "test",
+                d: vec![0u8, 34u8]
+            })?)?
+        );
 
         sensor_io.write_raw("reset", 7)?;
         sensor_io.write_raw("reset", 0)?;
         sensor_io.write_raw("reset", 7)?;
 
-        Ok("success".to_string())
+        "success".to_bytes()
     }
 
     // the devices this script needs
