@@ -131,7 +131,18 @@ impl<'de> Deserialize<'de> for LuaScript {
 }
 
 impl LuaScript {
-    pub fn init_functions(&mut self, lua_vm: &Lua) {
+    pub fn with_no_args(description: String, script: String, uses: Vec<String>) -> Self {
+        Self {
+            description,
+            script,
+            uses,
+            arg_types: HashMap::new(),
+            args: HashMap::new(),
+            lua_function: None
+        }
+    }
+
+    pub fn init(&mut self, lua_vm: &Lua) {
         let mut devices_unpack = String::new();
         for device_name in &self.uses {
             devices_unpack = format!("{0}local {1} = devices.{1}\n", devices_unpack, device_name);

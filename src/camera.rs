@@ -97,6 +97,7 @@ pub struct Camera {
     pub devices: HashMap<String, Mutex<Device>>,
     pub scripts: HashMap<String, Mutex<Box<dyn Script>>>,
     globals: HashMap<String, String>,
+    init_script: Option<String>,
     #[fuseable(skip)]
     #[derivative(Debug = "ignore")]
     pub lua_vm: rlua::Lua,
@@ -211,6 +212,7 @@ impl Fuseable for SharedCamera {
 
         match path.next() {
             Some("camera_model") => Err(FuseableError::unsupported("write", "Camera.camera_model")),
+            Some("init_script") => Err(FuseableError::unsupported("write", "Camera.init_script")),
             Some("devices") => match path.next() {
                 Some(name) => match cam.devices.get(name) {
                     Some(device) => device.lock().unwrap().write(path, value),
@@ -244,9 +246,11 @@ impl<'de> Deserialize<'de> for Camera {
             globals: HashMap<String, String>,
             #[serde(default = "empty_map")]
             scripts: HashMap<String, LuaScript>,
+            #[serde(rename = "init")]
+            init_script: Option<String>
         }
 
-        let CameraWithoutScripts { camera_model, devices, globals, scripts } =
+        let CameraWithoutScripts { camera_model, devices, globals, scripts, init_script } =
             CameraWithoutScripts::deserialize(deserializer)?;
 
         let lua_vm = lua_util::create_lua_vm();
@@ -255,7 +259,7 @@ impl<'de> Deserialize<'de> for Camera {
         let mut scripts: HashMap<String, Mutex<Box<dyn Script>>> = scripts
             .into_iter()
             .map(|(k, mut v)| {
-                v.init_functions(&lua_vm);
+                v.init(&lua_vm);
 
                 (k, Mutex::new(Box::new(v) as Box<dyn Script>))
             })
@@ -270,7 +274,7 @@ impl<'de> Deserialize<'de> for Camera {
 
         scripts.extend(rust_scripts);
 
-        Ok(Camera { scripts, camera_model, devices, globals, lua_vm })
+        Ok(Camera { scripts, camera_model, devices, globals, lua_vm, init_script })
     }
 }
 
@@ -285,5 +289,28 @@ impl Camera {
                 device.lock().unwrap().channel.unset_mock()
             }
         }
+    }
+
+    pub fn init(&self) -> fuseable::Result<()> {
+        self.init_script.as_ref().map(|script| {
+            let device_names = self.devices.keys().cloned().collect::<Vec<_>>();
+            let device_handles: Vec<_> = device_names
+                .iter()
+                .map(|device_name| self.devices[device_name].lock().unwrap())
+                .collect();
+
+            let mut devices: HashMap<String, &dyn DeviceLike> = HashMap::new();
+
+            for (handle, name) in device_handles.iter().zip(&device_names) {
+                devices.insert(name.to_owned(), &**handle as &dyn DeviceLike);
+            }
+
+            let mut script = crate::scripts::LuaScript::with_no_args("".to_owned(), script.to_owned(), device_names);
+
+            script.init(&self.lua_vm);
+            script.run(devices, HashMap::new())?;
+
+            Ok(())
+        }).unwrap_or(Ok(()))
     }
 }

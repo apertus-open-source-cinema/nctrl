@@ -67,3 +67,7 @@ scripts:
       b: float
       c: string
       d: binary
+
+
+init: |
+  ar0330.computed.analog_gain = 2

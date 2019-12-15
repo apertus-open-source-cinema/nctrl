@@ -1,7 +1,7 @@
 use env_logger::{Builder, Env};
 use log::info;
 use nctrl::{
-    camera::{camera, set_camera, Camera, SharedCamera},
+    camera::{camera, set_camera, with_camera, Camera, SharedCamera},
     fuseable_fs::FuseableFS,
     serde_util::FILE_OPENER,
 };
@@ -39,12 +39,17 @@ fn main() {
     f.read_to_string(&mut contents).expect("something went wrong reading the file");
 
     info!("parsing yml file");
-    let mut sensor: Camera = serde_yaml::from_str(&contents).unwrap();
+    let mut cam: Camera = serde_yaml::from_str(&contents).unwrap();
 
     info!("setting mocked mode to {}", opt.mock);
-    sensor.mocked(opt.mock);
+    cam.mocked(opt.mock);
 
-    set_camera(sensor);
+    set_camera(cam);
+
+    // initialize stuff, for example run the init script
+    with_camera(|cam| {
+        cam.init()
+    }).unwrap();
 
     let options = ["-o", "allow_other", "-o", "rw", "-o", "fsname=propfs", "-o", "auto_unmount"]
         .iter()
