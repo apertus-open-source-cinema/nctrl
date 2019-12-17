@@ -1,5 +1,5 @@
 use env_logger::{Builder, Env};
-use log::info;
+use log::{info, error};
 use nctrl::{
     camera::{camera, set_camera, with_camera, Camera, SharedCamera},
     fuseable_fs::FuseableFS,
@@ -32,7 +32,14 @@ fn main() {
 
     let opt = Opt::from_args();
 
-    let mut f = FILE_OPENER.open(&opt.file).unwrap();
+    let mut f = match FILE_OPENER.open(&opt.file) {
+        Ok(f) => f,
+        Err(e) => {
+            error!("could not open camera descripton {}: {}", opt.file, e);
+            std::process::exit(1);
+        }
+    };
+
     FILE_OPENER.set_path(PathBuf::from(opt.file));
 
     let mut contents = String::new();
