@@ -40,11 +40,23 @@ interrupts.
 
 
 ## Developing locally
+make the axiom_api directory under nctrl file
 ```bash
 $ mkdir ./axiom_api
+```
+run this command under nctrl directory
+```
 $ cargo run -- --mock --mountpoint ./axiom_api camera_descriptions/beta/beta.yml
 ```
+Note:
 
+if it shows the error 
+
+```error: failed to load source for a dependency on `fuse` ```
+
+then run this command in nctrl directory
+
+```$ git submodule update --recursive --init ```
 
 ## Concepts
 The control daemon parses a `YAML` file that describes the camera setup and the available `devices`. A `device` consist of four parts:
