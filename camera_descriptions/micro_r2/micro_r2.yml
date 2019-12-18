@@ -61,6 +61,7 @@ scripts:
       print("b", b)
       print("c", c)
       print("d", d)
+      ar0330.raw.analog_gain = 3
       return ar0330.computed.analog_gain
     args:
       a: int
