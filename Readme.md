@@ -40,7 +40,8 @@ interrupts.
 
 
 ## Developing locally
-> ### :warning: This Project uses submodules! Either use `git clone --recursive` or run `git submodule update --init --recursive` after cloning, otherwise the build will fail!
+> **:warning: This Project uses submodules!**  
+> **Either use `git clone --recursive` or run `git submodule update --init -- recursive` after cloning, otherwise the build will fail!**
 ```bash
 $ mkdir ./axiom_api
 $ cargo run -- --mock --mountpoint ./axiom_api camera_descriptions/beta/beta.yml
