@@ -1,7 +1,10 @@
 use fuseable::Fuseable;
 use std::{collections::HashMap, fmt::Debug};
 
-use crate::{bytes::ToBytes, device::DeviceLike};
+use crate::{
+    device::DeviceLike,
+    value::{ToValue, Value},
+};
 
 mod lua_script;
 pub use crate::scripts::lua_script::LuaScript;
@@ -21,22 +24,22 @@ struct DeviceLikeWrapper<'a>(&'a dyn DeviceLike);
 
 #[allow(dead_code)]
 impl<'a> DeviceLikeWrapper<'a> {
-    fn read_raw(&self, name: &str) -> fuseable::Result<Vec<u8>> { self.0.read_raw(name) }
+    fn read_raw(&self, name: &str) -> fuseable::Result<Value> { self.0.read_raw(name) }
 
-    fn write_raw<T: ToBytes>(&self, name: &str, value: T) -> fuseable::Result<()> {
-        self.0.write_raw(name, value.to_bytes()?)
+    fn write_raw<T: ToValue>(&self, name: &str, value: T) -> fuseable::Result<()> {
+        self.0.write_raw(name, value.to_value()?)
     }
 
-    fn read_cooked(&self, name: &str) -> fuseable::Result<Vec<u8>> { self.0.read_cooked(name) }
+    fn read_cooked(&self, name: &str) -> fuseable::Result<Value> { self.0.read_cooked(name) }
 
-    fn write_cooked<T: ToBytes>(&self, name: &str, value: T) -> fuseable::Result<()> {
-        self.0.write_cooked(name, value.to_bytes()?)
+    fn write_cooked<T: ToValue>(&self, name: &str, value: T) -> fuseable::Result<()> {
+        self.0.write_cooked(name, value.to_value()?)
     }
 
-    fn read_computed(&self, name: &str) -> fuseable::Result<Vec<u8>> { self.0.read_computed(name) }
+    fn read_computed(&self, name: &str) -> fuseable::Result<Value> { self.0.read_computed(name) }
 
-    fn write_computed<T: ToBytes>(&self, name: &str, value: T) -> fuseable::Result<()> {
-        self.0.write_computed(name, value.to_bytes()?)
+    fn write_computed<T: ToValue>(&self, name: &str, value: T) -> fuseable::Result<()> {
+        self.0.write_computed(name, value.to_value()?)
     }
 }
 
@@ -44,8 +47,8 @@ pub trait Script: Debug + Fuseable {
     fn run(
         &self,
         devices: HashMap<String, &dyn DeviceLike>,
-        args: HashMap<String, Vec<u8>>,
-    ) -> fuseable::Result<Vec<u8>>;
+        args: HashMap<String, Value>,
+    ) -> fuseable::Result<Value>;
 
     // the devices this script needs
     fn devices(&self) -> Vec<String>;
@@ -80,9 +83,9 @@ macro_rules! script {
 
             impl super::Script for $struct_name {
                 #[allow(unused_variables)]
-                fn run(&$self, $devices_name: std::collections::HashMap<String, &dyn crate::device::DeviceLike>, args: std::collections::HashMap<String, Vec<u8>>) -> fuseable::Result<Vec<u8>> {
+                fn run(&$self, $devices_name: std::collections::HashMap<String, &dyn crate::device::DeviceLike>, args: std::collections::HashMap<String, Value>) -> fuseable::Result<Value> {
                     $(let $devices = crate::scripts::DeviceLikeWrapper($devices_name[stringify!($devices)]);)*
-                    $(let $args: $args_ty = crate::bytes::FromBytes::from_bytes(args[stringify!($args)].clone())?;)*
+                    $(let $args: $args_ty = crate::value::FromValue::from_value(args[stringify!($args)].clone())?;)*
                     $body
                 }
 
@@ -127,8 +130,10 @@ macro_rules! script_config {
 
 mod beta;
 mod micro_r2;
+mod test;
 
 use beta::BetaScripts;
 use micro_r2::MicroR2Scripts;
+use test::TestScripts;
 
-script_config!(MicroR2Scripts => "micro-r2", BetaScripts => "beta");
+script_config!(MicroR2Scripts => "micro-r2", BetaScripts => "beta", TestScripts => "test_model");

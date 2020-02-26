@@ -1,9 +1,9 @@
 use crate::{
-    bytes::{FromBytes, ToBytes},
     camera::with_camera,
     device::DeviceLike,
     lua_util::FailureCompat,
     scripts::Script,
+    value::{Bytes, FromValue, ToValue, Value},
 };
 
 use failure::format_err;
@@ -12,7 +12,7 @@ use serde::{Deserialize, Deserializer};
 use serde_derive::*;
 use std::collections::HashMap;
 
-use rlua::{Function, Lua, RegistryKey, ToLua, Value};
+use rlua::{Function, Lua, RegistryKey, ToLua, Value as LuaValue};
 
 #[derive(Debug, Deserialize, Fuseable, Clone)]
 enum ArgumentType {
@@ -25,9 +25,6 @@ enum ArgumentType {
     #[serde(rename = "binary")]
     Binary,
 }
-
-#[derive(Debug)]
-struct Bytes(Vec<u8>);
 
 impl fuseable::Fuseable for Bytes {
     fn is_dir(&self, path: &mut dyn Iterator<Item = &str>) -> fuseable::Result<bool> {
@@ -170,8 +167,8 @@ impl Script for LuaScript {
     fn run(
         &self,
         devices: HashMap<String, &dyn DeviceLike>,
-        args: HashMap<String, Vec<u8>>,
-    ) -> fuseable::Result<Vec<u8>> {
+        args: HashMap<String, Value>,
+    ) -> fuseable::Result<Value> {
         with_camera(|cam| {
             cam.lua_vm.context(|ctx| {
                 let devices_table = ctx.create_table()?;
@@ -196,15 +193,17 @@ impl Script for LuaScript {
 
                         let arg_value = match arg_type {
                             ArgumentType::Float => {
-                                <f64 as FromBytes>::from_bytes(arg_value)?.to_lua(ctx)?
+                                <f64 as FromValue>::from_value(arg_value)?.to_lua(ctx)?
                             }
                             ArgumentType::Int => {
-                                <i64 as FromBytes>::from_bytes(arg_value)?.to_lua(ctx)?
+                                <i64 as FromValue>::from_value(arg_value)?.to_lua(ctx)?
                             }
                             ArgumentType::String => {
-                                <String as FromBytes>::from_bytes(arg_value)?.to_lua(ctx)?
+                                <String as FromValue>::from_value(arg_value)?.to_lua(ctx)?
                             }
-                            ArgumentType::Binary => arg_value.to_lua(ctx)?,
+                            ArgumentType::Binary => {
+                                <Bytes as FromValue>::from_value(arg_value)?.0.to_lua(ctx)?
+                            }
                         };
 
                         args_table.set(arg_name.clone(), arg_value)?;
@@ -213,9 +212,9 @@ impl Script for LuaScript {
                     ctx.registry_value::<Function>(self.lua_function.as_ref().ok_or_else(
                         || format_err!("cannot read script {:#?} with no get script", self),
                     )?)?
-                    .call::<_, Value>((devices_table, args_table))
+                    .call::<_, LuaValue>((devices_table, args_table))
                     .map_err(|e| e.into())
-                    .and_then(ToBytes::to_bytes)
+                    .and_then(ToValue::to_value)
                 })
             })
         })

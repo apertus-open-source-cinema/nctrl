@@ -38,7 +38,10 @@ structopt = "*"
 
 rlua = "*"
 
+rand = "*"
+
 [profile.release]
 lto = true
 opt-level = 3
+panic = "abort"
 # debug = true    # use for cargo flamegraph only, bloats the binary a lot (~4Mb -> 28Mb)

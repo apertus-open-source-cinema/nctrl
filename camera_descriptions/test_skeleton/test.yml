@@ -1,14 +1,17 @@
-camera_model: "micro-r2"
+camera_model: "test_model"
 
 devices:
-    sensor_io:
+    test_mmap:
         channel:
             mode: "memory-map"
             base: 0x41200000
             len: 4096
         raw: "sensor_io_raw.yml"
         cooked: "sensor_io_cooked.yml"
-    ar0330:
+    test_spi:
+        channel:
+            mode: "spi"
+    test_i2c:
         channel:
             mode: "i2c-cdev"
             bus: 0
@@ -17,25 +20,32 @@ devices:
         raw: "ar0330_raw.yml"
         cooked: "ar0330_cooked.yml"
         computed: "ar0330_computed.yml"
-    drp:
-        channel:
-            mode: "memory-map"
-            base: 0x40000010
-            bytes_per_word: 2
-            len: 4096
-        cooked: "mmcm_drp_cooked.yml"
 
 globals:
-  extclock: 24000000
-  default_bitstream: no_patch.bit.bin
-  gain: |
+  test_int: 24000000
+  test_float: 3.1415
+  test_string: "testtesttest"
+  test_script: |
     function (reg_a, reg_b)
        return reg_a * reg_b
     end
-  default_gain: gain(1, 2)
+  test_nested_script: gain(1, 2)
 
 scripts:
-  test:
+  test_raw_access:
+  test_cooked_access:
+  test_scripted_access:
+  test_global_constant_access:
+  test_global_lua_access:
+  test_lua_script_call:
+  test_called_by_lua:
+  test_rust_script_call:
+  test_called_by_rust:
+  test_int_argument:
+  test_float_argument:
+  test_string_argument:
+  test_bytes_argument:
+  test_nested_lua_access:
     description:
     uses:
       - ar0330

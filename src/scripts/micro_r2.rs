@@ -1,6 +1,6 @@
 use crate::{
     camera,
-    common::{float, string},
+    value::{FromValue, ToValue, Value},
 };
 
 use fuseable_derive::Fuseable;
@@ -18,7 +18,7 @@ script! {
             ar0330.write_cooked("software_reset", 0)?;
             ar0330.write_cooked("stream", 1)?;
 
-            ().to_bytes()
+            ().to_value()
         }
     }
 }
@@ -27,7 +27,7 @@ script! {
     "start up the sensor in default settings"
     Kick {} => {
         (self, devices = { ar0330, sensor_io }) {
-            let extclk = camera::globals("extclock")?;
+            let extclk = camera::globals("extclock")?.into()?;
             // init
             // toggle reset (active low)
             sensor_io.write_raw("reset", 0x7)?;
@@ -36,19 +36,21 @@ script! {
             std::thread::sleep(std::time::Duration::from_millis(1));
             sensor_io.write_raw("reset", 0x7)?;
 
+            std::thread::sleep(std::time::Duration::from_millis(1));
+
             // magic init
             ar0330.write_raw("magic_init_config", 0xa114)?;
             ar0330.write_raw("magic_init_start", 0x0070)?;
 
-            std::thread::sleep(std::time::Duration::from_millis(1));
+            std::thread::sleep(std::time::Duration::from_millis(2));
 
             // check chip_version
             let chip_version = ar0330.read_raw("chip_version_reg")?;
             // assert(chip_version == "0x2304");
 
-            debug!("chip_version {}", string(chip_version)?);
-            debug!("reserved_chiprev {}", string(ar0330.read_raw("reserved_chiprev")?)?);
-            debug!("version {}", string(ar0330.read_raw("test_data_red")?)?);
+            debug!("chip_version {:#x}", u64::from_value(chip_version)?);
+            debug!("reserved_chiprev {:#x}", u64::from_value(ar0330.read_raw("reserved_chiprev")?)?);
+            debug!("version {:#x}", u64::from_value(ar0330.read_raw("test_data_red")?)?);
 
             /*
             write("magic_patch1", 0x0146);
@@ -161,13 +163,12 @@ script! {
             // streaming enable
             ar0330.write_raw("mode_select", 1)?;
 
-            ().to_bytes()
+            ().to_value()
         }
     }
 }
 
 use crate::{
-    bytes::ToBytes,
     device::DeviceLike,
     run_script,
     scripts::{DeviceLikeWrapper, Script},
@@ -182,19 +183,25 @@ impl Script for TestScript {
     fn run(
         &self,
         devices: HashMap<String, &dyn DeviceLike>,
-        args: HashMap<String, Vec<u8>>,
-    ) -> fuseable::Result<Vec<u8>> {
+        args: HashMap<String, Value>,
+    ) -> fuseable::Result<Value> {
         let ar0330 = DeviceLikeWrapper(devices["ar0330"]);
         let sensor_io = DeviceLikeWrapper(devices["sensor_io"]);
 
         println!("args: {:?}", args);
 
         ar0330.write_raw("analog_gain", 1)?;
-        println!("hello rust; analog_gain: {}", float(ar0330.read_computed("analog_gain")?)?);
-        println!("now running a lua script from rust: {}", float(run_script!("test2", devices)?)?);
+        println!(
+            "hello rust; analog_gain: {}",
+            f64::from_value(ar0330.read_computed("analog_gain")?)?
+        );
+        println!(
+            "now running a lua script from rust: {}",
+            f64::from_value(run_script!("test2", devices)?)?
+        );
         println!(
             "now running a lua script from rust with args: {}",
-            float(run_script!("test3", devices, {
+            f64::from_value(run_script!("test3", devices, {
                 a: 123,
                 b: 1.23,
                 c: "test",
@@ -206,7 +213,7 @@ impl Script for TestScript {
         sensor_io.write_raw("reset", 0)?;
         sensor_io.write_raw("reset", 7)?;
 
-        "success".to_bytes()
+        "success".to_value()
     }
 
     // the devices this script needs

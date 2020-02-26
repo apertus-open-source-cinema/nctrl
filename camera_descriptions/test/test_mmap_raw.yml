@@ -1,0 +1,10 @@
+test_mmap_raw_1:
+  address: '0x0'
+  description: Test mmap 1
+  width: 2
+  default: -0x1bcd
+test_mmap_raw_2:
+  address: '0x2'
+  description: Test mmap 2
+  width: 4
+  default: 0x12345678

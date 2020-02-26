@@ -2,8 +2,9 @@ use crate::{
     address::Address,
     common::Description,
     communication_channel::CommunicationChannel,
-    registers::{ComputedRegister, CookedRegister, RawRegister},
+    registers::{ComputedRegister, CookedRegister, RawRegister, WidthOrRawRegister},
     serde_util::{bool_true, by_path},
+    value::Value,
     valuemap::*,
 };
 
@@ -13,27 +14,27 @@ use itertools::Itertools;
 
 use serde::{de::Error, Deserialize, Deserializer};
 use serde_derive::*;
-use std::{collections::HashMap, fmt::Debug};
+use std::{collections::HashMap, fmt::Debug, rc::Rc};
 
 use derivative::Derivative;
 use failure::{format_err, ResultExt};
 
 pub trait DeviceLike {
-    fn read_raw(&self, name: &str) -> fuseable::Result<Vec<u8>>;
-    fn write_raw(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()>;
+    fn read_raw(&self, name: &str) -> fuseable::Result<Value>;
+    fn write_raw(&self, name: &str, value: Value) -> fuseable::Result<()>;
 
-    fn read_cooked(&self, name: &str) -> fuseable::Result<Vec<u8>>;
-    fn write_cooked(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()>;
+    fn read_cooked(&self, name: &str) -> fuseable::Result<Value>;
+    fn write_cooked(&self, name: &str, value: Value) -> fuseable::Result<()>;
 
-    fn read_computed(&self, name: &str) -> fuseable::Result<Vec<u8>>;
-    fn write_computed(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()>;
+    fn read_computed(&self, name: &str) -> fuseable::Result<Value>;
+    fn write_computed(&self, name: &str, value: Value) -> fuseable::Result<()>;
 }
 
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct Device {
     pub channel: CommunicationChannel,
-    pub raw: HashMap<String, RawRegister>,
+    pub raw: HashMap<String, Rc<RawRegister>>,
     pub cooked: HashMap<String, CookedRegister>,
     pub computed: HashMap<String, ComputedRegister>,
 }
@@ -52,7 +53,7 @@ macro_rules! with_register_from_set {
 macro_rules! read_reg_from_set {
     ($self:ident.$reg_set:ident, $reg_name:ident, $extra:expr) => {
         with_register_from_set!($self.$reg_set, $reg_name, "read")
-            .read_value(&mut std::iter::empty(), $extra)
+            .read_value($extra)
             .with_context(|e| {
                 format!(
                     "error while reading register {}.{}: {}",
@@ -62,17 +63,13 @@ macro_rules! read_reg_from_set {
                 )
             })
             .map_err(|e| e.into())
-            .map(|v| match v {
-                Either::Right(s) => s,
-                _ => panic!("got directory entries from a register"),
-            })
     };
 }
 
 macro_rules! write_reg_from_set {
     ($self:ident.$reg_set:ident, $reg_name:ident, $extra:expr, $value:ident) => {
         with_register_from_set!($self.$reg_set, $reg_name, "write to")
-            .write_value(&mut std::iter::empty(), $value, $extra)
+            .write_value($value, $extra)
             .with_context(|e| {
                 format!(
                     "error while writing to register {}.{}: {}",
@@ -86,27 +83,27 @@ macro_rules! write_reg_from_set {
 }
 
 impl DeviceLike for Device {
-    fn read_raw(&self, name: &str) -> fuseable::Result<Vec<u8>> {
+    fn read_raw(&self, name: &str) -> fuseable::Result<Value> {
         read_reg_from_set!(self.raw, name, &self.channel)
     }
 
-    fn write_raw(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()> {
+    fn write_raw(&self, name: &str, value: Value) -> fuseable::Result<()> {
         write_reg_from_set!(self.raw, name, &self.channel, value)
     }
 
-    fn read_cooked(&self, name: &str) -> fuseable::Result<Vec<u8>> {
+    fn read_cooked(&self, name: &str) -> fuseable::Result<Value> {
         read_reg_from_set!(self.cooked, name, &self.channel)
     }
 
-    fn write_cooked(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()> {
+    fn write_cooked(&self, name: &str, value: Value) -> fuseable::Result<()> {
         write_reg_from_set!(self.cooked, name, &self.channel, value)
     }
 
-    fn read_computed(&self, name: &str) -> fuseable::Result<Vec<u8>> {
+    fn read_computed(&self, name: &str) -> fuseable::Result<Value> {
         read_reg_from_set!(self.computed, name, &self)
     }
 
-    fn write_computed(&self, name: &str, value: Vec<u8>) -> fuseable::Result<()> {
+    fn write_computed(&self, name: &str, value: Value) -> fuseable::Result<()> {
         write_reg_from_set!(self.computed, name, &self, value)
     }
 }
@@ -138,7 +135,7 @@ macro_rules! inject_read {
                         panic!("tought I would get directory entires, but got file content")
                     }
                 }),
-                (Some(name), Some("value")) => $self.$path(name).map(fuseable::Either::Right),
+                (Some(name), Some("value")) => $self.$path(name).and_then(|v| v.display_representation().map(fuseable::Either::Right)),
                 _ => $actual_path.read(&mut path)
             )
         }
@@ -149,7 +146,7 @@ macro_rules! inject_write {
     ($actual_path:expr, $self:ident.$path:ident, $path_iter:ident, $value:ident) => {
         {
             inject!($path_iter, path,
-                    (Some(name), Some("value")) => $self.$path(name, $value),
+                    (Some(name), Some("value")) => $self.$path(name, Value::String(String::from_utf8($value)?)),
                     _ => $actual_path.write(&mut path, $value)
             )
         }
@@ -226,11 +223,12 @@ impl<'de> Deserialize<'de> for Device {
         struct CookedRegisterStringAddr {
             address: String,
             description: Option<Description>,
-            #[serde(default, deserialize_with = "deser_valuemap")]
-            map: Option<ValueMap>,
+            #[serde(default)]
+            map: Option<ValueMapNonMatched>,
             #[serde(default = "bool_true")]
             writable: bool,
             default: Option<u64>,
+            width: Option<u64>,
         }
 
         #[derive(Debug, Deserialize)]
@@ -247,21 +245,51 @@ impl<'de> Deserialize<'de> for Device {
         let settings = DeviceConfig::deserialize(deserializer)?;
 
         let DeviceConfig { channel, raw, cooked, computed } = settings;
+        let raw = raw.into_iter().map(|(k, v)| (k, Rc::new(v))).collect();
 
         let cooked = cooked
             .into_iter()
             .map(|(name, cooked_reg)| {
-                let address = Address::parse_named(&cooked_reg.address, &raw).map_err(|_| {
+                let (address, slice, raw_register) = Address::parse_named(&cooked_reg.address, cooked_reg.width, &raw).map_err(|e| {
                     D::Error::custom(format!(
-                        "could not parse the address of this cooked register ({})",
-                        cooked_reg.address
+                        "could not parse the address of this cooked register ({}): {}",
+                        cooked_reg.address, e
                     ))
                 })?;
 
+                let width_or_raw_register = raw_register.clone()
+                    .map(WidthOrRawRegister::RawRegister)
+                    .or_else(|| {
+                        cooked_reg.width.map(WidthOrRawRegister::Width)
+                    })
+                    .ok_or_else(|| {
+                        D::Error::custom(
+                            format!("tried to parse cooked register {:?}, but neither was the base a raw register or a width specified, one of these is necessary", cooked_reg))})?;
+
+
+
+                let reg_bytes = if let Some(slice) = slice.clone() {
+                    slice.bytes()
+                } else if let Some(width) = cooked_reg.width {
+                    width
+                } else if let Some(r) = raw_register {
+                    if let Some(width) = r.width {
+                        width
+                    } else if let Some(width) = r.address.bytes().ok() {
+                        width
+                    } else {
+                        return Err(D::Error::custom(format!("tried to parse cooked register {:?} but no widht was specified", cooked_reg)));
+                    }
+                } else {
+                    return Err(D::Error::custom(format!("tried to parse cooked register {:?} but no widht was specified", cooked_reg)));
+                };
+
                 Ok((name.clone(), CookedRegister {
                     address,
+                    width_or_raw_register,
+                    slice,
                     description: cooked_reg.description,
-                    map: cooked_reg.map,
+                    map: cooked_reg.map.map(|vm| vm.into_valuemap(reg_bytes)).transpose().map_err(|e| D::Error::custom(format!("{}", e)))?,
                     default: cooked_reg.default,
                     writable: cooked_reg.writable,
                 }))

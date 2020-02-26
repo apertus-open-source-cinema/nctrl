@@ -1,0 +1,3 @@
+#[dependencies.panic_unwind]
+[dependencies.std]
+#features = ["panic-unwind"]

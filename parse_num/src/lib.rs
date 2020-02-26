@@ -42,7 +42,7 @@ pub fn parse_num_mask<T: ToString>(s: T) -> Result<(Option<Vec<u8>>, Vec<u8>), P
     if !string.contains(&'z') {
         let num = parse_num(s)?;
 
-        return Ok((None, num))
+        return Ok((None, num.1))
     }
 
     let (negative, radix, start) = get_negative_radix_start(string)?;
@@ -85,7 +85,7 @@ pub fn parse_num_mask_padded<T: ToString + Clone>(
     if !string.contains(&'z') {
         let num = parse_num_padded(s)?;
 
-        return Ok((None, num))
+        return Ok((None, num.1))
     }
 
     let (negative, radix, start) = get_negative_radix_start(string)?;
@@ -159,7 +159,7 @@ fn str_to_vec_radix_negative(s: &str, radix: u32, negative: bool) -> Result<Vec<
         .map_err(|e| e.to_string().into())
 }
 
-pub fn parse_num<T: ToString>(string: T) -> Result<Vec<u8>, ParseError> {
+pub fn parse_num<T: ToString>(string: T) -> Result<(bool, Vec<u8>), ParseError> {
     let string: Vec<_> = string.to_string().trim().chars().collect();
     let string = &string[..];
 
@@ -172,12 +172,34 @@ pub fn parse_num<T: ToString>(string: T) -> Result<Vec<u8>, ParseError> {
         }
     }
 
-    str_to_vec_radix_negative(&String::from_iter(string), radix, negative)
+    str_to_vec_radix_negative(&String::from_iter(string), radix, negative).map(|v| (negative, v))
+}
+
+pub fn parse_num_padded_width<T: ToString + Clone>(
+    string: T,
+    width: u64,
+) -> Result<(bool, Vec<u8>), ParseError> {
+    parse_num_padded(string).and_then(|(negative, mut bytes)| {
+        if bytes.len() > width as usize {
+            Err(format!(
+                "tried to parse a number with fixed width {} but the string specified {} bytes",
+                width,
+                bytes.len()
+            )
+            .into())
+        } else {
+            while bytes.len() < width as usize {
+                bytes.insert(0, 0);
+            }
+
+            Ok((negative, bytes))
+        }
+    })
 }
 
 // TODO(robin): this is not really well defined for non radix 2^n ∀ n ∈ ℕ
 // numbers
-pub fn parse_num_padded<T: ToString + Clone>(string: T) -> Result<Vec<u8>, ParseError> {
+pub fn parse_num_padded<T: ToString + Clone>(string: T) -> Result<(bool, Vec<u8>), ParseError> {
     let orig_string = string.clone();
     let string: Vec<_> = string.to_string().trim().chars().collect();
     let string = &string[..];
@@ -213,7 +235,7 @@ pub fn parse_num_padded<T: ToString + Clone>(string: T) -> Result<Vec<u8>, Parse
     str_to_vec_radix_negative(&String::from_iter(string), radix, negative).map(|mut v| {
         let mut padding = vec![0; padding_bytes as usize];
         padding.append(&mut v);
-        padding
+        (negative, padding)
     })
 }
 
@@ -223,97 +245,97 @@ mod tests {
 
     #[test]
     fn padding_test() {
-        assert_eq!(parse_num_padded("0b0"), Ok(vec![0b0]));
-        assert_eq!(parse_num_padded("0b1"), Ok(vec![0b1]));
-        assert_eq!(parse_num_padded("0b01"), Ok(vec![0b1]));
-        assert_eq!(parse_num_padded("0b001"), Ok(vec![0b1]));
-        assert_eq!(parse_num_padded("0b0001"), Ok(vec![0b1]));
-        assert_eq!(parse_num_padded("0b00001"), Ok(vec![0b1]));
-        assert_eq!(parse_num_padded("0b000001"), Ok(vec![0b1]));
-        assert_eq!(parse_num_padded("0b0000001"), Ok(vec![0b1]));
-        assert_eq!(parse_num_padded("0b00000001"), Ok(vec![0b1]));
-        assert_eq!(parse_num_padded("0b000000001"), Ok(vec![0, 0b1]));
-        assert_eq!(parse_num_padded("0b10"), Ok(vec![0b10]));
-        assert_eq!(parse_num_padded("0b010"), Ok(vec![0b10]));
-        assert_eq!(parse_num_padded("0b0010"), Ok(vec![0b10]));
-        assert_eq!(parse_num_padded("0b00010"), Ok(vec![0b10]));
-        assert_eq!(parse_num_padded("0b000010"), Ok(vec![0b10]));
-        assert_eq!(parse_num_padded("0b0000010"), Ok(vec![0b10]));
-        assert_eq!(parse_num_padded("0b00000010"), Ok(vec![0b10]));
-        assert_eq!(parse_num_padded("0b000000010"), Ok(vec![0, 0b10]));
-        assert_eq!(parse_num_padded("0b0000000010"), Ok(vec![0, 0b10]));
-        assert_eq!(parse_num_padded("0b100"), Ok(vec![0b100]));
-        assert_eq!(parse_num_padded("0b0100"), Ok(vec![0b100]));
-        assert_eq!(parse_num_padded("0b00100"), Ok(vec![0b100]));
-        assert_eq!(parse_num_padded("0b000100"), Ok(vec![0b100]));
-        assert_eq!(parse_num_padded("0b0000100"), Ok(vec![0b100]));
-        assert_eq!(parse_num_padded("0b00000100"), Ok(vec![0b100]));
-        assert_eq!(parse_num_padded("0b000000100"), Ok(vec![0, 0b100]));
-        assert_eq!(parse_num_padded("0b0000000100"), Ok(vec![0, 0b100]));
-        assert_eq!(parse_num_padded("0b00000000100"), Ok(vec![0, 0b100]));
-        assert_eq!(parse_num_padded("0b1000"), Ok(vec![0b1000]));
-        assert_eq!(parse_num_padded("0b01000"), Ok(vec![0b1000]));
-        assert_eq!(parse_num_padded("0b001000"), Ok(vec![0b1000]));
-        assert_eq!(parse_num_padded("0b0001000"), Ok(vec![0b1000]));
-        assert_eq!(parse_num_padded("0b00001000"), Ok(vec![0b1000]));
-        assert_eq!(parse_num_padded("0b000001000"), Ok(vec![0, 0b1000]));
-        assert_eq!(parse_num_padded("0b0000001000"), Ok(vec![0, 0b1000]));
-        assert_eq!(parse_num_padded("0b00000001000"), Ok(vec![0, 0b1000]));
-        assert_eq!(parse_num_padded("0b000000001000"), Ok(vec![0, 0b1000]));
-        assert_eq!(parse_num_padded("0b10000"), Ok(vec![0b10000]));
-        assert_eq!(parse_num_padded("0b010000"), Ok(vec![0b10000]));
-        assert_eq!(parse_num_padded("0b0010000"), Ok(vec![0b10000]));
-        assert_eq!(parse_num_padded("0b00010000"), Ok(vec![0b10000]));
-        assert_eq!(parse_num_padded("0b000010000"), Ok(vec![0, 0b10000]));
-        assert_eq!(parse_num_padded("0b0000010000"), Ok(vec![0, 0b10000]));
-        assert_eq!(parse_num_padded("0b00000010000"), Ok(vec![0, 0b10000]));
-        assert_eq!(parse_num_padded("0b000000010000"), Ok(vec![0, 0b10000]));
-        assert_eq!(parse_num_padded("0b0000000010000"), Ok(vec![0, 0b10000]));
-        assert_eq!(parse_num_padded("0b100000"), Ok(vec![0b100000]));
-        assert_eq!(parse_num_padded("0b0100000"), Ok(vec![0b100000]));
-        assert_eq!(parse_num_padded("0b00100000"), Ok(vec![0b100000]));
-        assert_eq!(parse_num_padded("0b000100000"), Ok(vec![0, 0b100000]));
-        assert_eq!(parse_num_padded("0b0000100000"), Ok(vec![0, 0b100000]));
-        assert_eq!(parse_num_padded("0b00000100000"), Ok(vec![0, 0b100000]));
-        assert_eq!(parse_num_padded("0b000000100000"), Ok(vec![0, 0b100000]));
-        assert_eq!(parse_num_padded("0b0000000100000"), Ok(vec![0, 0b100000]));
-        assert_eq!(parse_num_padded("0b00000000100000"), Ok(vec![0, 0b100000]));
-        assert_eq!(parse_num_padded("0b1000000"), Ok(vec![0b1000000]));
-        assert_eq!(parse_num_padded("0b01000000"), Ok(vec![0b1000000]));
-        assert_eq!(parse_num_padded("0b001000000"), Ok(vec![0, 0b1000000]));
-        assert_eq!(parse_num_padded("0b0001000000"), Ok(vec![0, 0b1000000]));
-        assert_eq!(parse_num_padded("0b00001000000"), Ok(vec![0, 0b1000000]));
-        assert_eq!(parse_num_padded("0b000001000000"), Ok(vec![0, 0b1000000]));
-        assert_eq!(parse_num_padded("0b0000001000000"), Ok(vec![0, 0b1000000]));
-        assert_eq!(parse_num_padded("0b00000001000000"), Ok(vec![0, 0b1000000]));
-        assert_eq!(parse_num_padded("0b000000001000000"), Ok(vec![0, 0b1000000]));
-        assert_eq!(parse_num_padded("0b10000000"), Ok(vec![0b10000000]));
-        assert_eq!(parse_num_padded("0b010000000"), Ok(vec![0, 0b10000000]));
-        assert_eq!(parse_num_padded("0b0010000000"), Ok(vec![0, 0b10000000]));
-        assert_eq!(parse_num_padded("0b00010000000"), Ok(vec![0, 0b10000000]));
-        assert_eq!(parse_num_padded("0b000010000000"), Ok(vec![0, 0b10000000]));
-        assert_eq!(parse_num_padded("0b0000010000000"), Ok(vec![0, 0b10000000]));
-        assert_eq!(parse_num_padded("0b00000010000000"), Ok(vec![0, 0b10000000]));
-        assert_eq!(parse_num_padded("0b000000010000000"), Ok(vec![0, 0b10000000]));
-        assert_eq!(parse_num_padded("0b0000000010000000"), Ok(vec![0, 0b10000000]));
-        assert_eq!(parse_num_padded("0b100000000"), Ok(vec![0b1, 0]));
-        assert_eq!(parse_num_padded("0b0100000000"), Ok(vec![0b1, 0]));
-        assert_eq!(parse_num_padded("0b00100000000"), Ok(vec![0b1, 0]));
-        assert_eq!(parse_num_padded("0b000100000000"), Ok(vec![0b1, 0]));
-        assert_eq!(parse_num_padded("0b0000100000000"), Ok(vec![0b1, 0]));
-        assert_eq!(parse_num_padded("0b00000100000000"), Ok(vec![0b1, 0]));
-        assert_eq!(parse_num_padded("0b000000100000000"), Ok(vec![0b1, 0]));
-        assert_eq!(parse_num_padded("0b0000000100000000"), Ok(vec![0b1, 0]));
-        assert_eq!(parse_num_padded("0b00000000100000000"), Ok(vec![0, 0b1, 0]));
-        assert_eq!(parse_num_padded("0b010000000"), Ok(vec![0, 0b10000000]));
-        assert_eq!(parse_num_padded("0b0010000000"), Ok(vec![0, 0b10000000]));
-        assert_eq!(parse_num_padded("0b00010000000"), Ok(vec![0, 0b10000000]));
-        assert_eq!(parse_num_padded("0b000010000000"), Ok(vec![0, 0b10000000]));
-        assert_eq!(parse_num_padded("0b0000010000000"), Ok(vec![0, 0b10000000]));
-        assert_eq!(parse_num_padded("0b00000010000000"), Ok(vec![0, 0b10000000]));
-        assert_eq!(parse_num_padded("0b000000010000000"), Ok(vec![0, 0b10000000]));
-        assert_eq!(parse_num_padded("0b0000000010000000"), Ok(vec![0, 0b10000000]));
-        assert_eq!(parse_num_padded("0b00000000010000000"), Ok(vec![0, 0, 0b10000000]));
+        assert_eq!(parse_num_padded("0b0"), Ok((false, vec![0b0])));
+        assert_eq!(parse_num_padded("0b1"), Ok((false, vec![0b1])));
+        assert_eq!(parse_num_padded("0b01"), Ok((false, vec![0b1])));
+        assert_eq!(parse_num_padded("0b001"), Ok((false, vec![0b1])));
+        assert_eq!(parse_num_padded("0b0001"), Ok((false, vec![0b1])));
+        assert_eq!(parse_num_padded("0b00001"), Ok((false, vec![0b1])));
+        assert_eq!(parse_num_padded("0b000001"), Ok((false, vec![0b1])));
+        assert_eq!(parse_num_padded("0b0000001"), Ok((false, vec![0b1])));
+        assert_eq!(parse_num_padded("0b00000001"), Ok((false, vec![0b1])));
+        assert_eq!(parse_num_padded("0b000000001"), Ok((false, vec![0, 0b1])));
+        assert_eq!(parse_num_padded("0b10"), Ok((false, vec![0b10])));
+        assert_eq!(parse_num_padded("0b010"), Ok((false, vec![0b10])));
+        assert_eq!(parse_num_padded("0b0010"), Ok((false, vec![0b10])));
+        assert_eq!(parse_num_padded("0b00010"), Ok((false, vec![0b10])));
+        assert_eq!(parse_num_padded("0b000010"), Ok((false, vec![0b10])));
+        assert_eq!(parse_num_padded("0b0000010"), Ok((false, vec![0b10])));
+        assert_eq!(parse_num_padded("0b00000010"), Ok((false, vec![0b10])));
+        assert_eq!(parse_num_padded("0b000000010"), Ok((false, vec![0, 0b10])));
+        assert_eq!(parse_num_padded("0b0000000010"), Ok((false, vec![0, 0b10])));
+        assert_eq!(parse_num_padded("0b100"), Ok((false, vec![0b100])));
+        assert_eq!(parse_num_padded("0b0100"), Ok((false, vec![0b100])));
+        assert_eq!(parse_num_padded("0b00100"), Ok((false, vec![0b100])));
+        assert_eq!(parse_num_padded("0b000100"), Ok((false, vec![0b100])));
+        assert_eq!(parse_num_padded("0b0000100"), Ok((false, vec![0b100])));
+        assert_eq!(parse_num_padded("0b00000100"), Ok((false, vec![0b100])));
+        assert_eq!(parse_num_padded("0b000000100"), Ok((false, vec![0, 0b100])));
+        assert_eq!(parse_num_padded("0b0000000100"), Ok((false, vec![0, 0b100])));
+        assert_eq!(parse_num_padded("0b00000000100"), Ok((false, vec![0, 0b100])));
+        assert_eq!(parse_num_padded("0b1000"), Ok((false, vec![0b1000])));
+        assert_eq!(parse_num_padded("0b01000"), Ok((false, vec![0b1000])));
+        assert_eq!(parse_num_padded("0b001000"), Ok((false, vec![0b1000])));
+        assert_eq!(parse_num_padded("0b0001000"), Ok((false, vec![0b1000])));
+        assert_eq!(parse_num_padded("0b00001000"), Ok((false, vec![0b1000])));
+        assert_eq!(parse_num_padded("0b000001000"), Ok((false, vec![0, 0b1000])));
+        assert_eq!(parse_num_padded("0b0000001000"), Ok((false, vec![0, 0b1000])));
+        assert_eq!(parse_num_padded("0b00000001000"), Ok((false, vec![0, 0b1000])));
+        assert_eq!(parse_num_padded("0b000000001000"), Ok((false, vec![0, 0b1000])));
+        assert_eq!(parse_num_padded("0b10000"), Ok((false, vec![0b10000])));
+        assert_eq!(parse_num_padded("0b010000"), Ok((false, vec![0b10000])));
+        assert_eq!(parse_num_padded("0b0010000"), Ok((false, vec![0b10000])));
+        assert_eq!(parse_num_padded("0b00010000"), Ok((false, vec![0b10000])));
+        assert_eq!(parse_num_padded("0b000010000"), Ok((false, vec![0, 0b10000])));
+        assert_eq!(parse_num_padded("0b0000010000"), Ok((false, vec![0, 0b10000])));
+        assert_eq!(parse_num_padded("0b00000010000"), Ok((false, vec![0, 0b10000])));
+        assert_eq!(parse_num_padded("0b000000010000"), Ok((false, vec![0, 0b10000])));
+        assert_eq!(parse_num_padded("0b0000000010000"), Ok((false, vec![0, 0b10000])));
+        assert_eq!(parse_num_padded("0b100000"), Ok((false, vec![0b100000])));
+        assert_eq!(parse_num_padded("0b0100000"), Ok((false, vec![0b100000])));
+        assert_eq!(parse_num_padded("0b00100000"), Ok((false, vec![0b100000])));
+        assert_eq!(parse_num_padded("0b000100000"), Ok((false, vec![0, 0b100000])));
+        assert_eq!(parse_num_padded("0b0000100000"), Ok((false, vec![0, 0b100000])));
+        assert_eq!(parse_num_padded("0b00000100000"), Ok((false, vec![0, 0b100000])));
+        assert_eq!(parse_num_padded("0b000000100000"), Ok((false, vec![0, 0b100000])));
+        assert_eq!(parse_num_padded("0b0000000100000"), Ok((false, vec![0, 0b100000])));
+        assert_eq!(parse_num_padded("0b00000000100000"), Ok((false, vec![0, 0b100000])));
+        assert_eq!(parse_num_padded("0b1000000"), Ok((false, vec![0b1000000])));
+        assert_eq!(parse_num_padded("0b01000000"), Ok((false, vec![0b1000000])));
+        assert_eq!(parse_num_padded("0b001000000"), Ok((false, vec![0, 0b1000000])));
+        assert_eq!(parse_num_padded("0b0001000000"), Ok((false, vec![0, 0b1000000])));
+        assert_eq!(parse_num_padded("0b00001000000"), Ok((false, vec![0, 0b1000000])));
+        assert_eq!(parse_num_padded("0b000001000000"), Ok((false, vec![0, 0b1000000])));
+        assert_eq!(parse_num_padded("0b0000001000000"), Ok((false, vec![0, 0b1000000])));
+        assert_eq!(parse_num_padded("0b00000001000000"), Ok((false, vec![0, 0b1000000])));
+        assert_eq!(parse_num_padded("0b000000001000000"), Ok((false, vec![0, 0b1000000])));
+        assert_eq!(parse_num_padded("0b10000000"), Ok((false, vec![0b10000000])));
+        assert_eq!(parse_num_padded("0b010000000"), Ok((false, vec![0, 0b10000000])));
+        assert_eq!(parse_num_padded("0b0010000000"), Ok((false, vec![0, 0b10000000])));
+        assert_eq!(parse_num_padded("0b00010000000"), Ok((false, vec![0, 0b10000000])));
+        assert_eq!(parse_num_padded("0b000010000000"), Ok((false, vec![0, 0b10000000])));
+        assert_eq!(parse_num_padded("0b0000010000000"), Ok((false, vec![0, 0b10000000])));
+        assert_eq!(parse_num_padded("0b00000010000000"), Ok((false, vec![0, 0b10000000])));
+        assert_eq!(parse_num_padded("0b000000010000000"), Ok((false, vec![0, 0b10000000])));
+        assert_eq!(parse_num_padded("0b0000000010000000"), Ok((false, vec![0, 0b10000000])));
+        assert_eq!(parse_num_padded("0b100000000"), Ok((false, vec![0b1, 0])));
+        assert_eq!(parse_num_padded("0b0100000000"), Ok((false, vec![0b1, 0])));
+        assert_eq!(parse_num_padded("0b00100000000"), Ok((false, vec![0b1, 0])));
+        assert_eq!(parse_num_padded("0b000100000000"), Ok((false, vec![0b1, 0])));
+        assert_eq!(parse_num_padded("0b0000100000000"), Ok((false, vec![0b1, 0])));
+        assert_eq!(parse_num_padded("0b00000100000000"), Ok((false, vec![0b1, 0])));
+        assert_eq!(parse_num_padded("0b000000100000000"), Ok((false, vec![0b1, 0])));
+        assert_eq!(parse_num_padded("0b0000000100000000"), Ok((false, vec![0b1, 0])));
+        assert_eq!(parse_num_padded("0b00000000100000000"), Ok((false, vec![0, 0b1, 0])));
+        assert_eq!(parse_num_padded("0b010000000"), Ok((false, vec![0, 0b10000000])));
+        assert_eq!(parse_num_padded("0b0010000000"), Ok((false, vec![0, 0b10000000])));
+        assert_eq!(parse_num_padded("0b00010000000"), Ok((false, vec![0, 0b10000000])));
+        assert_eq!(parse_num_padded("0b000010000000"), Ok((false, vec![0, 0b10000000])));
+        assert_eq!(parse_num_padded("0b0000010000000"), Ok((false, vec![0, 0b10000000])));
+        assert_eq!(parse_num_padded("0b00000010000000"), Ok((false, vec![0, 0b10000000])));
+        assert_eq!(parse_num_padded("0b000000010000000"), Ok((false, vec![0, 0b10000000])));
+        assert_eq!(parse_num_padded("0b0000000010000000"), Ok((false, vec![0, 0b10000000])));
+        assert_eq!(parse_num_padded("0b00000000010000000"), Ok((false, vec![0, 0, 0b10000000])));
     }
 
     #[test]
