@@ -1,19 +1,21 @@
 use crate::{
-    address::Address,
-    common::{to_hex_string, Description},
-    communication_channel::CommunicationChannel,
+    address::{Address, Slice},
+    bit_slice::{slice, slice_write},
+    common::Description,
+    communication_channel::{CommChannel, CommunicationChannel},
+    registers::RawRegister,
+    value::{Bytes, FromValue, Value},
     valuemap::*,
 };
 
-use failure::format_err;
-use fuseable::{type_name, Either, FuseableError};
+
 use fuseable_derive::Fuseable;
-use itertools::izip;
+
 use log::debug;
-use parse_num::parse_num_mask;
 
 use serde_derive::*;
-use std::fmt::Debug;
+
+use std::{fmt::Debug, rc::Rc};
 
 
 #[derive(Debug, Serialize, Fuseable)]
@@ -29,77 +31,88 @@ pub struct CookedRegister {
     pub writable: bool,
     #[fuseable(ro)]
     pub default: Option<u64>,
+    #[fuseable(ro)]
+    pub slice: Option<Slice>,
+    #[fuseable(skip)]
+    pub width_or_raw_register: WidthOrRawRegister,
+}
+
+#[derive(Debug, Serialize)]
+pub enum WidthOrRawRegister {
+    Width(u64),
+    RawRegister(Rc<RawRegister>),
 }
 
 impl CookedRegister {
-    pub fn read_value(
-        &self,
-        path: &mut dyn Iterator<Item = &str>,
-        comm_channel: &CommunicationChannel,
-    ) -> fuseable::Result<Either<Vec<String>, Vec<u8>>> {
-        match path.next() {
-            Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
-            None => {
-                let value = comm_channel.read_value(&self.address)?;
+    fn value_bytes(&self) -> fuseable::Result<u64> {
+        Ok(self.slice.as_ref().map(|v| v.bytes()).unwrap_or(self.width()?))
+    }
 
-                match &self.map {
-                    Some(map) => map.lookup(value).map(Either::Right),
-                    None => to_hex_string(&value).map(Either::Right),
-                }
-            }
+    fn width(&self) -> fuseable::Result<u64> {
+        match &self.width_or_raw_register {
+            WidthOrRawRegister::Width(width) => Ok(*width),
+            WidthOrRawRegister::RawRegister(register) => register.width(),
         }
+    }
+
+    fn read_raw_value(&self, comm_channel: &CommunicationChannel) -> fuseable::Result<Value> {
+        match &self.width_or_raw_register {
+            WidthOrRawRegister::Width(_width) => comm_channel.read_value(&self.address),
+            WidthOrRawRegister::RawRegister(register) => register.read_value(comm_channel),
+        }
+    }
+
+    fn write_raw_value(
+        &self,
+        comm_channel: &CommunicationChannel,
+        value: Value,
+    ) -> fuseable::Result<()> {
+        match &self.width_or_raw_register {
+            WidthOrRawRegister::Width(_width) => comm_channel.write_value(&self.address, value),
+            WidthOrRawRegister::RawRegister(register) => register.write_value(value, comm_channel),
+        }
+    }
+
+    pub fn read_value(&self, comm_channel: &CommunicationChannel) -> fuseable::Result<Value> {
+        let value = self.read_raw_value(comm_channel)?;
+        let value = Value::Bytes(slice(value.byte_representation(None)?, &self.slice));
+
+        let ret = match &self.map {
+            Some(map) => map.lookup(Bytes(
+                value.clone().byte_representation(Some(self.value_bytes()? as usize))?,
+            )),
+            None => Ok(value.clone()),
+        };
+
+        debug!("{:?} looked up to {:?}", value, ret);
+
+        ret
     }
 
     pub fn write_value(
         &self,
-        path: &mut dyn Iterator<Item = &str>,
-        value: Vec<u8>,
+        value: Value,
         comm_channel: &CommunicationChannel,
     ) -> fuseable::Result<()> {
-        match path.next() {
-            Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
-            None => {
-                let encoded_value = match &self.map {
-                    Some(map) => map.encode(value.clone())?,
-                    None => {
-                        if let Some(width) = self.address.bytes() {
-                            let (mask, mut value) =
-                                parse_num_mask(String::from_utf8_lossy(&value))?;
+        let encoded_value = match &self.map {
+            Some(map) => Value::Bytes(map.encode(FromValue::from_value(value.clone())?)?),
+            None => value.clone(),
+        };
 
-                            if value.len() > width as usize {
-                                return Err(format_err!("value {:?} to write was longer ({}) than cooked register {:?} with width of {}", value, value.len(), self, width));
-                            }
+        debug!("{:?} encoded to {:?}", value, encoded_value);
 
-                            // pad value to the length of the register
-                            while value.len() < width as usize {
-                                value.insert(0, 0);
-                            }
+        let encoded_value = if self.slice.is_some() {
+            let mut old_bytes =
+                self.read_raw_value(comm_channel).and_then(|v| v.byte_representation(None))?;
 
-                            match mask {
-                                Some(mut mask) => {
-                                    // pad mask to the length of the register
-                                    while mask.len() < width as usize {
-                                        mask.insert(0, 0);
-                                    }
+            slice_write(&mut old_bytes, encoded_value.byte_representation(None)?, &self.slice)
+                .unwrap();
 
-                                    let current_value = comm_channel.read_value(&self.address)?;
+            Value::Bytes(old_bytes.to_vec())
+        } else {
+            encoded_value
+        };
 
-                                    izip!(mask, value, current_value)
-                                        .map(|(m, val, cur)| (val & m) | (cur & !m))
-                                        .collect()
-                                }
-                                None => value,
-                            }
-                        } else {
-                            panic!("the cooked register written to {:?} did not specify a width, don't know what to do", self)
-                        }
-                    }
-                };
-
-                debug!("{:?} encoded to {:?}", value, encoded_value);
-
-                comm_channel.write_value(&self.address, encoded_value)
-            }
-        }
+        self.write_raw_value(comm_channel, encoded_value)
     }
 }

@@ -16,6 +16,7 @@ use crate::{
     lua_util,
     scripts::{scripts_from_model, LuaScript, Script},
     serde_util::empty_map,
+    value::Value,
 };
 use fuseable::{type_name, Either, Fuseable, FuseableError};
 use fuseable_derive::Fuseable;
@@ -63,8 +64,8 @@ macro_rules! run_script {
     ($name:expr, $devices:ident, {$($arg_name:ident:$arg_val:expr),*}) => {
         crate::camera::with_camera(|cam| {
             #[allow(unused_mut)]
-            let mut args: HashMap<String, Vec<u8>> = HashMap::new();
-            $(args.insert(stringify!($arg_name).to_owned(), $arg_val.to_bytes()?);)*
+            let mut args: HashMap<String, Value> = HashMap::new();
+            $(args.insert(stringify!($arg_name).to_owned(), $arg_val.to_value()?);)*
 
             cam.scripts
                 .get($name)
@@ -76,15 +77,12 @@ macro_rules! run_script {
     }
 }
 
-pub fn globals<T: std::str::FromStr>(name: &str) -> Result<T, GlobalsError<failure::Error>>
-where
-    <T as std::str::FromStr>::Err: std::error::Error + Sync + Send + 'static,
-{
+pub fn globals(name: &str) -> Result<Value, GlobalsError<failure::Error>> {
     (*camera().read().unwrap())
         .globals
         .get(name)
         .ok_or_else(|| format_err!("tried to get non existant global {}", name))
-        .and_then(|v| v.parse().map_err(|e: <T as std::str::FromStr>::Err| e.into()))
+        .map(|s| Value::String(s.to_owned()))
         .map_err(GlobalsError)
 }
 
@@ -93,7 +91,7 @@ pub fn set_camera(cam: Camera) { unsafe { CAMERA = Some(Arc::new(RwLock::new(cam
 #[derive(Fuseable, Derivative)]
 #[derivative(Debug)]
 pub struct Camera {
-    camera_model: String,
+    pub camera_model: String,
     pub devices: HashMap<String, Mutex<Device>>,
     pub scripts: HashMap<String, Mutex<Box<dyn Script>>>,
     globals: HashMap<String, String>,
@@ -154,9 +152,7 @@ impl Fuseable for SharedCamera {
                             dir_entries.push("value".to_owned());
                             Either::Left(dir_entries)
                         }
-                        Either::Right(_) => {
-                            panic!("tought I would get directory entires, but got file content")
-                        }
+                        Either::Right(_) => panic!("tought I would get directory entires, but got file content"),
                     }),
                     (Some(name), Some("value")) => {
                         let script = &**cam.scripts // wat???
@@ -166,10 +162,8 @@ impl Fuseable for SharedCamera {
 
                         let device_names = script.devices();
 
-                        let device_handles: Vec<_> = device_names
-                            .iter()
-                            .map(|device_name| cam.devices[device_name].lock().unwrap())
-                            .collect();
+                        let device_handles: Vec<_> =
+                            device_names.iter().map(|device_name| cam.devices[device_name].lock().unwrap()).collect();
 
                         let mut devices: HashMap<String, &dyn DeviceLike> = HashMap::new();
 
@@ -179,21 +173,34 @@ impl Fuseable for SharedCamera {
 
                         // get the script arguments from fuse
                         let args = match script.read(&mut std::iter::once("args")) {
-                            Ok(Either::Left(args)) => {
-                                args.into_iter().map(|name| {
-                                    let arg_value = match script.read(&mut std::iter::once("args").chain(std::iter::once(name.as_str()))) {
+                            Ok(Either::Left(args)) => args
+                                .into_iter()
+                                .map(|name| {
+                                    let arg_value = match script
+                                        .read(&mut std::iter::once("args").chain(std::iter::once(name.as_str())))
+                                    {
                                         Ok(Either::Right(val)) => val,
-                                        something_else => panic!("tried to read argument {} of script {:?}, but got {:?}", name, script, something_else)
+                                        something_else => panic!(
+                                            "tried to read argument {} of script {:?}, but got {:?}",
+                                            name, script, something_else
+                                        ),
                                     };
 
-                                    (name.to_string(), arg_value)
-                                }).collect()
-                            },
-                            _ => HashMap::new()
+                                    let arg_value = String::from_utf8(arg_value.clone()).unwrap_or_else(|e| {
+                                        panic!(
+                                            "tried to convert arg {} (value: {:?}) to string, but a error occured: {}",
+                                            name, arg_value, e
+                                        )
+                                    });
+
+                                    (name.to_string(), Value::String(arg_value))
+                                })
+                                .collect(),
+                            _ => HashMap::new(),
                         };
                         trace!("running script {} with args {:?}", name, args);
 
-                        script.run(devices, args)
+                        script.run(devices, args).and_then(|v| v.display_representation())
                     }
                     .map(Either::Right),
                     _ => cam.scripts.read(&mut path),
@@ -281,13 +288,15 @@ impl<'de> Deserialize<'de> for Camera {
 impl Camera {
     pub fn mocked(&mut self, mock: bool) {
         for device in self.devices.values() {
-            if mock {
-                let mock_memory = MockMemory::filled_with_device_defaults(&device.lock().unwrap());
+            let mut device = device.lock().unwrap();
 
-                device.lock().unwrap().channel.set_mock(mock_memory)
-            } else {
-                device.lock().unwrap().channel.unset_mock()
+            if mock {
+                let mock_memory = MockMemory::filled_with_device_defaults(&device);
+
+                device.channel.mock_memory = mock_memory;
             }
+
+            device.channel.mocked = mock;
         }
     }
 

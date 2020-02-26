@@ -1,23 +1,27 @@
-use crate::common::{to_hex_string, Description, Range};
+use crate::common::{Description, Range};
 
-use crate::{address::Address, communication_channel::CommunicationChannel};
+use crate::{
+    address::Address,
+    communication_channel::{CommChannel, CommunicationChannel},
+    value::Value,
+};
+
+
+use fuseable_derive::Fuseable;
 
 use failure::format_err;
-use fuseable::{type_name, Either, FuseableError};
-use fuseable_derive::Fuseable;
-use itertools::izip;
-use parse_num::parse_num_mask;
+
 use serde::{de::Error, Deserialize, Deserializer};
 use serde_derive::*;
 use std::fmt::Debug;
 
 
-#[derive(Debug, Serialize, Fuseable, Clone)]
+#[derive(Debug, Serialize, Fuseable, Clone, PartialEq)]
 pub struct RawRegister {
     #[fuseable(ro)]
     pub address: Address,
     #[fuseable(ro)]
-    pub width: Option<u8>,
+    pub width: Option<u64>,
     #[fuseable(ro)]
     mask: Option<String>,
     #[fuseable(ro)]
@@ -38,7 +42,7 @@ impl<'de> Deserialize<'de> for RawRegister {
         #[derive(Deserialize)]
         pub struct RegisterStringAddr {
             pub address: String,
-            pub width: Option<u8>,
+            pub width: Option<u64>,
             mask: Option<String>,
             #[serde(flatten)]
             range: Option<Range>,
@@ -48,11 +52,19 @@ impl<'de> Deserialize<'de> for RawRegister {
 
         let reg = RegisterStringAddr::deserialize(deserializer)?;
 
-        let address = Address::parse(&reg.address, reg.width.map(|v| v as usize))
+        let address = Address::parse(&reg.address, reg.width)
             .map_err(|_| D::Error::custom("error parsing address"))?;
 
         // TODO(robin): error handling here!
-        let default = reg.default.map(|x| parse_num::parse_num(x).unwrap());
+        let width = reg.width; // rust closure capture is shit and cannot handle partial captures
+        let default = reg.default.map(|x| {
+            match width {
+                Some(width) => parse_num::parse_num_padded_width(x, width as u64),
+                None => parse_num::parse_num(x),
+            }
+            .unwrap()
+            .1
+        });
 
         Ok(RawRegister {
             address,
@@ -66,66 +78,24 @@ impl<'de> Deserialize<'de> for RawRegister {
 }
 
 impl RawRegister {
-    pub fn read_value(
-        &self,
-        path: &mut dyn Iterator<Item = &str>,
-        comm_channel: &CommunicationChannel,
-    ) -> fuseable::Result<Either<Vec<String>, Vec<u8>>> {
-        match path.next() {
-            Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
-            None => comm_channel
-                .read_value(&self.address)
-                .and_then(|v| to_hex_string(&v))
-                .map(Either::Right),
-        }
+    pub fn width(&self) -> fuseable::Result<u64> {
+        self.width.map(|v| v as u64).or_else(|| self.address.bytes().ok()).ok_or_else(|| {
+            format_err!(
+                "tried to get width of {:?} but neither was width directly specified nor part of the address",
+                self
+            )
+        })
+    }
+
+    pub fn read_value(&self, comm_channel: &CommunicationChannel) -> fuseable::Result<Value> {
+        comm_channel.read_value(&self.address)
     }
 
     pub fn write_value(
         &self,
-        path: &mut dyn Iterator<Item = &str>,
-        value: Vec<u8>,
+        value: Value,
         comm_channel: &CommunicationChannel,
     ) -> fuseable::Result<()> {
-        match path.next() {
-            Some(s) => Err(FuseableError::not_a_directory(type_name(&self), s)),
-            None => {
-                if let Some(width) = self.width {
-                    let (mask, mut value) = parse_num_mask(String::from_utf8_lossy(&value))?;
-
-                    if value.len() > width as usize {
-                        return Err(format_err!("value {:?} to write was longer ({}) than register {:?} with width of {}", value, value.len(), self, width));
-                    }
-
-                    while value.len() < width as usize {
-                        value.insert(0, 0);
-                    }
-
-                    let value = match mask {
-                        Some(mut mask) => {
-                            // TODO(robin): this currently interprets a too short value, as if the
-                            // missing part should not be assigned and the old value (that is
-                            // already in the register) be kept
-                            // it is unclear if this is the wanted / intuitive behaviour, or if the
-                            // opposite is the case (note this applies only if a mask is specified,
-                            // maybe we only want to allow masks, when their width matches the
-                            while mask.len() < width as usize {
-                                mask.insert(0, 0);
-                            }
-
-                            let current_value = comm_channel.read_value(&self.address)?;
-
-                            izip!(mask, value, current_value)
-                                .map(|(m, val, cur)| (val & m) | (cur & !m))
-                                .collect()
-                        }
-                        None => value,
-                    };
-
-                    comm_channel.write_value(&self.address, value)
-                } else {
-                    Err(format_err!("the register written to {:?} did not specify a width, don't know what to do", self))
-                }
-            }
-        }
+        comm_channel.write_value(&self.address, value)
     }
 }

@@ -3,6 +3,7 @@ use std::{
     collections::{BTreeMap, HashMap},
     hash::Hash,
     ops::{Deref, DerefMut},
+    rc::Rc,
     result,
     str::FromStr,
     sync::{Arc, Mutex},
@@ -228,6 +229,20 @@ impl<T: Fuseable + ?Sized> Fuseable for Box<T> {
 
     fn write(&mut self, path: &mut dyn Iterator<Item = &str>, value: Vec<u8>) -> Result<()> {
         DerefMut::deref_mut(self).write(path, value)
+    }
+}
+
+impl<T: Fuseable> Fuseable for Rc<T> {
+    fn is_dir(&self, path: &mut dyn Iterator<Item = &str>) -> Result<bool> {
+        Deref::deref(self).is_dir(path)
+    }
+
+    fn read(&self, path: &mut dyn Iterator<Item = &str>) -> Result<Either<Vec<String>, Vec<u8>>> {
+        Deref::deref(self).read(path)
+    }
+
+    fn write(&mut self, _path: &mut dyn Iterator<Item = &str>, _value: Vec<u8>) -> Result<()> {
+        Err(FuseableError::unsupported("write", type_name(&self)))
     }
 }
 

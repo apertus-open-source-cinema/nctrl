@@ -95,6 +95,8 @@ where
 }
 */
 
+pub fn u64_one() -> u64 { 1 }
+
 pub fn bool_false() -> bool { false }
 
 pub fn bool_true() -> bool { true }

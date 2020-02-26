@@ -1,102 +1,68 @@
-use crate::address::{Address, Slice};
+use crate::{address::Address, serde_util::u64_one, value::Value};
 use core::fmt::Debug;
 use derivative::*;
 use failure::format_err;
 use fuseable::{Fuseable, Result};
 use fuseable_derive::*;
 use i2cdev::{core::I2CDevice, linux::LinuxI2CDevice};
-use lazy_static::lazy_static;
-use log::debug;
+
+use log::{debug, warn};
 use memmap::{MmapMut, MmapOptions};
 use paste;
 use serde::*;
 use serde_derive::{Deserialize, Serialize};
-use std::{
-    fs::OpenOptions,
-    sync::{Mutex, RwLock},
-};
+use std::{fs::OpenOptions, sync::RwLock};
 
-use crate::{
-    bit_slice::{slice, slice_write},
-    communication_channel::mock_memory::MockMemory,
-};
-use std::collections::HashMap;
+use crate::communication_channel::mock_memory::MockMemory;
+
 
 pub mod mock_memory;
 
-pub type CommunicationChannel = Box<dyn CommChannel>;
-
-lazy_static! {
-    static ref MOCK_MEMORIES: Mutex<HashMap<String, MockMemory>> = Mutex::new(HashMap::new());
-}
-
+pub type CommunicationChannel = MockableCommChannel;
 
 pub trait CommChannel: Debug + Fuseable {
-    // these are assumed to be bytewise
-    fn read_value_real(&self, address: &Address) -> Result<Vec<u8>>;
-    fn write_value_real(&self, address: &Address, value: Vec<u8>) -> Result<()>;
+    fn read_value(&self, address: &Address) -> Result<Value>;
+    fn write_value(&self, address: &Address, value: Value) -> Result<()>;
+}
 
-    fn read_value_mock(&self, address: &Address) -> Result<Vec<u8>> {
-        let mock_memories = MOCK_MEMORIES.lock().unwrap();
-        let mock_memory = mock_memories.get(&format!("{:?}", self)).unwrap();
-        let value = mock_memory.read(address).map(|x| x.clone());
-        debug!("mock_read: {:?} at {:?} by {:?}", &value.as_ref().unwrap(), address.as_u64(), self);
-        value.map(|x| x.clone())
+#[derive(Derivative, Fuseable)]
+#[derivative(Debug)]
+pub struct MockableCommChannel {
+    comm_channel: Box<dyn CommChannel>,
+    #[fuseable(skip)]
+    #[derivative(Debug = "ignore")]
+    pub mock_memory: MockMemory,
+    pub mocked: bool,
+}
+
+impl MockableCommChannel {
+    fn from(comm_channel: Box<dyn CommChannel>) -> MockableCommChannel {
+        MockableCommChannel {
+            comm_channel,
+            mock_memory: MockMemory::all_zeros(), /* TODO(robin): figure out how to get the
+                                                   * device defaults back in on creation? */
+            mocked: false,
+        }
     }
+}
 
-    fn write_value_mock(&self, address: &Address, value: Vec<u8>) -> Result<()> {
-        let mut mock_memories = MOCK_MEMORIES.lock().unwrap();
-        let mock_memory = mock_memories.get_mut(&format!("{:?}", self)).unwrap();
-        mock_memory.write(address, value.clone());
-        debug!("mock_write: {:?} to {:?} by {:?}", value.clone(), address.as_u64(), self);
-        Ok(())
-    }
-
-    fn set_mock(&mut self, mock_memory: MockMemory) {
-        MOCK_MEMORIES.lock().unwrap().insert(format!("{:?}", self), mock_memory);
-    }
-    fn unset_mock(&mut self) { MOCK_MEMORIES.lock().unwrap().remove(&format!("{:?}", self)); }
-
-    // TODO(anuejn): this is probably very slow
-    fn get_mock_mode(&self) -> bool {
-        MOCK_MEMORIES.lock().unwrap().contains_key(&format!("{:?}", self))
-    }
-
-    fn read_value(&self, address: &Address) -> Result<Vec<u8>> {
-        let v = if self.get_mock_mode() {
-            self.read_value_mock(&address)
-        } else {
-            self.read_value_real(&address)
-        };
-
-        v.map(|v| slice(v, address))
-    }
-
-    fn write_value(&self, address: &Address, value: Vec<u8>) -> Result<()> {
-        /* else if !address.unbounded() { TODO(robin): we could optimize the case where the slice starts and end at a byte boundary, as we just need to adjust the address base, but that carries the assumption, that addreses are always byte granularity, so maybe we actually cant do that? (for example the CMVSPIBridge has addresses that are 4 bytes per unit increment)
-            // the slice starts and ends at a byte boundary and is not unbounded
-            let Slice { start, end } = address.slice.as_ref().unwrap();
-            value[(start >> 3) as usize..(end >> 3) as usize].to_vec()
-        }*/
-
-        let new_value = if !address.unbounded() {
-            let mut old_value = if self.get_mock_mode() {
-                self.read_value_mock(address)?
-            } else {
-                self.read_value_real(address)?
-            };
-
-            slice_write(&mut old_value, value, address);
-
-            old_value
-        } else {
+impl CommChannel for MockableCommChannel {
+    fn read_value(&self, address: &Address) -> Result<Value> {
+        if self.mocked {
+            let value = self.mock_memory.read_value(address);
+            debug!("mock_read: {:?} at {:?} by {:?}", &value.as_ref().unwrap(), address, self);
             value
-        };
-
-        if self.get_mock_mode() {
-            self.write_value_mock(&address, new_value)
         } else {
-            self.write_value_real(&address, new_value)
+            self.comm_channel.read_value(address)
+        }
+    }
+
+    fn write_value(&self, address: &Address, value: Value) -> Result<()> {
+        if self.mocked {
+            debug!("mock_write: {:?} to {:?} by {:?}", value, address, self);
+            self.mock_memory.write_value(address, value)
+        } else {
+            self.comm_channel.write_value(address, value)
         }
     }
 }
@@ -106,6 +72,8 @@ pub trait CommChannel: Debug + Fuseable {
 struct I2CCdev {
     bus: u8,
     address: u8,
+    // max 8 supported for now
+    address_bytes: u8,
     #[fuseable(skip)]
     #[serde(skip)]
     #[derivative(Debug = "ignore", PartialEq = "ignore")]
@@ -117,6 +85,8 @@ struct I2CCdev {
 struct MemoryMap {
     base: u64,
     len: u64,
+    #[serde(default = "u64_one")]
+    bytes_per_word: u64,
     #[fuseable(skip)]
     #[serde(skip)]
     #[derivative(Debug = "ignore", PartialEq = "ignore")]
@@ -145,7 +115,7 @@ impl<'de> Deserialize<'de> for CMVSPIBridge {
 
         let CMVSPIBridgeConfig { base, len } = CMVSPIBridgeConfig::deserialize(deserializer)?;
 
-        let channel = MemoryMap { base, len, dev: RwLock::new(None) };
+        let channel = MemoryMap { base, len, bytes_per_word: 1, dev: RwLock::new(None) };
 
         Ok(CMVSPIBridge { base, len, channel })
     }
@@ -172,51 +142,72 @@ impl MemoryMap {
     }
 }
 
+// TODO(robin): replace with value.byte_representation(Some(max_len))
+fn to_bytes_be(val: u64, max_len: u64) -> Result<Vec<u8>> {
+    let value = val.to_be_bytes();
+    let num_zeros = value.len() - max_len as usize;
+    let mut all_zeros = true;
+
+    for v in &value[..num_zeros] {
+        all_zeros = (*v == 0) && all_zeros;
+    }
+
+    if !all_zeros {
+        Err(format_err!(
+            "tried to convert {} into a array of {} bytes, but it doesn't fit",
+            val,
+            max_len
+        ))
+    } else {
+        Ok(value[num_zeros..].to_vec())
+    }
+}
+
 impl CommChannel for I2CCdev {
-    fn read_value_real(&self, address: &Address) -> Result<Vec<u8>> {
+    fn read_value(&self, address: &Address) -> Result<Value> {
+        let (offset, bytes) = address.get_numeric()?;
+        let offset = to_bytes_be(offset, self.address_bytes as u64)?;
+        let bytes = bytes.ok_or_else(|| format_err!("I2CCdev doesn't support unbounded read"))?;
+
         with_dev(
             &self.dev,
             |i2c_dev| {
-                i2c_dev.write(&address.base)?;
-                let mut ret = vec![
-                    0;
-                    address.bytes().ok_or_else(|| format_err!(
-                        "I2CCdev doesn't support unbounded read"
-                    ))?
-                ];
+                i2c_dev.write(&offset)?;
+                let mut ret = vec![0; bytes as usize];
                 i2c_dev.read(&mut ret)?;
-                Ok(ret)
+                Ok(Value::Bytes(ret))
             },
             || self.init(),
         )
     }
 
-    fn write_value_real(&self, address: &Address, value: Vec<u8>) -> Result<()> {
-        let mut tmp = Vec::new();
-        tmp.extend(&address.base);
-        tmp.extend(value);
+    fn write_value(&self, address: &Address, value: Value) -> Result<()> {
+        let (offset, bytes) = address.get_numeric()?;
+        let mut offset = to_bytes_be(offset, self.address_bytes as u64)?;
+        let value = value.string_to_uint()?;
+        let value_bytes = pad_bytes_to_address_bytes(value, bytes, self, address)?;
+        offset.extend(value_bytes);
 
-        with_dev(&self.dev, |i2c_dev| i2c_dev.write(&tmp).map_err(|e| e.into()), || self.init())
+        with_dev(&self.dev, |i2c_dev| i2c_dev.write(&offset).map_err(|e| e.into()), || self.init())
     }
 }
 
 impl CommChannel for MemoryMap {
-    fn read_value_real(&self, address: &Address) -> Result<Vec<u8>> {
-        let offset = address.as_u64() as usize;
+    fn read_value(&self, address: &Address) -> Result<Value> {
+        let (offset, bytes) = address.get_numeric()?;
+        let offset = (offset * self.bytes_per_word) as usize;
+        let bytes =
+            bytes.ok_or_else(|| format_err!("MemoryMap doesn't support unbounded read"))? as usize;
 
         with_dev(
             &self.dev,
             |mmap_dev| {
-                let bytes = address
-                    .bytes()
-                    .ok_or_else(|| format_err!("MemoryMap doesn't support unbounded read"))?;
-
                 mmap_dev
                     .get(offset..(offset + bytes))
                     .map(|v| {
                         let mut v = v.to_vec();
-                        v.reverse();
-                        v
+                        v.reverse(); // convert little to big endian
+                        Value::Bytes(v)
                     })
                     .ok_or_else(|| {
                         format_err!(
@@ -231,13 +222,17 @@ impl CommChannel for MemoryMap {
         )
     }
 
-    fn write_value_real(&self, address: &Address, value: Vec<u8>) -> Result<()> {
-        let offset = address.as_u64() as usize;
+    fn write_value(&self, address: &Address, value: Value) -> Result<()> {
+        let (offset, bytes) = address.get_numeric()?;
+        let offset = (offset * self.bytes_per_word) as usize;
+        let value = value.string_to_uint()?;
+        let value_bytes = pad_bytes_to_address_bytes(value, bytes, self, address)?;
 
         with_dev(
             &self.dev,
             |mmap_dev| {
-                for (i, byte) in value.iter().rev().enumerate() {
+                // rev to convert from big to little endian
+                for (i, byte) in value_bytes.iter().rev().enumerate() {
                     mmap_dev[offset + i] = *byte;
                 }
                 Ok(())
@@ -245,6 +240,23 @@ impl CommChannel for MemoryMap {
             || self.init(),
         )
     }
+}
+
+// TODO(robin): replace with value.byte_representation(Some(max_len))
+fn pad_bytes_to_address_bytes<C: Debug, A: Debug>(
+    value: Value,
+    bytes: Option<u64>,
+    comm_channel: &C,
+    address: &A,
+) -> Result<Vec<u8>> {
+    if bytes.is_none() {
+        warn!(
+            "Writing value {:?} to address {:?} on comm channel {:?}, but don't know the width of this register",
+            value, address, comm_channel
+        )
+    }
+
+    value.clone().byte_representation(bytes.map(|v| v as usize))
 }
 
 fn with_dev<D, F, I, T>(dev: &RwLock<Option<D>>, func: F, init: I) -> Result<T>
@@ -271,31 +283,22 @@ where
 }
 
 impl CMVSPIBridge {
-    fn addr_to_mmap_addr(address: &Address) -> Address {
-        let spi_reg = address.as_u64();
+    fn addr_to_mmap_addr(address: &Address) -> Result<Address> {
+        let (spi_reg, bytes) = address.get_numeric()?;
         let base = 4 * spi_reg;
-        let mut address = address.clone();
-        // clear slice to avoid double handling of it in mock mode
-        address.slice = Some(Slice { start: 0, end: (address.bytes().unwrap() * 8) as u8 });
-        address.set_base_from_u64(base);
-        address
+
+        Ok(Address::Numeric { base, bytes })
     }
 }
 
 impl CommChannel for CMVSPIBridge {
-    fn read_value_real(&self, address: &Address) -> Result<Vec<u8>> {
-        self.channel.read_value(&Self::addr_to_mmap_addr(address))
+    fn read_value(&self, address: &Address) -> Result<Value> {
+        self.channel.read_value(&Self::addr_to_mmap_addr(address)?)
     }
 
-    fn write_value_real(&self, address: &Address, value: Vec<u8>) -> Result<()> {
-        self.channel.write_value(&Self::addr_to_mmap_addr(address), value)
+    fn write_value(&self, address: &Address, value: Value) -> Result<()> {
+        self.channel.write_value(&Self::addr_to_mmap_addr(address)?, value)
     }
-
-    fn set_mock(&mut self, mock_memory: MockMemory) { self.channel.set_mock(mock_memory) }
-
-    fn unset_mock(&mut self) { self.channel.unset_mock() }
-
-    fn get_mock_mode(&self) -> bool { false }
 }
 
 macro_rules! comm_channel_config {
@@ -328,12 +331,12 @@ macro_rules! comm_channel_config {
 
 comm_channel_config!(I2CCdev => "i2c-cdev", MemoryMap => "memory-map", CMVSPIBridge => "cmv-spi-bridge");
 
-impl<'de> Deserialize<'de> for Box<dyn CommChannel> {
+impl<'de> Deserialize<'de> for MockableCommChannel {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         let config = CommChannelConfig::deserialize(deserializer)?;
-        Ok(config.convert_to_comm_channel())
+        Ok(MockableCommChannel::from(config.convert_to_comm_channel()))
     }
 }

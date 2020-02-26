@@ -1,0 +1,55 @@
+camera_model: "test_model"
+
+devices:
+    test_mmap:
+        channel:
+            mode: "memory-map"
+            base: 0x1234
+            len: 12345
+        raw: "test_mmap_raw.yml"
+        # cooked: "test_mmap_cooked.yml"
+        # computed: "test_mmap_computed.yml"
+    test_spi:
+        channel:
+            mode: "cmv-spi-bridge"
+            base: 0x5678
+            len: 5678
+        # raw: "test_spi_raw.yml"
+        # cooked: "test_spi_cooked.yml"
+        # computed: "test_spi_computed.yml"
+    test_i2c:
+        channel:
+            mode: "i2c-cdev"
+            bus: 0
+            address: 0x10
+            address_bytes: 2
+        # raw: "test_i2c_raw.yml"
+        # cooked: "test_i2c_cooked.yml"
+        # computed: "test_i2c_computed.yml"
+
+globals:
+  test_int: -1234
+  test_uint: 1234
+  test_float: 3.1415
+  test_string: "testtesttest"
+  test_script: |
+    function (reg_a, reg_b)
+       return reg_a * reg_b
+    end
+  test_nested_script: test_script(1, 2)
+
+# scripts:
+#   test_raw_access:
+#   test_cooked_access:
+#   test_scripted_access:
+#   test_global_constant_access:
+#   test_global_lua_access:
+#   test_lua_script_call:
+#   test_called_by_lua:
+#   test_rust_script_call:
+#   test_called_by_rust:
+#   test_int_argument:
+#   test_float_argument:
+#   test_string_argument:
+#   test_bytes_argument:
+#   test_nested_lua_access:

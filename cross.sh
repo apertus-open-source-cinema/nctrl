@@ -1,1 +1,0 @@
-FUSE_CROSS_STATIC_PATH=/usr/armv7-unknown-linux-musleabihf/usr/lib/ FUSE_CROSS_STATIC_LIB=fuse CROSS_COMPILE=armv7-unknown-linux-musleabihf- PKG_CONFIG_ALL_STATIC=1 PKG_CONFIG_ALLOW_CROSS=1 PKG_CONFIG=arm-linux-gnueabi-pkg-config RUST_BACKTRACE=1 rustup run nightly cargo build --release --target=armv7-unknown-linux-musleabihf

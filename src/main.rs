@@ -1,5 +1,5 @@
 use env_logger::{Builder, Env};
-use log::{info, error};
+use log::{error, info};
 use nctrl::{
     camera::{camera, set_camera, with_camera, Camera, SharedCamera},
     fuseable_fs::FuseableFS,
@@ -7,6 +7,10 @@ use nctrl::{
 };
 use std::{ffi::OsStr, io::Read, path::PathBuf};
 use structopt::StructOpt;
+
+// TODO(robin): consider making Fusable work with Value?
+// TODO(robin): rework the Error handling (with own error type per component)
+
 
 /// Basic daemon for controlling the various components of a camera
 #[derive(StructOpt, Debug)]
