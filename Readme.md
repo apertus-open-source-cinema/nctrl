@@ -1,6 +1,22 @@
 # AXIOM ctrl
 A driver for controlling AXIOM cameras.
 
+## Getting started
+Currently a somewhat recent stable [rust compiler](https://www.rust-lang.org/tools/install)  is required. 
+Furthermore you need to install `libfuse` and the development headers for it (called `libfuse-dev` on debian derivatives). 
+
+Clone the repository using
+```bash
+git clone --recursive https://github.com/apertus-open-source-cinema/nctrl
+```
+
+In this directory you can use `cargo run` to start the control daemon. 
+For example:
+```bash
+cargo run -- -d nctrl_mountpoint -m camera_descriptions/beta/beta.yml
+```
+This starts the control daemon with the `beta` registers and using `nctrl_mountpoint` as mountpoint for the fuse API.
+
 ## Working Principle
 The code in this repository takes care of all the low level communication to the hardware
 of the camera (ie. the image sensor). This is done with a variety of protocols (ie. `i2c`
