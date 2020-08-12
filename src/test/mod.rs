@@ -10,6 +10,38 @@ mod tests {
         value::{Bytes, Value},
     };
 
+    #[test]
+    fn test_parse_beta() {
+        let path = "camera_descriptions/beta/beta.yml";
+        let mut f = File::open(path).unwrap();
+        FILE_OPENER.set_path(PathBuf::from(path));
+
+        let mut contents = String::new();
+        f.read_to_string(&mut contents).unwrap();
+
+        let mut cam: Camera = serde_yaml::from_str(&contents).unwrap();
+
+        cam.mocked(true);
+
+        set_camera(cam);
+    }
+
+    #[test]
+    fn test_parse_micro_r2() {
+        let path = "camera_descriptions/micro_r2/micro_r2.yml";
+        let mut f = File::open(path).unwrap();
+        FILE_OPENER.set_path(PathBuf::from(path));
+
+        let mut contents = String::new();
+        f.read_to_string(&mut contents).unwrap();
+
+        let mut cam: Camera = serde_yaml::from_str(&contents).unwrap();
+
+        cam.mocked(true);
+
+        set_camera(cam);
+    }
+
     fn cam() {
         let path = "camera_descriptions/test/test.yml";
         let mut f = File::open(path).unwrap();

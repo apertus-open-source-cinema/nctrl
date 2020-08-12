@@ -1,194 +1,233 @@
 identifier:
+    width: 4
     address: 0x0[8:32]
     writeable: false
     default: 0x53434E
     description: Identifier	"SCN"
 revision:
+    width: 4
     address: 0x0[4:8]
     writeable: false
     default: 0x0
     description: Revision	0
 split_x0100:
+    width: 4
     address: 0x0[0:4]
     writeable: false
     default: 0x8
     description: Split x0100
 scan_frame_counter:
+    width: 4
     address: 0x4[16:28]
     writeable: false
     default:
     description: 	Scan Frame Counter
 current_events:
+    width: 4
     address: 0x4[0:8]
     writeable: false
     default:
     description: Current Events
 total_height:
+    width: 4
     address: 0x100[16:28]
     writeable: true
     default: 0x000
     description: Total Height
 total_width:
+    width: 4
     address: 0x100[0:12]
     writeable: true
     default: 0x000
     description: Total Width
 total_frames:
+    width: 4
     address: 0x104[0:12]
     writeable: true
     default: 0x000
     description: Total Frames
 hor_display_end:
+    width: 4
     address: 0x108[16:28]
     writeable: true
     default: 0x000
     description: Hor. Display End
 hor_display_start:
+    width: 4
     address: 0x108[0:12]
     writeable: true
     default: 0x000
     description: Hor. Display Start
 vert_display_end:
+    width: 4
     address: 0x10C[16:28]
     writeable: true
     default: 0x000
     description: Vert. Display End
 vert_display_start:
+    width: 4
     address: 0x10C[0:12]
     writeable: true
     default: 0x000
     description: Vert. Display Start
 hor_sync_end:
+    width: 4
     address: 0x110[16:27]
     writeable: true
     default: 0x000
     description: Hor. Sync End
 hor_sync_start:
+    width: 4
     address: 0x110[0:12]
     writeable: true
     default: 0x000
     description: Hor. Sync Start
 vert_sync_end:
+    width: 4
     address: 0x114[16:28]
     writeable: true
     default: 0x000
     description: Vert. Sync End
 vert_sync_start:
+    width: 4
     address: 0x114[0:12]
     writeable: true
     default: 0x000
     description: Vert. Sync Start
 hor_data_end:
+    width: 4
     address: 0x118[16:28]
     writeable: true
     default: 0x000
     description: Hor. Data End
 hor_data_start:
+    width: 4
     address: 0x118[0:12]
     writeable: true
     default: 0x000
     description: Hor. Data Start
 vert_data_end:
+    width: 4
     address: 0x11C[16:28]
     writeable: true
     default: 0x000
     description: Vert. Data End
 vert_data_start:
+    width: 4
     address: 0x11C[0:12]
     writeable: true
     default: 0x000
     description: Vert. Data Start
 event_location_1_hor:
+    width: 4
     address: 0x120[16:28]
     writeable: true
     default: 0x000
     description: Event Location 1 (Hor)
 event_location_0_hor:
+    width: 4
     address: 0x120[0:12]
     writeable: true
     default: 0x000
     description: Event Location 0 (Hor)
 event_location_3_hor:
+    width: 4
     address: 0x124[16:28]
     writeable: true
     default: 0x000
     description: Event Location 3 (Hor)
 event_location_2_hor:
+    width: 4
     address: 0x124[0:12]
     writeable: true
     default: 0x000
     description: Event Location 2 (Hor)
 event_location_5_vert:
+    width: 4
     address: 0x128[16:28]
     writeable: true
     default: 0x000
     description: Event Location 5 (Vert)
 event_location_4_vert:
+    width: 4
     address: 0x128[0:12]
     writeable: true
     default: 0x000
     description: Event Location 4 (Vert)
 event_location_7_vert:
+    width: 4
     address: 0x12C[16:28]
     writeable: true
     default: 0x000
     description: Event Location 7 (Vert)
 event_location_6_vert:
+    width: 4
     address: 0x12C[0:12]
     writeable: true
     default: 0x000
     description: Event Location 6 (Vert)
 event_3_configuration:
+    width: 4
     address: 0x130[24:32]
     writeable: true
     default: 0x00
     description: Event 3 Configuration
 event_2_configuration:
+    width: 4
     address: 0x130[16:24]
     writeable: true
     default: 0x00
     description: Event 2 Configuration
 event_1_configuration:
+    width: 4
     address: 0x130[8:16]
     writeable: true
     default: 0x00
     description: Event 1 Configuration
 event_0_configuration:
+    width: 4
     address: 0x130[0:8]
     writeable: true
     default: 0x00
     description: Event 0 Configuration
 event_7_configuration:
+    width: 4
     address: 0x134[24:32]
     writeable: true
     default: 0x00
     description: Event 7 Configuration
 event_6_configuration:
+    width: 4
     address: 0x134[16:24]
     writeable: true
     default: 0x00
     description: Event 6 Configuration
 event_5_configuration:
+    width: 4
     address: 0x134[8:16]
     writeable: true
     default: 0x00
     description: Event 5 Configuration
 event_4_configuration:
+    width: 4
     address: 0x134[0:8]
     writeable: true
     default: 0x00
     description: Event 4 Configuration
 clip_range_overflow:
+    width: 4
     address: 0x138[5]
     writeable: true
     default: 0
     description: Clip Range Overflow
 clip_range_underflow:
+    width: 4
     address: 0x138[4]
     writeable: true
     default: 0
     description: Clip Range Underflow
 even_odd_swap:
+    width: 4
     address: 0x138[0]
     writeable: true
     default: 0

@@ -278,10 +278,10 @@ impl<'de> Deserialize<'de> for Device {
                     } else if let Some(width) = r.address.bytes().ok() {
                         width
                     } else {
-                        return Err(D::Error::custom(format!("tried to parse cooked register {:?} but no widht was specified", cooked_reg)));
+                        return Err(D::Error::custom(format!("tried to parse cooked register {:?} but no width was specified", cooked_reg)));
                     }
                 } else {
-                    return Err(D::Error::custom(format!("tried to parse cooked register {:?} but no widht was specified", cooked_reg)));
+                    return Err(D::Error::custom(format!("tried to parse cooked register {:?} but no width was specified", cooked_reg)));
                 };
 
                 Ok((name.clone(), CookedRegister {

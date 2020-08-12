@@ -8,7 +8,9 @@ pub struct FileOpener {
 }
 
 impl FileOpener {
-    pub fn set_path(&self, path: PathBuf) { *self.path.lock().unwrap() = Some(path); }
+    pub fn set_path(&self, path: PathBuf) {
+        *self.path.lock().unwrap() = Some(path);
+    }
 
     pub fn open(&self, filename: &str) -> std::io::Result<File> {
         let path = match *self.path.lock().unwrap() {
