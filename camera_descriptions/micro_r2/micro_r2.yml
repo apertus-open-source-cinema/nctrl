@@ -78,5 +78,5 @@ scripts:
       d: binary
 
 
-init: |
-  ar0330.computed.analog_gain = 2
+# init: |
+#   ar0330.computed.analog_gain = 2
