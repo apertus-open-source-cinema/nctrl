@@ -31,18 +31,18 @@ script! {
             // init
             // toggle reset (active low)
             sensor_io.write_raw("reset", 0x7)?;
-            std::thread::sleep(std::time::Duration::from_millis(1));
+            std::thread::sleep(std::time::Duration::from_millis(10));
             sensor_io.write_raw("reset", 0x0)?;
-            std::thread::sleep(std::time::Duration::from_millis(1));
+            std::thread::sleep(std::time::Duration::from_millis(10));
             sensor_io.write_raw("reset", 0x7)?;
 
-            std::thread::sleep(std::time::Duration::from_millis(1));
+            std::thread::sleep(std::time::Duration::from_millis(10));
 
             // magic init
             ar0330.write_raw("magic_init_config", 0xa114)?;
             ar0330.write_raw("magic_init_start", 0x0070)?;
 
-            std::thread::sleep(std::time::Duration::from_millis(2));
+            std::thread::sleep(std::time::Duration::from_millis(20));
 
             // check chip_version
             let chip_version = ar0330.read_raw("chip_version_reg")?;
@@ -117,7 +117,7 @@ script! {
             ar0330.write_raw("op_sys_clk_div", op_sys_clk_div)?;
 
             // pll lock time
-            std::thread::sleep(std::time::Duration::from_millis(1));
+            std::thread::sleep(std::time::Duration::from_millis(10));
 
             // data format setting
             // 0xc0c - 12bit raw uncompressed
