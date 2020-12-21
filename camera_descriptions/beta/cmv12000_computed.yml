@@ -36,7 +36,7 @@ fot_overlap:
   description: ""
   type: int
   get: |
-    return 34 * (raw.fot_timing & 0xFF) + 1;
+    return (raw.fot_timing & 0xFF) * 34 + 1;
 
 exposure_time:
   description: > 
@@ -47,7 +47,7 @@ exposure_time:
     -- formula from the datasheet p38
 
     val = computed.exposure_time_raw
-    time_in_pixels = (val - 1) * (raw.slot_timing + 1) + computed.fot_overlap
+    time_in_pixels = computed.fot_overlap + (val - 1) * (raw.slot_timing + 1)
 
     return time_in_pixels * (pixel_bits / lvds_clk) * 1e9;
   set: |
@@ -55,11 +55,11 @@ exposure_time:
 
     pixels = value * 1e-9 * (lvds_clk / pixel_bits) -- number of pixels for one exposure
     val = 1
-    if tonumber(computed.fot_overlap) < pixels then
-      val = (pixels - computed.fot_overlap) / (raw.slot_timing + 1) + 1;
+    if computed.fot_overlap < pixels then
+      val = (computed.fot_overlap - pixels) / (raw.slot_timing + 1) * (-1) + 1;
     end
 
-    computed.exposure_time_raw = math.floor(val)
+    computed.exposure_time_raw = val
 
 exposure_time_ms:
   description: >
@@ -78,4 +78,4 @@ temperature_celsius:
     temperature_sensor_clock = (lvds_clk / pixel_bits)
     offset_dn = (825 * temperature_sensor_clock) / 30
     slope = (3.5 * temperature_sensor_clock) / 30
-    return (offset_dn + raw.temp_sensor) / slope
+    return (raw.temp_sensor + offset_dn) / slope

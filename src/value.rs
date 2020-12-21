@@ -24,6 +24,33 @@ impl UserData for Value {
         methods.add_meta_method(MetaMethod::Mul, |_, this, value: rlua::Value| {
             this.clone().mul(value).map_err(|e| FailureCompat::failure_to_lua(e.into()))
         });
+        methods.add_meta_method(MetaMethod::Div, |_, this, value: rlua::Value| {
+            this.clone().div(value).map_err(|e| FailureCompat::failure_to_lua(e.into()))
+        });
+        methods.add_meta_method(MetaMethod::Shl, |_, this, value: rlua::Value| {
+            this.clone().shl(value).map_err(|e| FailureCompat::failure_to_lua(e.into()))
+        });
+        methods.add_meta_method(MetaMethod::BOr, |_, this, value: rlua::Value| {
+            this.clone().bor(value).map_err(|e| FailureCompat::failure_to_lua(e.into()))
+        });
+        methods.add_meta_method(MetaMethod::BAnd, |_, this, value: rlua::Value| {
+            this.clone().band(value).map_err(|e| FailureCompat::failure_to_lua(e.into()))
+        });
+        methods.add_meta_method(MetaMethod::Add, |_, this, value: rlua::Value| {
+            this.clone().add(value).map_err(|e| FailureCompat::failure_to_lua(e.into()))
+        });
+        methods.add_meta_method(MetaMethod::Sub, |_, this, value: rlua::Value| {
+            this.clone().sub(value).map_err(|e| FailureCompat::failure_to_lua(e.into()))
+        });
+        methods.add_meta_method(MetaMethod::Lt, |_, this, value: rlua::Value| {
+            this.clone().lt(value.clone()).map_err(|e| FailureCompat::failure_to_lua(e.into()))
+                .and_then(|v| {
+                    match v {
+                        Value::Boolean(b) => Ok(b),
+                        e => Err(FailureCompat::failure_to_lua(format_err!("tried to compare {:?} with {:?} but did not get a bool, got {:?}", this, value, e)))
+                    }
+                })
+        });
 
         // methods.add_meta_function(MetaMethod::Concat, |_, (lhs, rhs):
         // (rlua::Value, rlua::Value)| {     Ok("riea".to_owned())
@@ -38,6 +65,7 @@ impl UserData for Value {
 
 #[derive(Debug, Fuseable, Clone, PartialEq)]
 pub enum Value {
+    Boolean(bool),
     Int(i64),
     UInt(u64),
     Float(f64),
@@ -106,9 +134,166 @@ impl Value {
             (Int(a), UInt(b)) => Ok(Int(a * b as i64)),
             (UInt(a), Int(b)) => Ok(Int(a as i64 * b)),
             (UInt(a), UInt(b)) => Ok(UInt(a * b)),
+            (Float(a), UInt(b)) => Ok(Float(a * (b as f64))),
+            (Float(a), Int(b)) => Ok(Float(a * (b as f64))),
+            (UInt(a), Float(b)) => Ok(Float((a as f64) * b)),
+            (Int(a), Float(b)) => Ok(Float((a as f64) * b)),
             (Float(a), Float(b)) => Ok(Float(a * b)),
             _ => Err(format_err!(
                 "tried to multiply {:?} with {:?} but don't know how to do that",
+                self,
+                other
+            )),
+        }
+    }
+
+    pub fn div<T: ToValue>(self, other: T) -> Result<Value> {
+        use Value::*;
+        let other = other.to_value()?;
+
+        match (self.clone(), other.clone()) {
+            (Int(a), Int(b)) => Ok(Int(a / b)),
+            (Int(a), UInt(b)) => Ok(Int(a / b as i64)),
+            (UInt(a), Int(b)) => Ok(Int(a as i64 / b)),
+            (UInt(a), UInt(b)) => Ok(UInt(a / b)),
+            (Float(a), UInt(b)) => Ok(Float(a / (b as f64))),
+            (Float(a), Int(b)) => Ok(Float(a / (b as f64))),
+            (UInt(a), Float(b)) => Ok(Float((a as f64) / b)),
+            (Int(a), Float(b)) => Ok(Float((a as f64) / b)),
+            (Float(a), Float(b)) => Ok(Float(a / b)),
+            _ => Err(format_err!(
+                "tried to divide {:?} by {:?} but don't know how to do that",
+                self,
+                other
+            )),
+        }
+    }
+
+    pub fn shl<T: ToValue>(self, other: T) -> Result<Value> {
+        use Value::*;
+        let other = other.to_value()?;
+
+        match (self.clone(), other.clone()) {
+            (Int(a), Int(b)) => Ok(Int(a << (b as usize))),
+            (Int(a), UInt(b)) => Ok(Int(a << (b as usize))),
+            (UInt(a), Int(b)) => Ok(UInt(a << (b as usize))),
+            (UInt(a), UInt(b)) => Ok(UInt(a << (b as usize))),
+            (Bytes(a), UInt(b)) => Ok(UInt(u64::from_value(self)? << (b as usize))),
+            (Bytes(a), Int(b)) => Ok(UInt(u64::from_value(self)? << (b as usize))),
+            _ => Err(format_err!(
+                "tried to shl {:?} by {:?} but don't know how to do that",
+                self,
+                other
+            )),
+        }
+    }
+
+    pub fn bor<T: ToValue>(self, other: T) -> Result<Value> {
+        use Value::*;
+        let other = other.to_value()?;
+
+        match (self.clone(), other.clone()) {
+            (Int(a), Int(b)) => Ok(Int(a | b)),
+            (Int(a), UInt(b)) => Ok(Int(a | (b as i64))),
+            (UInt(a), Int(b)) => Ok(Int(a as i64 | b)),
+            (UInt(a), UInt(b)) => Ok(UInt(a | b)),
+            (Bytes(a), UInt(b)) => Ok(UInt(u64::from_value(self)? | b)),
+            (Bytes(a), Int(b)) => Ok(UInt(u64::from_value(self)? | (b as u64))),
+            _ => Err(format_err!(
+                "tried to bor {:?} and {:?} but don't know how to do that",
+                self,
+                other
+            )),
+        }
+    }
+
+    pub fn lt<T: ToValue>(self, other: T) -> Result<Value> {
+        use Value::*;
+        let other = other.to_value()?;
+
+        match (self.clone(), other.clone()) {
+            (Int(a), Int(b)) => Ok(Boolean(a < b)),
+            (Int(a), UInt(b)) => Ok(Boolean(a < (b as i64))),
+            (UInt(a), Int(b)) => Ok(Boolean((a as i64) < b)),
+            (UInt(a), UInt(b)) => Ok(Boolean(a < b)),
+            (Bytes(a), UInt(b)) => Ok(Boolean(u64::from_value(self)? < b)),
+            (Bytes(a), Int(b)) => Ok(Boolean((u64::from_value(self)? as i64) < b)),
+            (Bytes(a), Float(b)) => Ok(Boolean((u64::from_value(self)? as f64) < b)),
+            (Int(a), Float(b)) => Ok(Boolean((a as f64) < b)),
+            (UInt(a), Float(b)) => Ok(Boolean((a as f64) < b)),
+            (Float(a), Int(b)) => Ok(Boolean(a < (b as f64))),
+            (Float(a), UInt(b)) => Ok(Boolean(a < (b as f64))),
+            (Float(a), Float(b)) => Ok(Boolean(a < b)),
+            _ => Err(format_err!(
+                "tried to compare {:?} with {:?} but don't know how to do that",
+                self,
+                other
+            )),
+        }
+    }
+
+    pub fn add<T: ToValue>(self, other: T) -> Result<Value> {
+        use Value::*;
+        let other = other.to_value()?;
+
+        match (self.clone(), other.clone()) {
+            (Int(a), Int(b)) => Ok(Int(a + b)),
+            (Int(a), UInt(b)) => Ok(Int(a + (b as i64))),
+            (UInt(a), Int(b)) => Ok(Int(a as i64 + b)),
+            (UInt(a), UInt(b)) => Ok(UInt(a + b)),
+            (Bytes(a), UInt(b)) => Ok(UInt(u64::from_value(self)? + b)),
+            (Bytes(a), Int(b)) => Ok(UInt(u64::from_value(self)? + (b as u64))),
+            (Bytes(a), Float(b)) => Ok(Float(u64::from_value(self)? as f64 + b)),
+            (Float(a), UInt(b)) => Ok(Float(a + (b as f64))),
+            (Float(a), Int(b)) => Ok(Float(a + (b as f64))),
+            (UInt(a), Float(b)) => Ok(Float((a as f64) + b)),
+            (Int(a), Float(b)) => Ok(Float((a as f64) + b)),
+            (Float(a), Float(b)) => Ok(Float(a + b)),
+            _ => Err(format_err!(
+                "tried to and {:?} and {:?} but don't know how to do that",
+                self,
+                other
+            )),
+        }
+    }
+
+    pub fn sub<T: ToValue>(self, other: T) -> Result<Value> {
+        use Value::*;
+        let other = other.to_value()?;
+
+        match (self.clone(), other.clone()) {
+            (Int(a), Int(b)) => Ok(Int(a - b)),
+            (Int(a), UInt(b)) => Ok(Int(a - (b as i64))),
+            (UInt(a), Int(b)) => Ok(Int(a as i64 - b)),
+            (UInt(a), UInt(b)) => Ok(Int(a as i64 - b as i64)),
+            (Bytes(a), UInt(b)) => Ok(Int(u64::from_value(self)? as i64 - b as i64)),
+            (Bytes(a), Int(b)) => Ok(Int(u64::from_value(self)? as i64 - b)),
+            (Float(a), UInt(b)) => Ok(Float(a - (b as f64))),
+            (Float(a), Int(b)) => Ok(Float(a - (b as f64))),
+            (UInt(a), Float(b)) => Ok(Float((a as f64) - b)),
+            (Int(a), Float(b)) => Ok(Float((a as f64) - b)),
+            (Float(a), Float(b)) => Ok(Float(a - b)),
+            _ => Err(format_err!(
+                "tried to sub {:?} from {:?} but don't know how to do that",
+                other,
+                self,
+            )),
+        }
+    }
+
+    pub fn band<T: ToValue>(self, other: T) -> Result<Value> {
+        use Value::*;
+        let other = other.to_value()?;
+
+        match (self.clone(), other.clone()) {
+            (Int(a), Int(b)) => Ok(Int(a & b)),
+            (Int(a), UInt(b)) => Ok(Int(a & (b as i64))),
+            (UInt(a), Int(b)) => Ok(Int(a as i64 & b)),
+            (UInt(a), UInt(b)) => Ok(UInt(a & b)),
+            (Bytes(a), UInt(b)) => Ok(UInt(u64::from_value(self)? & b)),
+            (Bytes(a), Int(b)) => Ok(UInt(u64::from_value(self)? & (b as u64))),
+            _ => Err(format_err!(
+                "tried to band {:?} and {:?} but don't know how to do that",
                 self,
                 other
             )),
@@ -242,10 +427,11 @@ impl<'a> ToValue for LuaValue<'a> {
         use Value::*;
 
         match self {
+            LuaValue::Integer(int) => Ok(Int(int)),
             LuaValue::UserData(userdata) => Ok(userdata.borrow::<Value>()?.clone()),
             LuaValue::String(s) => Ok(String(s.to_str()?.to_owned())),
             LuaValue::Number(float) => Ok(Float(float)),
-            LuaValue::Integer(int) => Ok(Int(int)),
+            LuaValue::Boolean(b) => Ok(Boolean(b)),
             LuaValue::Nil => Ok(Nil),
             _ => Err(format_err!(
                 "tried to convert {:?} to Value, but don't know how to do that",
@@ -431,6 +617,7 @@ macro_rules! value_to_int {
                         }
                     }
                     Value::Int(i) => Ok(i.try_into()?),
+                    Value::Float(f) => Ok(f as $ty),
                     Value::String(s) => string_to_int!(s, $ty),
                     _ => Err(format_err!(
                         "tried to cast {:?} to {}, but don't know how to do that",
@@ -487,6 +674,8 @@ macro_rules! value_to_uint {
                         }
                     }
                     Value::UInt(i) => Ok(i.try_into()?),
+                    Value::Int(i) => Ok(i.try_into()?),
+                    Value::Float(f) => Ok(f as $ty),
                     Value::String(s) => string_to_int!(s, $ty),
                     _ => Err(format_err!(
                         "tried to cast {:?} to {}, but don't know how to do that",
