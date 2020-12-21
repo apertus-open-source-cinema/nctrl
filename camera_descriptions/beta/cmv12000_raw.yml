@@ -2,7 +2,7 @@ number_lines_tot:
     address: 1
     width: 2
     default: 3072
-    description: Total number of lines read out from the sensor (1 to 1536)
+    description: Total number of lines read out from the sensor (1 to 3072)
 y_start_1:
     address: 2
     width: 2
