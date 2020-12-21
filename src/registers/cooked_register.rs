@@ -96,7 +96,7 @@ impl CookedRegister {
     ) -> fuseable::Result<()> {
         let encoded_value = match &self.map {
             Some(map) => Value::Bytes(map.encode(FromValue::from_value(value.clone())?)?),
-            None => value.clone(),
+            None => value.clone().string_to_uint()?,
         };
 
         debug!("{:?} encoded to {:?}", value, encoded_value);
