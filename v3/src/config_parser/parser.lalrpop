@@ -1,0 +1,99 @@
+use std::str::FromStr;
+use std::collections::HashMap;
+use lalrpop_util::ParseError;
+use super::raw_ast::{RawAst, Device, ArgumentValue, BindingExpr};
+use super::span::Spanned;
+use super::parser_helpers::{ArgOrDevice, parse_int_lit};
+
+
+grammar;
+
+match {
+    "," => ",",
+    ";" => ";",
+    "=" => "=",
+    "[" => "[",
+    "]" => "]",
+    "{" => "{",
+    "}" => "}",
+    "(" => "(",
+    ")" => ")",
+    "&" => "&",
+    "true" => TRUE,
+    "false" => FALSE,
+    r"(-|\+)?(0x[a-fA-F0-9]+|0b[01]+|0o[0-7]+|[0-9])" => INT_LIT,
+    r"(-|\+)?[0-9]*[.][0-9]*((e|E)[0-9]*[.][0-9]*)?" => FLOAT_LIT,
+    r#""[^\n"]*""# => STRING_LIT,
+    r"<[^<>]*>" => FILE_LIT,
+    r"[a-zA-Z][a-zA-Z0-9_]+" => IDENT,
+    r"[a-zA-Z][a-zA-Z0-9_]+:" => NAME_SPEC,
+    r"@[^{;]*" => BINDING_EXPR,
+    r"\s*" => { },
+    r"`[^`]*`" => MULTI_LINE_STRING_LIT,
+    r"//[^\n\r]*" => {}
+}
+
+pub ConfigFile: RawAst = Spanned<Device>* => RawAst { devices: <> };
+
+Device: Device = {
+    <name:DeviceName> <ty:Spanned<DeviceType>> <binding_expr:Spanned<BINDING_EXPR>?> "{"
+        <inner:DeviceInner*>
+    "}" => {
+        let mut args = HashMap::<Spanned<String>, Spanned<ArgumentValue>>::new();
+        let mut subdevices = Vec::new();
+
+        for i in inner {
+            match i {
+                ArgOrDevice::Arg { name, arg } => { args.insert(name, arg); },
+                ArgOrDevice::Device(d) => subdevices.push(d),
+            }
+        }
+
+        Device { name, ty, subdevices, parent_binding_expr: binding_expr.map(|v| v.map(|vv| BindingExpr { expr: vv[1..].to_owned() })), args }
+    }
+};
+
+DeviceInner: ArgOrDevice = {
+    <Spanned<Device>> => ArgOrDevice::Device(<>),
+    <v:ValueAssignment> => ArgOrDevice::Arg { name: v.0, arg: v.1 },
+};
+
+ValueAssignment: (Spanned<String>, Spanned<ArgumentValue>) = <name:Spanned<IDENT>> "=" <arg:Spanned<ArgumentValue>> ";" => (name.map(|v| v.to_owned()), arg);
+
+ArgumentValue: ArgumentValue = {
+    <Spanned<FILE_LIT>> => ArgumentValue::File { path: <>.map(|v| v[1..v.len() - 1].to_owned()) },
+    <INT_LIT> =>? parse_int_lit(<>).map(ArgumentValue::Int).map_err(|_| ParseError::User { error: "could not parse int" }),
+    <FLOAT_LIT> =>? <>.parse::<f64>().map_err(|e| ParseError::User {
+        error: "could not parse float literal"
+    }).map(ArgumentValue::Float),
+    <STRING_LIT> => ArgumentValue::String(<>[1..<>.len() - 1].to_owned()),
+    <MULTI_LINE_STRING_LIT> => ArgumentValue::String(<>[1..<>.len() - 1].to_owned()),
+    <TRUE> => ArgumentValue::Bool(true),
+    <FALSE> => ArgumentValue::Bool(false),
+    "[" <Comma<Spanned<ArgumentValue>>> "]" => ArgumentValue::Array(<>),
+    <AssociativeArray> => ArgumentValue::AssociativeArray(<>),
+    "&" <name:Spanned<IDENT>> <expr:Spanned<BINDING_EXPR>> => ArgumentValue::BindingReference { name: name.map(|v| v.to_owned()), expr: expr.map(|v| BindingExpr { expr: v[1..].to_owned() }) }
+};
+
+AssociativeArray: HashMap<Spanned<String>, Spanned<ArgumentValue>> = "(" <v:(<ValueAssignment>)*> ")" => v.into_iter().collect();
+
+#[inline]
+Spanned<T>: Spanned<T> = <l:@L> <v:T> <r:@R>=> Spanned::new(l, r, v);
+
+
+Comma<T>: Vec<T> = {
+    <mut v:(<T> ",")*> <e:T?> => match e {
+        None => v,
+        Some(e) => {
+            v.push(e);
+            v
+        }
+    }
+};
+
+#[inline]
+DeviceName: Option<Spanned<String>> = {
+    <name:Spanned<NAME_SPEC>?> => name.map(|name| name.map(|name| name[..name.len() - 1].to_owned())),
+}
+
+DeviceType: String = <ty:IDENT> => ty.to_owned();

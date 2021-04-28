@@ -1,0 +1,16 @@
+[package]
+name = "v3"
+version = "0.1.0"
+authors = ["Robin Ole Heinemann <robin.ole.heinemann@gmail.com>"]
+edition = "2018"
+build = "build.rs"
+
+[dependencies]
+serde-reflection = "*"
+lalrpop-util = { version = "*", features = ["lexer"] }
+regex = "1"
+anyhow = "*"
+thiserror = "*"
+
+[build-dependencies]
+lalrpop = { git = "https://github.com/lalrpop/lalrpop", rev = "ea6e5bf11226649e5c422d9748898c6c51515f7c" }

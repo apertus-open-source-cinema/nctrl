@@ -1,5 +1,6 @@
 /target
 /read_bench/target
+/v3/target
 /ftable/target
 /btree/target
 /parse_num/target
