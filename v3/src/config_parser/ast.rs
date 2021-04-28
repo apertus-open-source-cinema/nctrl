@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use super::{span::Spanned, ParserError};
+use super::{span::Spanned, ParserError, SourceFile};
 
 #[derive(Debug)]
 pub struct Device {
@@ -25,7 +25,7 @@ pub enum ArgumentValue {
 
 impl ArgumentValue {
     pub fn from_raw<'a>(
-        source_contents: &'a str,
+        source_file: SourceFile<'a>,
         value: super::raw_ast::ArgumentValue,
     ) -> Result<ArgumentValue, ParserError<'a>> {
         use super::raw_ast::ArgumentValue::*;
@@ -37,21 +37,22 @@ impl ArgumentValue {
             Float(f) => ArgumentValue::Float(f),
             Array(a) => ArgumentValue::Array(
                 a.into_iter()
-                    .map(|v| v.try_map(|v| ArgumentValue::from_raw(source_contents, v)))
+                    .map(|v| v.try_map(|v| ArgumentValue::from_raw(source_file, v)))
                     .collect::<Result<_, _>>()?,
             ),
             AssociativeArray(a) => ArgumentValue::AssociativeArray(
                 a.into_iter()
                     .map(|(k, v)| {
-                        v.try_map(|v| ArgumentValue::from_raw(source_contents, v)).map(|v| (k, v))
+                        v.try_map(|v| ArgumentValue::from_raw(source_file, v)).map(|v| (k, v))
                     })
                     .collect::<Result<_, _>>()?,
             ),
             BindingReference { name, expr } => ArgumentValue::BindingReference { name, expr },
             File { path } => {
-                let contents = std::fs::read(*path).map_err(|error| ParserError::FileError {
-                    source_file: source_contents,
-                    path,
+                let path_c = path.clone();
+                let contents = std::fs::read(&*path).map_err(|error| ParserError::FileError {
+                    source_file,
+                    path: path_c,
                     error,
                 })?;
                 let file_ref = FileRef { path, contents };
@@ -81,11 +82,11 @@ pub struct Ast {
 
 impl Ast {
     pub fn from_raw<'a>(
-        source_contents: &'a str,
+        source_file: SourceFile<'a>,
         raw_ast: super::raw_ast::RawAst,
     ) -> Result<Ast, ParserError<'a>> {
         fn convert_devices<'a>(
-            source_contents: &'a str,
+            source_file: SourceFile<'a>,
             device_names: &mut HashSet<String>,
             device_type_counts: &mut HashMap<String, usize>,
             devices: Vec<Spanned<super::raw_ast::Device>>,
@@ -102,7 +103,7 @@ impl Ast {
                             parent_binding_expr,
                         } = device;
                         let subdevices = convert_devices(
-                            source_contents,
+                            source_file,
                             device_names,
                             device_type_counts,
                             subdevices,
@@ -119,15 +120,12 @@ impl Ast {
                         };
 
                         if !device_names.insert((*name).clone()) {
-                            Err(ParserError::DuplicateDeviceName {
-                                source_file: source_contents,
-                                name,
-                            })
+                            Err(ParserError::DuplicateDeviceName { source_file, name })
                         } else {
                             let args = args
                                 .into_iter()
                                 .map(|(k, v)| {
-                                    v.try_map(|v| Ok(ArgumentValue::from_raw(source_contents, v)?))
+                                    v.try_map(|v| Ok(ArgumentValue::from_raw(source_file, v)?))
                                         .map(|v| (k, v))
                                 })
                                 .collect::<Result<_, _>>()?;
@@ -143,7 +141,7 @@ impl Ast {
 
         Ok(Ast {
             devices: convert_devices(
-                source_contents,
+                source_file,
                 &mut device_names,
                 &mut device_type_counts,
                 raw_ast.devices,

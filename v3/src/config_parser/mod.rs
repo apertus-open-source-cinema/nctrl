@@ -13,101 +13,76 @@ pub use ast::Ast;
 
 lalrpop_mod!(parser, "/config_parser/parser.rs");
 
+#[derive(Debug, Copy, Clone)]
+pub struct SourceFile<'a> {
+    pub contents: &'a str,
+    pub file_name: &'a str,
+}
+
 
 #[derive(Error, Debug)]
 pub enum ParserError<'a> {
     #[error("{}", ParserError::format_parse_error(.source_file, .error))]
-    ParsingError { source_file: &'a str, error: ParseError<usize, Token<'a>, &'a str> },
+    ParsingError { source_file: SourceFile<'a>, error: ParseError<usize, Token<'a>, &'a str> },
     #[error("{}", ParserError::format_duplicate_device_name(.source_file, .name))]
-    DuplicateDeviceName { source_file: &'a str, name: Spanned<String> },
+    DuplicateDeviceName { source_file: SourceFile<'a>, name: Spanned<String> },
     #[error("{}", ParserError::format_file_error(.source_file, .path, .error))]
-    FileError { source_file: &'a str, path: Spanned<String>, error: () },
+    FileError { source_file: SourceFile<'a>, path: Spanned<String>, error: std::io::Error },
 }
 
 impl<'a> ParserError<'a> {
-    fn format_file_error(source_file: &'a str, path: &'a Spanned<String>, error: &'a ()) -> String {
-        todo!()
+    fn format_file_error(
+        source_file: &SourceFile<'a>,
+        path: &'a Spanned<String>,
+        error: &'a std::io::Error,
+    ) -> String {
+        path.print_note_and_message_with_context(
+            source_file.file_name,
+            source_file.contents,
+            &format!("{}", error),
+            "",
+        )
     }
 
-    fn format_duplicate_device_name(source_file: &'a str, name: &'a str) -> String { todo!() }
-
-    fn find_context(source_file: &'a str, location: usize) -> (&'a str, String, usize) {
-        let mut start = location;
-        let mut end = location;
-
-        let mut broke_start = false;
-        while &source_file[start..start + 1] != "\n" {
-            if start > 0 {
-                start -= 1;
-            } else {
-                broke_start = true;
-                break
-            }
-        }
-        if !broke_start {
-            start += 1;
-        }
-
-        while &source_file[end..end + 1] != "\n" {
-            if end + 1 == source_file.len() {
-                end += 1;
-                break
-            } else {
-                end += 1;
-            }
-        }
-
-        let num_spacing = location - start;
-        let spacing = " ".repeat(num_spacing);
-        let lineno = &source_file[..start + 1].chars().filter(|x| *x == '\n').count() + 1;
-
-        (&source_file[start..end], spacing, lineno)
+    fn format_duplicate_device_name(
+        source_file: &SourceFile<'a>,
+        name: &Spanned<String>,
+    ) -> String {
+        name.print_note_and_message_with_context(
+            source_file.file_name,
+            source_file.contents,
+            "duplicate device name",
+            "",
+        )
     }
 
     fn format_parse_error(
-        source_file: &'a str,
+        source_file: &SourceFile<'a>,
         error: &'a ParseError<usize, Token<'a>, &'a str>,
     ) -> String {
         match error {
-            ParseError::InvalidToken { location } => {
-                let (context_line, spacing, lineno) =
-                    ParserError::find_context(source_file, *location);
-
-                format!(
-                    r#"Invalid token in line {}:
-{}∨
-{}"#,
-                    lineno, spacing, context_line
-                )
-            }
+            ParseError::InvalidToken { location } => Spanned::new(*location, location + 1, ())
+                .print_note_and_message_with_context(
+                    source_file.file_name,
+                    source_file.contents,
+                    "invalid token",
+                    "",
+                ),
             ParseError::UnrecognizedEOF { location, expected } => {
-                let lineno =
-                    &source_file[..location + 1].chars().filter(|x| *x == '\n').count() + 1;
-                format!(
-                    r#"Unrecognized EOF in line {}
-Expected one of: {}"#,
-                    lineno,
-                    ParserError::display_vec(expected),
+                Spanned::new(*location, location + 1, ()).print_note_and_message_with_context(
+                    source_file.file_name,
+                    source_file.contents,
+                    "unrecognized EOF",
+                    &format!("expected one of: {}", ParserError::display_vec(expected)),
                 )
             }
-            ParseError::UnrecognizedToken { token, expected } => {
-                let (context_line, spacing, lineno) =
-                    ParserError::find_context(source_file, token.0);
-                let length = token.2 - token.0;
-                let marker = "∨".repeat(length);
-
-                format!(
-                    r#"Unrecognized token in line {}:
-{}{}
-{}
-Expected one of: {}"#,
-                    lineno,
-                    spacing,
-                    marker,
-                    context_line,
-                    ParserError::display_vec(expected),
-                )
-            }
+            ParseError::UnrecognizedToken { token, expected } => Spanned::new(token.0, token.2, ())
+                .print_note_and_message_with_context(
+                    source_file.file_name,
+                    source_file.contents,
+                    "unrecognized token",
+                    &format!("expected one of: {}", ParserError::display_vec(expected)),
+                ),
             _ => {
                 format!("{}", error)
             }
@@ -123,8 +98,8 @@ Expected one of: {}"#,
     }
 }
 
-pub fn parse<'a>(contents: &'a str) -> Result<raw_ast::RawAst, ParserError<'a>> {
+pub fn parse<'a>(source_file: SourceFile<'a>) -> Result<raw_ast::RawAst, ParserError<'a>> {
     parser::ConfigFileParser::new()
-        .parse(contents)
-        .map_err(|e| ParserError::ParsingError { source_file: contents, error: e })
+        .parse(source_file.contents)
+        .map_err(|e| ParserError::ParsingError { source_file, error: e })
 }

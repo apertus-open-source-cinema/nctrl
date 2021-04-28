@@ -1,8 +1,10 @@
 use anyhow;
-use v3::config_parser::{parse, Ast};
+use v3::config_parser::{parse, Ast, SourceFile};
 
 fn main() -> anyhow::Result<()> {
-    let source = r#"fpga_config: fpga_mgr {
+    let source = SourceFile {
+        file_name: "<embedded>",
+        contents: r#"fpga_config: fpga_mgr {
     bitstream = <i2c.bit>;
     tags = [
         "has_i2c_mux",
@@ -36,10 +38,12 @@ print("hello")
 named_registers {
     device = &i2c_mux0@0x1;
     description = <pmic_regs.yml>;
-}"#;
+}"#,
+    };
     let ast = parse(source)?;
 
-    println!("{:#?}", Ast::from_raw(&source, ast));
+    // TODO(robin): integrate parse into Ast::parse_source or something like that.
+    println!("{:#?}", Ast::from_raw(source, ast)?);
 
     Ok(())
 }
