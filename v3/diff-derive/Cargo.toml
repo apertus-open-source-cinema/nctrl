@@ -1,0 +1,13 @@
+[package]
+name = "diff-derive"
+version = "0.1.0"
+authors = ["Robin Ole Heinemann <robin.ole.heinemann@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+syn = { version = "*", features = ["full", "extra-traits"] }
+proc-macro2 = "*"
+quote = "*"
+
+[lib]
+proc-macro = true

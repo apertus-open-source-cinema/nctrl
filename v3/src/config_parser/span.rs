@@ -22,6 +22,7 @@ impl<T> Spanned<T> {
         mapping_function(value).map(|v| Spanned { start, end, value: v })
     }
 
+    // TODO(robin): colors
     pub fn print_note_and_message_with_context<'a>(
         &self,
         path: &'a str,
@@ -60,7 +61,7 @@ impl<T> Spanned<T> {
                 }
             }
 
-            let num_spacing = dbg!(location) - dbg!(start);
+            let num_spacing = location - start;
             let spacing = " ".repeat(num_spacing);
             let lineno = &source_file[..start + 1].chars().filter(|x| *x == '\n').count() + 1;
 

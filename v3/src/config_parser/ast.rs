@@ -151,4 +151,6 @@ impl Ast {
 }
 
 #[derive(Debug)]
-pub struct FlatAst(Vec<Device>);
+pub struct FlatAst {
+    devices: HashMap<String, Device>,
+}

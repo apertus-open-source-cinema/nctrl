@@ -1,6 +1,7 @@
 /target
 /read_bench/target
 /v3/target
+/v3/diff-derive/target
 /ftable/target
 /btree/target
 /parse_num/target
