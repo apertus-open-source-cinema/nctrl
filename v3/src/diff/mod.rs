@@ -298,7 +298,7 @@ impl<T: Diff + Clone> PatchWithValue<T, T::Patch> {
         }
     }
 
-    fn is_equal(&self) -> bool { matches!(self, Self::Equal(_)) }
+    // fn is_equal(&self) -> bool { matches!(self, Self::Equal(_)) }
 
     fn is_maximal(&self) -> bool {
         match self {

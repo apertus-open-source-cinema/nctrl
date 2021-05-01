@@ -11,7 +11,11 @@ mod span;
 
 pub use ast::Ast;
 
-lalrpop_mod!(parser, "/config_parser/parser.rs");
+lalrpop_mod!(
+    #[allow(clippy::all)]
+    parser,
+    "/config_parser/parser.rs"
+);
 
 #[derive(Debug, Copy, Clone)]
 pub struct SourceFile<'a> {

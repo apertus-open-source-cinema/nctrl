@@ -14,6 +14,10 @@ thiserror = "*"
 pathfinding = "*"
 diff-derive = { path = "diff-derive" }
 paste = "*"
+async-trait = "*"
+async-std = "*"
+generational-arena = "*"
+futures = "*"
 
 [build-dependencies]
 lalrpop = { git = "https://github.com/lalrpop/lalrpop", rev = "ea6e5bf11226649e5c422d9748898c6c51515f7c" }

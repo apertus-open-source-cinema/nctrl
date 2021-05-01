@@ -1,4 +1,3 @@
-use std::str::FromStr;
 use std::collections::HashMap;
 use lalrpop_util::ParseError;
 use super::raw_ast::{RawAst, Device, ArgumentValue, BindingExpr};
