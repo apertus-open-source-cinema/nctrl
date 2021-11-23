@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: © 2020 Robin Ole Heinemann <robin.ole.heinemann@gmail.com>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 #[cfg(test)]
 mod tests {
     use std::{fs::File, io::Read, path::PathBuf};

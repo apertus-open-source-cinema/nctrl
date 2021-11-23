@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: © 2020 Robin Ole Heinemann <robin.ole.heinemann@gmail.com>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 use crate::lua_util::FailureCompat;
 use failure::{format_err, ResultExt};
 use fuseable::Result;
