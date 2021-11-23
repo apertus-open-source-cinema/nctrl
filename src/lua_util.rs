@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: © 2019 Robin Ole Heinemann <robin.ole.heinemann@gmail.com>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 use core::fmt::{self, Display};
 use failure::format_err;
 use rlua::Error as LuaError;

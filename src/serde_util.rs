@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: © 2019 Robin Ole Heinemann <robin.ole.heinemann@gmail.com>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 use lazy_static::lazy_static;
 use num::Num;
 use serde::{de::Error, Deserialize, Deserializer};

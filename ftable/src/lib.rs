@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: © 2019 Robin Ole Heinemann <robin.ole.heinemann@t-online.de>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 use btree::{BTree, BTreeDFIter, BTreeIdx, BTreeProxy};
 use std::{ffi::OsStr, fmt::Debug};
 

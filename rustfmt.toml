@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: © 2019 Robin Ole Heinemann <robin.ole.heinemann@t-online.de>
+# SPDX-License-Identifier: CC0-1.0
+
 max_width = 100
 use_small_heuristics = "Max"
 combine_control_expr = false

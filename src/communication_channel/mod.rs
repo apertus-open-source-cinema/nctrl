@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: © 2019 Jaro Habiger <jarohabiger@googlemail.com>
+// SPDX-FileCopyrightText: © 2019 Robin Ole Heinemann <robin.ole.heinemann@gmail.com>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 use crate::{address::Address, serde_util::u64_one, value::Value};
 use core::fmt::Debug;
 use derivative::*;

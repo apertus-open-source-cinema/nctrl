@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2019 Robin Ole Heinemann <robin.ole.heinemann@gmail.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use core::fmt::Debug;
