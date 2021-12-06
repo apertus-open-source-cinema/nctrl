@@ -35,7 +35,82 @@ exposure_time_raw:
     raw.exp_time_low = value & 0xFFFF
     raw.exp_time_high = value >> 16
 
+exposure_time_raw_kp1:
+  description: raw register setting of the kneepoint 1 (PLR HDR) exposure time
+  type: int
+  get: |
+    return raw.exp_kp1_low | (raw.exp_kp1_high << 16)
+  set: |
+    raw.exp_kp1_low = value & 0xFFFF
+    raw.exp_kp1_high = value >> 16
+    
+exposure_time_raw_kp2:
+  description: raw register setting of the kneepoint 2 (PLR HDR) exposure time
+  type: int
+  get: |
+    return raw.exp_kp2_low | (raw.exp_kp2_high << 16)
+  set: |
+    raw.exp_kp2_low = value & 0xFFFF
+    raw.exp_kp2_high = value >> 16
 
+exposure_time_kp1:
+  description: > 
+    The exposure time of the kneepoint 1 (PLR HDR) in nano seconds.
+  type: float
+  get: |
+    -- formula from the datasheet p38
+
+    val = computed.exposure_time_raw_kp1
+    time_in_pixels = computed.fot_overlap + (val - 1) * (raw.slot_timing + 1)
+
+    return time_in_pixels * (pixel_bits / lvds_clk) * 1e9;
+  set: |
+    -- stolen code from https://github.com/apertus-open-source-cinema/axiom-beta-firmware/blob/master/software/sensor_tools/snap/snap.c#L415
+
+    pixels = value * 1e-9 * (lvds_clk / pixel_bits) -- number of pixels for one exposure
+    val = 1
+    if computed.fot_overlap < pixels then
+      val = (computed.fot_overlap - pixels) / (raw.slot_timing + 1) * (-1) + 1;
+    end
+
+    computed.exposure_time_raw_kp1 = val
+    
+exposure_time_kp2:
+  description: > 
+    The exposure time of the kneepoint 2 (PLR HDR) in nano seconds.
+  type: float
+  get: |
+    -- formula from the datasheet p38
+
+    val = computed.exposure_time_raw_kp2
+    time_in_pixels = computed.fot_overlap + (val - 1) * (raw.slot_timing + 1)
+
+    return time_in_pixels * (pixel_bits / lvds_clk) * 1e9;
+  set: |
+    -- stolen code from https://github.com/apertus-open-source-cinema/axiom-beta-firmware/blob/master/software/sensor_tools/snap/snap.c#L415
+
+    pixels = value * 1e-9 * (lvds_clk / pixel_bits) -- number of pixels for one exposure
+    val = 1
+    if computed.fot_overlap < pixels then
+      val = (computed.fot_overlap - pixels) / (raw.slot_timing + 1) * (-1) + 1;
+    end
+
+    computed.exposure_time_raw_kp2 = val
+    
+exposure_time_kp1_ms:
+  description: >
+    The exposure time of the kneepoint 1 (PLR HDR) in miliseconds.
+  type: float
+  get: return computed.exposure_time_kp1 / 1e6
+  set: computed.exposure_time_kp1 = value * 1e6
+  
+exposure_time_kp2_ms:
+  description: >
+    The exposure time of the kneepoint 2 (PLR HDR) in miliseconds.
+  type: float
+  get: return computed.exposure_time_kp2 / 1e6
+  set: computed.exposure_time_kp2 = value * 1e6
+    
 fot_overlap:
   description: ""
   type: int
