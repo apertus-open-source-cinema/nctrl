@@ -5,7 +5,7 @@
 analog_gain:
   description: The analog gain of the image Sensor. Can be < 1 due to the sensors ability to divitde the signal
   type: float
-  get: return cooked.pga_gain / cooked.pga_div * 1.0
+  get: return (cooked.pga_gain * 1.0) / cooked.pga_div * 1.0
   set: |
     -- brute force all possible combinations, to get the closest
     local final_gain = -1
