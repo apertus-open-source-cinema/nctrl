@@ -4,46 +4,46 @@
 camera_model: "beta"
 
 devices:
-    cmv12000:
-        channel:
-            mode: "cmv-spi-bridge"
-            base: 0x60000000
-            len: 0x00020000
-        raw: "cmv12000_raw.yml"
-        cooked: "cmv12000_cooked.yml"
-        computed: "cmv12000_computed.yml"
-    capture_control_address_generator:
-        channel:
-            mode: "memory-map"
-            base: 0x60100000
-            len: 0x00020000
-        cooked: "capture_control_address_generator_cooked.yml"
-    lvds_input_delay:
-        channel:
-            mode: "memory-map"
-            base: 0x60200000
-            len: 0x00020000
-        cooked: "lvds_input_delay_cooked.yml"
-    # rcn_noise_lut:
-    #     channel:
-    #         mode: "memory-map"
-    #         base: 0x60300000
-    #         len: 0x00020000
-    #     cooked: "rcn_noise_lut_cooked.yml"
-#     linearization_lut:
-#         channel:
-#             mode: "memory-map"
-#             base: 0x60500000
-#             len: 0x00020000
-# #        raw: "linearization_lut_raw.yml"    expose as one big register
-#         cooked: "linearization_lut_cooked.yml"
-    display_scan_generator:
-        channel:
-            mode: "memory-map"
-            base: 0x80000000
-            len: 0x00020000
-#        raw: "display_scan_generator_raw.yml"
-        cooked: "display_scan_generator_cooked.yml"
+  cmv12000:
+    channel:
+      mode: "cmv-spi-bridge"
+      base: 0x60000000
+      len: 0x00020000
+    raw: "cmv12000_raw.yml"
+    cooked: "cmv12000_cooked.yml"
+    computed: "cmv12000_computed.yml"
+  capture_control_address_generator:
+    channel:
+      mode: "memory-map"
+      base: 0x60100000
+      len: 0x00020000
+    cooked: "capture_control_address_generator_cooked.yml"
+  lvds_input_delay:
+    channel:
+      mode: "memory-map"
+      base: 0x60200000
+      len: 0x00020000
+    cooked: "lvds_input_delay_cooked.yml"
+  # rcn_noise_lut:
+  #     channel:
+  #         mode: "memory-map"
+  #         base: 0x60300000
+  #         len: 0x00020000
+  #     cooked: "rcn_noise_lut_cooked.yml"
+  #     linearization_lut:
+  #         channel:
+  #             mode: "memory-map"
+  #             base: 0x60500000
+  #             len: 0x00020000
+  # #        raw: "linearization_lut_raw.yml"    expose as one big register
+  #         cooked: "linearization_lut_cooked.yml"
+  display_scan_generator:
+    channel:
+      mode: "memory-map"
+      base: 0x80000000
+      len: 0x00020000
+    #        raw: "display_scan_generator_raw.yml"
+    cooked: "display_scan_generator_cooked.yml"
 #    display_control_address_generator:
 #        channel:
 #            mode: "memory-map"
@@ -83,3 +83,39 @@ devices:
 globals:
   lvds_clk: 250e6 # MHz
   pixel_bits: 12 # number of bits per pixel
+
+scripts:
+  check_axiom_service_status:
+    description:
+    script: |
+      result = "false"
+      local f=io.open("/tmp/axiom.started","r")
+      if f~=nil then
+        io.close(f)
+        result = "true"
+      end
+      return result
+  reboot:
+    description:
+    script: |
+      os.execute("reboot now")
+  power_off:
+    description:
+    script: |
+      os.execute("shutdown --poweroff")
+  start_hdmi:
+    description:
+    script: |
+      os.execute("axiom_sequencer_start.sh")
+  stop_hdmi:
+    description:
+    script: |
+      os.execute("axiom_sequencer_stop.sh")
+  start_axiom:
+    description:
+    script: |
+      os.execute("axiom_start.sh")
+  stop_axiom:
+    description:
+    script: |
+      os.execute("axiom_stop.sh")
