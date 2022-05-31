@@ -83,3 +83,15 @@ devices:
 globals:
   lvds_clk: 250e6 # MHz
   pixel_bits: 12 # number of bits per pixel
+
+scripts:
+    check_axiom_service_status:
+        description:
+        script: |
+            result = "false"
+            local f=io.open("/tmp/axiom.started","r")
+            if f~=nil then
+                io.close(f)
+                result = "true"
+            end
+            return result
