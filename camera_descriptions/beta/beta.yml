@@ -95,9 +95,3 @@ scripts:
                 result = "true"
             end
             return result
-    reboot:
-        description:
-        script: os.execute("reboot now")
-    power_off:
-        description:
-        script: os.execute("shutdown --poweroff")
