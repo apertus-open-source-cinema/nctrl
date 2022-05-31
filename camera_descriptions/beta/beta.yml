@@ -101,15 +101,3 @@ scripts:
     power_off:
         description:
         script: os.execute("shutdown --poweroff")
-    start_hdmi:
-        description:
-        script: os.execute("axiom_sequencer_start.sh")
-    stop_hdmi:
-        description:
-        script: os.execute("axiom_sequencer_stop.sh")
-    start_axiom:
-        description:
-        script: os.execute("axiom_start.sh")
-    stop_axiom:
-        description:
-        script: os.execute("axiom_stop.sh")
